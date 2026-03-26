@@ -1,83 +1,100 @@
-/* Global */
+/* NexariOS v5 UI — Dark Mode */
+
 body {
   margin: 0;
   padding: 0;
-  background: #1C1C1E;
-  color: white;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #0d0d0d;
+  color: #e5e5e5;
+  font-family: "Inter", Arial, sans-serif;
 }
 
-/* Loading */
-.loading {
+header {
   text-align: center;
-  padding: 40px;
-  font-size: 20px;
+  padding: 20px 0;
+  border-bottom: 1px solid #222;
 }
 
-/* Cards */
-.card {
-  background: #2C2C2E;
-  margin: 12px;
-  padding: 16px;
-  border-radius: 12px;
-  box-shadow: 0 0 8px rgba(0,0,0,0.4);
+h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: #4cc9f0;
 }
 
-.card h2 {
-  margin-top: 0;
+h2 {
+  margin: 5px 0 0;
+  font-size: 1rem;
+  color: #999;
 }
 
-/* Bottom Navigation */
-.nav {
-  position: fixed;
-  bottom: 0;
+#status {
+  text-align: center;
+  padding: 10px;
+  font-size: 0.95rem;
+  color: #ccc;
+}
+
+.table-container {
+  width: 95%;
+  margin: 20px auto;
+  overflow-x: auto;
+}
+
+table {
   width: 100%;
-  background: #2C2C2E;
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
-  border-top: 1px solid #3A3A3C;
+  border-collapse: collapse;
+  background: #111;
 }
 
-.nav-btn {
-  background: none;
-  border: none;
-  color: #8E8E93;
-  font-size: 16px;
+thead {
+  background: #1a1a1a;
 }
 
-.nav-btn.active {
-  color: white;
-  font-weight: bold;
+th, td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #222;
 }
 
-/* Tabs */
-.tab-content {
-  padding-bottom: 80px;
+tbody tr:hover {
+  background: #1f1f1f;
 }
 
-/* Modal */
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 10;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.7);
+/* Tier Coloring */
+.tier-elite {
+  background: #2b9348 !important;
+  color: #fff;
 }
 
-.modal-content {
-  background: #2C2C2E;
-  margin: 10% auto;
+.tier-strong {
+  background: #55a630 !important;
+  color: #fff;
+}
+
+.tier-solid {
+  background: #ffd166 !important;
+  color: #000;
+}
+
+.tier-deep {
+  background: #333 !important;
+  color: #ccc;
+}
+
+.tier-unknown {
+  opacity: 0.5;
+}
+
+.empty {
+  text-align: center;
   padding: 20px;
-  width: 90%;
-  border-radius: 12px;
+  color: #777;
 }
 
-.close {
-  float: right;
-  font-size: 28px;
-  cursor: pointer;
+footer {
+  text-align: center;
+  padding: 15px;
+  font-size: 0.8rem;
+  color: #555;
+  border-top: 1px solid #222;
+  margin-top: 20px;
 }

@@ -1,196 +1,98 @@
-/* ============================================================
-   Nexari OS — app.js (v4.4, Worker URL Patched)
-   ============================================================ */
+// NexariOS v5 UI – HR Legacy View
 
-let SCHEDULE = null;
+const API_URL = "https://nexari-auto.jardelterry.workers.dev/hr-legacy";
 
-/* -----------------------------
-   MAIN ENTRY
------------------------------ */
-document.addEventListener("DOMContentLoaded", async () => {
-  showLoading(true);
+// v5 scoring bands
+const ELITE_THRESHOLD = 25;   // v5: 25+ is elite
+const STRONG_THRESHOLD = 18;  // 18–25 strong
+const SOLID_THRESHOLD = 12;   // 12–18 solid
 
-  SCHEDULE = await loadNexariSchedule();
-
-  renderHRSignals();
-  renderGames();
-  renderSettings();
-
-  showLoading(false);
+document.addEventListener("DOMContentLoaded", () => {
+  loadHrCandidates();
 });
 
-/* -----------------------------
-   FETCH ULTRA-ARTIFACT
------------------------------ */
-async function loadNexariSchedule() {
+async function loadHrCandidates() {
+  setStatus("Loading HR candidates...");
   try {
-    const res = await fetch("https://nexari.jardelterry.workers.dev/schedule", {
-      cache: "no-store"
-    });
+    const res = await fetch(API_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
 
-    if (!res.ok) throw new Error("Bad response");
-    return await res.json();
+    const list = Array.isArray(data.top) ? data.top : [];
+    if (!list.length) {
+      setStatus("No HR candidates available for this slate.");
+      renderEmpty();
+      return;
+    }
 
+    renderHrTable(list);
+    const eliteCount = list.filter(p => p.score >= ELITE_THRESHOLD).length;
+    if (eliteCount === 0) {
+      setStatus("No v5-elite HR candidates (25+), but strong options exist.");
+    } else {
+      setStatus(`Found ${eliteCount} v5-elite HR candidates (25+).`);
+    }
   } catch (err) {
-    console.error("Schedule fetch failed:", err);
-    return { date: "N/A", games: [] };
+    console.error(err);
+    setStatus("Error loading HR candidates.");
+    renderEmpty();
   }
 }
 
-/* -----------------------------
-   UI HELPERS
------------------------------ */
-function showLoading(state) {
-  const el = document.getElementById("loading");
-  el.style.display = state ? "block" : "none";
+function setStatus(msg) {
+  const el = document.getElementById("status");
+  if (el) el.textContent = msg;
 }
 
-function switchTab(tab) {
-  document.getElementById("tab-hr").style.display = "none";
-  document.getElementById("tab-games").style.display = "none";
-  document.getElementById("tab-settings").style.display = "none";
-
-  document.getElementById("nav-hr").classList.remove("active");
-  document.getElementById("nav-games").classList.remove("active");
-  document.getElementById("nav-settings").classList.remove("active");
-
-  if (tab === "hr") {
-    document.getElementById("tab-hr").style.display = "block";
-    document.getElementById("nav-hr").classList.add("active");
-  }
-  if (tab === "games") {
-    document.getElementById("tab-games").style.display = "block";
-    document.getElementById("nav-games").classList.add("active");
-  }
-  if (tab === "settings") {
-    document.getElementById("tab-settings").style.display = "block";
-    document.getElementById("nav-settings").classList.add("active");
-  }
+function renderEmpty() {
+  const tbody = document.getElementById("hr-body");
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="5" class="empty">No candidates</td></tr>`;
 }
 
-/* ============================================================
-   TAB 1 — HR SIGNALS
-   ============================================================ */
+function renderHrTable(players) {
+  const tbody = document.getElementById("hr-body");
+  if (!tbody) return;
 
-function renderHRSignals() {
-  const container = document.getElementById("tab-hr");
+  tbody.innerHTML = "";
 
-  if (!SCHEDULE.games.length) {
-    container.innerHTML = `<p>No games today.</p>`;
-    return;
-  }
+  players.forEach((p, idx) => {
+    const tr = document.createElement("tr");
 
-  let html = "";
+    const tier = classifyTier(p.score);
+    tr.className = tier.className;
 
-  SCHEDULE.games.forEach(g => {
-    html += `
-      <div class="card">
-        <h2>${g.away.teamName} @ ${g.home.teamName}</h2>
-        <p>Home HR Score: <strong>${safeNum(g.nexari.homeHRScore)}</strong></p>
-        <p>Away HR Score: <strong>${safeNum(g.nexari.awayHRScore)}</strong></p>
-        <p>Weather Adj: ${safeNum(g.nexari.weatherAdjustment)}</p>
-        <p>Park HR Factor: ${g.parkFactors.hr}</p>
-      </div>
-    `;
+    const rankTd = cell(idx + 1);
+    const nameTd = cell(p.player || "Unknown");
+    const scoreTd = cell(p.score != null ? p.score.toFixed(1) : "-");
+    const hrpTd = cell(p.hrPerPA != null ? (p.hrPerPA * 100).toFixed(1) + "%" : "-");
+    const evTd = cell(formatEV(p.avgEV));
+
+    tr.appendChild(rankTd);
+    tr.appendChild(nameTd);
+    tr.appendChild(scoreTd);
+    tr.appendChild(hrpTd);
+    tr.appendChild(evTd);
+
+    tbody.appendChild(tr);
   });
-
-  container.innerHTML = html;
 }
 
-/* ============================================================
-   TAB 2 — GAMES LIST
-   ============================================================ */
-
-function renderGames() {
-  const container = document.getElementById("tab-games");
-
-  if (!SCHEDULE.games.length) {
-    container.innerHTML = `<p>No games today.</p>`;
-    return;
-  }
-
-  let html = "";
-
-  SCHEDULE.games.forEach(g => {
-    html += `
-      <div class="card">
-        <h2>${g.away.teamName} @ ${g.home.teamName}</h2>
-        <p><strong>Time:</strong> ${g.gameTime}</p>
-        <p><strong>Pitchers:</strong><br>
-          ${g.away.probablePitcher.name || "TBD"} (Away)<br>
-          ${g.home.probablePitcher.name || "TBD"} (Home)
-        </p>
-        <p><strong>Weather:</strong> ${g.weather.temp}°F — ${g.weather.forecast}</p>
-        <button onclick="openGameDetail(${g.gamePk})">View Details</button>
-      </div>
-    `;
-  });
-
-  container.innerHTML = html;
+function classifyTier(score) {
+  if (score == null || isNaN(score)) return { label: "unknown", className: "tier-unknown" };
+  if (score >= ELITE_THRESHOLD) return { label: "elite", className: "tier-elite" };
+  if (score >= STRONG_THRESHOLD) return { label: "strong", className: "tier-strong" };
+  if (score >= SOLID_THRESHOLD) return { label: "solid", className: "tier-solid" };
+  return { label: "deep", className: "tier-deep" };
 }
 
-/* ============================================================
-   GAME DETAIL MODAL
-   ============================================================ */
-
-function openGameDetail(gamePk) {
-  const g = SCHEDULE.games.find(x => x.gamePk === gamePk);
-  const modal = document.getElementById("game-modal");
-  const body = document.getElementById("game-modal-body");
-
-  const injuriesHome = g.home.roster.filter(p => p.injury);
-  const injuriesAway = g.away.roster.filter(p => p.injury);
-
-  body.innerHTML = `
-    <h2>${g.away.teamName} @ ${g.home.teamName}</h2>
-
-    <h3>Weather</h3>
-    <p>${g.weather.temp}°F — ${g.weather.forecast}</p>
-
-    <h3>Pitchers</h3>
-    <p>${g.away.probablePitcher.name || "TBD"} (Away)</p>
-    <p>${g.home.probablePitcher.name || "TBD"} (Home)</p>
-
-    <h3>HR Scores</h3>
-    <p>Home: ${safeNum(g.nexari.homeHRScore)}</p>
-    <p>Away: ${safeNum(g.nexari.awayHRScore)}</p>
-
-    <h3>Injuries</h3>
-    <strong>${g.away.teamName}</strong>
-    ${injuriesAway.length ? injuriesAway.map(i => `<p>${i.name}: ${i.injury.description}</p>`).join("") : "<p>No injuries</p>"}
-
-    <strong>${g.home.teamName}</strong>
-    ${injuriesHome.length ? injuriesHome.map(i => `<p>${i.name}: ${i.injury.description}</p>`).join("") : "<p>No injuries</p>"}
-  `;
-
-  modal.style.display = "block";
+function formatEV(ev) {
+  if (!ev || !isFinite(ev) || ev <= 0) return "—";
+  return ev.toFixed(1) + " mph";
 }
 
-function closeGameDetail() {
-  document.getElementById("game-modal").style.display = "none";
-}
-
-/* ============================================================
-   TAB 3 — SETTINGS
-   ============================================================ */
-
-function renderSettings() {
-  const container = document.getElementById("tab-settings");
-
-  container.innerHTML = `
-    <div class="card">
-      <h2>Nexari OS</h2>
-      <p>Version: 4.4</p>
-      <p>Data Source: Ultra-Artifact</p>
-      <p>Auto Refresh: Daily @ 9 AM EST</p>
-    </div>
-  `;
-}
-
-/* ============================================================
-   UTIL
-   ============================================================ */
-
-function safeNum(n) {
-  return n === null || n === undefined ? "N/A" : Number(n).toFixed(2);
+function cell(text) {
+  const td = document.createElement("td");
+  td.textContent = text;
+  return td;
 }

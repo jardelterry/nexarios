@@ -3,43 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nexari OS</title>
-
-  <link rel="manifest" href="manifest.json" />
+  <title>NexariOS v5 — HR Candidates</title>
   <link rel="stylesheet" href="style.css" />
-
-  <meta name="theme-color" content="#1C1C1E" />
 </head>
 
 <body>
+  <header>
+    <h1>NexariOS v5</h1>
+    <h2>Home Run Probability Engine</h2>
+  </header>
 
-  <!-- Loading Screen -->
-  <div id="loading" class="loading">Loading Nexari OS…</div>
+  <section id="status">Loading…</section>
 
-  <!-- Main App Container -->
-  <div id="app">
+  <section class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Player</th>
+          <th>Score</th>
+          <th>HR/PA</th>
+          <th>Avg EV</th>
+        </tr>
+      </thead>
+      <tbody id="hr-body"></tbody>
+    </table>
+  </section>
 
-    <!-- Tabs Content -->
-    <div id="tab-hr" class="tab-content"></div>
-    <div id="tab-games" class="tab-content" style="display:none;"></div>
-    <div id="tab-settings" class="tab-content" style="display:none;"></div>
-
-    <!-- Bottom Navigation -->
-    <div class="nav">
-      <button onclick="switchTab('hr')" id="nav-hr" class="nav-btn active">HR</button>
-      <button onclick="switchTab('games')" id="nav-games" class="nav-btn">Games</button>
-      <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn">Settings</button>
-    </div>
-
-  </div>
-
-  <!-- Game Detail Modal -->
-  <div id="game-modal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeGameDetail()">&times;</span>
-      <div id="game-modal-body"></div>
-    </div>
-  </div>
+  <footer>
+    NexariOS v5 — Powered by Nexari Auto Worker
+  </footer>
 
   <script src="app.js"></script>
 </body>
