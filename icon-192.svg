@@ -1,0 +1,9 @@
+<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="96" cy="96" r="96" fill="#000000"/>
+  <!-- Left vertical bar -->
+  <rect x="70" y="48" width="12" height="96" rx="3" fill="#FFFFFF"/>
+  <!-- Right vertical bar -->
+  <rect x="110" y="48" width="12" height="96" rx="3" fill="#FFFFFF"/>
+  <!-- Center diagonal connector -->
+  <path d="M82 96 L110 72 L110 84 L82 108 Z" fill="#FFFFFF"/>
+</svg>

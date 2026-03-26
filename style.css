@@ -1,0 +1,172 @@
+body {
+    margin: 0;
+    padding: 0;
+    background: #0D0D0D;
+    color: #FFFFFF;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+}
+
+.top-bar {
+    background: #111;
+    padding: 18px;
+    text-align: center;
+    border-bottom: 1px solid #222;
+}
+
+.top-bar h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.layout {
+    padding: 16px;
+    padding-bottom: 90px;
+}
+
+.left-column,
+.right-column {
+    width: 100%;
+}
+
+.section-title {
+    font-size: 20px;
+    margin-bottom: 12px;
+    color: #E5E5E7;
+}
+
+.mobile-only {
+    display: block;
+}
+
+.card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.card {
+    background: #1A1A1A;
+    padding: 16px;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.card-sub {
+    font-size: 14px;
+    color: #B3B3B3;
+}
+
+.badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+    margin-top: 8px;
+}
+
+.badge.Elite { background: #0A84FF; color: #FFF; }
+.badge.Strong { background: #30D158; color: #000; }
+.badge.Playable { background: #5E5CE6; color: #FFF; }
+.badge.Low { background: #8E8E93; color: #000; }
+
+.confidence-bar {
+    margin-top: 10px;
+    height: 6px;
+    border-radius: 999px;
+    background: #2C2C2E;
+    overflow: hidden;
+}
+
+.confidence-fill {
+    height: 100%;
+    width: 0;
+    border-radius: 999px;
+    transition: width 0.4s ease-out;
+}
+
+.conf-low { background: #8E8E93; }
+.conf-midlow { background: #5A6B80; }
+.conf-mid { background: #0A84FF; }
+.conf-high { background: #30D158; }
+.conf-elite { background: #5E5CE6; }
+
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #111;
+    border-top: 1px solid #222;
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 0;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    color: #AAA;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.tab-btn.active {
+    color: #0A84FF;
+}
+
+.tab-page {
+    display: none;
+}
+
+.tab-page.active {
+    display: block;
+}
+
+@media (min-width: 900px) {
+    .layout {
+        display: flex;
+        gap: 20px;
+        padding-bottom: 24px;
+    }
+
+    .left-column {
+        flex: 2;
+    }
+
+    .right-column {
+        flex: 1.2;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .bottom-nav {
+        display: none;
+    }
+
+    .mobile-only {
+        display: none;
+    }
+
+    .tab-page.active-desktop {
+        display: block;
+    }
+
+    #signalsTab {
+        display: block;
+    }
+}

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nexari OS — HR Signals</title>
+    <meta name="theme-color" content="#000000" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="manifest" href="manifest.json" />
+</head>
+
+<body>
+    <header class="top-bar">
+        <h1>NEXARI OS — HR SIGNALS</h1>
+    </header>
+
+    <main class="layout">
+        <section class="left-column">
+            <section id="signalsTab" class="tab-page active">
+                <h2 class="section-title mobile-only">Signals</h2>
+                <div id="signalsContainer" class="card-list"></div>
+            </section>
+        </section>
+
+        <section class="right-column">
+            <section id="gamesTab" class="tab-page active-desktop">
+                <h2 class="section-title">Today's Games</h2>
+                <div id="gamesContainer" class="card-list"></div>
+            </section>
+
+            <section id="systemTab" class="tab-page active-desktop">
+                <h2 class="section-title">System Diagnostics</h2>
+                <div id="systemContainer" class="card-list"></div>
+
+                <h2 class="section-title">Elite Accuracy Tracker</h2>
+                <div id="accuracyContainer" class="card-list"></div>
+            </section>
+
+            <section id="settingsTab" class="tab-page active-desktop">
+                <h2 class="section-title">Settings</h2>
+                <div id="settingsContainer" class="card-list">
+                    <div class="card">
+                        <div class="card-title">Nexari OS</div>
+                        <div class="card-sub">Interface: Apple Dark • Matte Black</div>
+                        <div class="card-sub">Mode: HR Signals Module</div>
+                    </div>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <nav class="bottom-nav">
+        <button class="tab-btn active" data-tab="signalsTab">Signals</button>
+        <button class="tab-btn" data-tab="gamesTab">Games</button>
+        <button class="tab-btn" data-tab="systemTab">System</button>
+        <button class="tab-btn" data-tab="settingsTab">Settings</button>
+    </nav>
+
+    <script src="app.js"></script>
+</body>
+</html>
