@@ -3,36 +3,177 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NexariOS v5 — HR Candidates</title>
+  <title>NexariOS v5 — HR Engine</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
   <header>
     <h1>NexariOS v5</h1>
     <h2>Home Run Probability Engine</h2>
   </header>
 
-  <section id="status">Loading…</section>
-
-  <section class="table-container">
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Player</th>
-          <th>Score</th>
-          <th>HR/PA</th>
-          <th>Avg EV</th>
-        </tr>
-      </thead>
-      <tbody id="hr-body"></tbody>
-    </table>
+  <section id="date-bar">
+    <button id="date-prev" class="date-btn">&lt;</button>
+    <div id="date-label">Loading date…</div>
+    <button id="date-next" class="date-btn">&gt;</button>
   </section>
 
-  <footer>
-    NexariOS v5 — Powered by Nexari Auto Worker
-  </footer>
+  <section id="status">Loading…</section>
+
+  <!-- Screens -->
+  <main>
+    <!-- HR Signals -->
+    <section id="screen-hr" class="screen active">
+      <div class="hr-controls">
+        <button id="toggle-top" class="toggle-btn active">Top 10</button>
+        <button id="toggle-all" class="toggle-btn">All Hitters</button>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Player</th>
+              <th>Score</th>
+              <th>HR/PA</th>
+              <th>Avg EV</th>
+            </tr>
+          </thead>
+          <tbody id="hr-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Games -->
+    <section id="screen-games" class="screen">
+      <div id="games-list" class="games-list"></div>
+    </section>
+
+    <!-- Matchups -->
+    <section id="screen-matchups" class="screen">
+      <div id="matchups-list" class="matchups-list"></div>
+    </section>
+
+    <!-- Players -->
+    <section id="screen-players" class="screen">
+      <div class="players-search">
+        <input id="players-search-input" type="text" placeholder="Search players…" />
+      </div>
+      <div id="players-list" class="players-list"></div>
+    </section>
+
+    <!-- Settings -->
+    <section id="screen-settings" class="screen">
+      <div class="settings-group">
+        <h3>Display</h3>
+        <div class="settings-row">
+          <span>Theme</span>
+          <button id="theme-toggle" class="pill-btn">Dark</button>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h3>System</h3>
+        <div class="settings-row">
+          <span>Manual refresh</span>
+          <button id="refresh-btn" class="pill-btn">Refresh</button>
+        </div>
+        <div class="settings-row">
+          <span>Last rebuild</span>
+          <span id="last-rebuild">Unknown</span>
+        </div>
+        <div class="settings-row">
+          <span>Version</span>
+          <span>NexariOS v5.0</span>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h3>About</h3>
+        <p>NexariOS v5 — HR probability engine with matchup‑aware scoring and elite tracking.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Floating Tab Bar -->
+  <nav id="tab-bar">
+    <button class="tab-btn active" data-screen="hr">
+      <div class="tab-icon">🔥</div>
+      <div class="tab-label">HR</div>
+    </button>
+    <button class="tab-btn" data-screen="games">
+      <div class="tab-icon">⚾</div>
+      <div class="tab-label">Games</div>
+    </button>
+    <button class="tab-btn" data-screen="matchups">
+      <div class="tab-icon">🎯</div>
+      <div class="tab-label">Matchups</div>
+    </button>
+    <button class="tab-btn" data-screen="players">
+      <div class="tab-icon">👤</div>
+      <div class="tab-label">Players</div>
+    </button>
+    <button class="tab-btn" data-screen="settings">
+      <div class="tab-icon">⚙️</div>
+      <div class="tab-label">Settings</div>
+    </button>
+  </nav>
+
+  <!-- Player Modal -->
+  <div id="player-modal-backdrop" class="modal-backdrop hidden">
+    <div id="player-modal" class="modal">
+      <div class="modal-header">
+        <h3 id="modal-player-name">Player Name</h3>
+        <button id="modal-close" class="modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-row">
+          <span class="modal-label">Score</span>
+          <span id="modal-score" class="modal-value"></span>
+        </div>
+        <div class="modal-row">
+          <span class="modal-label">HR / PA</span>
+          <span id="modal-hrpa" class="modal-value"></span>
+        </div>
+        <div class="modal-row">
+          <span class="modal-label">Avg EV</span>
+          <span id="modal-ev" class="modal-value"></span>
+        </div>
+        <div class="modal-row">
+          <span class="modal-label">Confidence</span>
+          <span id="modal-confidence" class="modal-value"></span>
+        </div>
+        <div class="modal-row">
+          <span class="modal-label">Risk</span>
+          <span id="modal-risk" class="modal-value"></span>
+        </div>
+
+        <h4>Matchup Factors</h4>
+        <div id="modal-matchup" class="modal-matchup">
+          <div class="modal-row">
+            <span class="modal-label">ERA factor</span>
+            <span id="modal-era" class="modal-value"></span>
+          </div>
+          <div class="modal-row">
+            <span class="modal-label">HR/9 factor</span>
+            <span id="modal-hr9" class="modal-value"></span>
+          </div>
+          <div class="modal-row">
+            <span class="modal-label">EV allowed</span>
+            <span id="modal-ev-allowed" class="modal-value"></span>
+          </div>
+          <div class="modal-row">
+            <span class="modal-label">Handedness</span>
+            <span id="modal-handed" class="modal-value"></span>
+          </div>
+          <div class="modal-row">
+            <span class="modal-label">Pitch type</span>
+            <span id="modal-pitch-type" class="modal-value"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
