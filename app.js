@@ -1,5 +1,5 @@
 /* ============================================================
-   Nexari OS — app.js (v4.4)
+   Nexari OS — app.js (v4.4, Worker URL Patched)
    ============================================================ */
 
 let SCHEDULE = null;
@@ -24,9 +24,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 ----------------------------- */
 async function loadNexariSchedule() {
   try {
-    const res = await fetch("/schedule", { cache: "no-store" });
+    const res = await fetch("https://nexari.jardelterry.workers.dev/schedule", {
+      cache: "no-store"
+    });
+
     if (!res.ok) throw new Error("Bad response");
     return await res.json();
+
   } catch (err) {
     console.error("Schedule fetch failed:", err);
     return { date: "N/A", games: [] };
@@ -82,9 +86,9 @@ function renderHRSignals() {
     html += `
       <div class="card">
         <h2>${g.away.teamName} @ ${g.home.teamName}</h2>
-        <p>Home HR Score: <strong>${g.nexari.homeHRScore.toFixed(2)}</strong></p>
-        <p>Away HR Score: <strong>${g.nexari.awayHRScore.toFixed(2)}</strong></p>
-        <p>Weather Adj: ${g.nexari.weatherAdjustment.toFixed(2)}</p>
+        <p>Home HR Score: <strong>${safeNum(g.nexari.homeHRScore)}</strong></p>
+        <p>Away HR Score: <strong>${safeNum(g.nexari.awayHRScore)}</strong></p>
+        <p>Weather Adj: ${safeNum(g.nexari.weatherAdjustment)}</p>
         <p>Park HR Factor: ${g.parkFactors.hr}</p>
       </div>
     `;
@@ -148,8 +152,8 @@ function openGameDetail(gamePk) {
     <p>${g.home.probablePitcher.name || "TBD"} (Home)</p>
 
     <h3>HR Scores</h3>
-    <p>Home: ${g.nexari.homeHRScore.toFixed(2)}</p>
-    <p>Away: ${g.nexari.awayHRScore.toFixed(2)}</p>
+    <p>Home: ${safeNum(g.nexari.homeHRScore)}</p>
+    <p>Away: ${safeNum(g.nexari.awayHRScore)}</p>
 
     <h3>Injuries</h3>
     <strong>${g.away.teamName}</strong>
@@ -181,4 +185,12 @@ function renderSettings() {
       <p>Auto Refresh: Daily @ 9 AM EST</p>
     </div>
   `;
+}
+
+/* ============================================================
+   UTIL
+   ============================================================ */
+
+function safeNum(n) {
+  return n === null || n === undefined ? "N/A" : Number(n).toFixed(2);
 }
