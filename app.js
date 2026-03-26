@@ -1,291 +1,184 @@
-// -----------------------------
-// Service Worker Registration
-// -----------------------------
-if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-        navigator.serviceWorker.register("service-worker.js")
-            .then(() => console.log("SW registered"))
-            .catch(err => console.error("SW failed:", err));
-    });
-}
+/* ============================================================
+   Nexari OS — app.js (v4.4)
+   ============================================================ */
 
-// -----------------------------
-// Tab Navigation (mobile)
-// -----------------------------
-const tabButtons = document.querySelectorAll(".tab-btn");
-const tabPages = document.querySelectorAll(".tab-page");
+let SCHEDULE = null;
 
-tabButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-        const target = btn.dataset.tab;
+/* -----------------------------
+   MAIN ENTRY
+----------------------------- */
+document.addEventListener("DOMContentLoaded", async () => {
+  showLoading(true);
 
-        tabButtons.forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
+  SCHEDULE = await loadNexariSchedule();
 
-        if (window.innerWidth < 900) {
-            tabPages.forEach(page => {
-                page.classList.remove("active");
-                if (page.id === target) page.classList.add("active");
-            });
-        }
-    });
+  renderHRSignals();
+  renderGames();
+  renderSettings();
+
+  showLoading(false);
 });
 
-// -----------------------------
-// Worker URL
-// -----------------------------
-const WORKER = "https://nexari.jardelterry.workers.dev";
-
-// -----------------------------
-// Shared State
-// -----------------------------
-let latestSignals = [];
-
-// -----------------------------
-// Helpers
-// -----------------------------
-function createConfidenceBar(conf) {
-    const bar = document.createElement("div");
-    bar.className = "confidence-bar";
-
-    const fill = document.createElement("div");
-    fill.className = "confidence-fill";
-
-    const pct = (conf ?? 0) * 100;
-
-    if (pct < 20) fill.classList.add("conf-low");
-    else if (pct < 40) fill.classList.add("conf-midlow");
-    else if (pct < 60) fill.classList.add("conf-mid");
-    else if (pct < 80) fill.classList.add("conf-high");
-    else fill.classList.add("conf-elite");
-
-    requestAnimationFrame(() => {
-        fill.style.width = `${Math.max(0, Math.min(100, pct)).toFixed(1)}%`;
-    });
-
-    bar.appendChild(fill);
-    return bar;
+/* -----------------------------
+   FETCH ULTRA-ARTIFACT
+----------------------------- */
+async function loadNexariSchedule() {
+  try {
+    const res = await fetch("/schedule", { cache: "no-store" });
+    if (!res.ok) throw new Error("Bad response");
+    return await res.json();
+  } catch (err) {
+    console.error("Schedule fetch failed:", err);
+    return { date: "N/A", games: [] };
+  }
 }
 
-function formatTeam(team) {
-    if (typeof team === "string") return team;
-    if (!team) return "TEAM";
-    return team.teamId || team.abbreviation || team.code || team.name || "TEAM";
+/* -----------------------------
+   UI HELPERS
+----------------------------- */
+function showLoading(state) {
+  const el = document.getElementById("loading");
+  el.style.display = state ? "block" : "none";
 }
 
-function computeGameHRIndex(game) {
-    if (!latestSignals || latestSignals.length === 0) return 0;
+function switchTab(tab) {
+  document.getElementById("tab-hr").style.display = "none";
+  document.getElementById("tab-games").style.display = "none";
+  document.getElementById("tab-settings").style.display = "none";
 
-    const home = formatTeam(game.home);
-    const away = formatTeam(game.away);
-    const teams = new Set([home, away]);
+  document.getElementById("nav-hr").classList.remove("active");
+  document.getElementById("nav-games").classList.remove("active");
+  document.getElementById("nav-settings").classList.remove("active");
 
-    let total = 0;
-    let weightSum = 0;
-
-    latestSignals.forEach(sig => {
-        if (!sig.team || !teams.has(sig.team)) return;
-
-        const prob = sig.score ?? 0;
-        const conf = sig.confidence ?? 0;
-        const tier = sig.tier ?? "Low";
-
-        let tierWeight = 1;
-        if (tier === "Elite") tierWeight = 1.5;
-        else if (tier === "Strong") tierWeight = 1.2;
-        else if (tier === "Playable") tierWeight = 1.0;
-        else tierWeight = 0.8;
-
-        const w = 1 + conf + tierWeight;
-        total += prob * w;
-        weightSum += w;
-    });
-
-    if (!weightSum) return 0;
-    return total / weightSum;
+  if (tab === "hr") {
+    document.getElementById("tab-hr").style.display = "block";
+    document.getElementById("nav-hr").classList.add("active");
+  }
+  if (tab === "games") {
+    document.getElementById("tab-games").style.display = "block";
+    document.getElementById("nav-games").classList.add("active");
+  }
+  if (tab === "settings") {
+    document.getElementById("tab-settings").style.display = "block";
+    document.getElementById("nav-settings").classList.add("active");
+  }
 }
 
-// -----------------------------
-// Fetch HR Signals
-// -----------------------------
-async function loadSignals() {
-    const container = document.getElementById("signalsContainer");
-    container.innerHTML = "<p>Loading...</p>";
+/* ============================================================
+   TAB 1 — HR SIGNALS
+   ============================================================ */
 
-    try {
-        const res = await fetch(`${WORKER}/signals`);
-        const data = await res.json();
+function renderHRSignals() {
+  const container = document.getElementById("tab-hr");
 
-        container.innerHTML = "";
+  if (!SCHEDULE.games.length) {
+    container.innerHTML = `<p>No games today.</p>`;
+    return;
+  }
 
-        if (!data.signals || data.signals.length === 0) {
-            container.innerHTML = "<p>No signals available.</p>";
-            latestSignals = [];
-            return;
-        }
+  let html = "";
 
-        latestSignals = data.signals;
+  SCHEDULE.games.forEach(g => {
+    html += `
+      <div class="card">
+        <h2>${g.away.teamName} @ ${g.home.teamName}</h2>
+        <p>Home HR Score: <strong>${g.nexari.homeHRScore.toFixed(2)}</strong></p>
+        <p>Away HR Score: <strong>${g.nexari.awayHRScore.toFixed(2)}</strong></p>
+        <p>Weather Adj: ${g.nexari.weatherAdjustment.toFixed(2)}</p>
+        <p>Park HR Factor: ${g.parkFactors.hr}</p>
+      </div>
+    `;
+  });
 
-        data.signals.forEach(sig => {
-            const prob = sig.score ?? 0;
-            const conf = sig.confidence ?? 0;
-            const tier = sig.tier ?? "Low";
-
-            const card = document.createElement("div");
-            card.className = "card";
-
-            card.innerHTML = `
-                <div class="card-title">${sig.player}</div>
-                <div class="card-sub">Team: ${sig.team}</div>
-                <div class="card-sub">HR Probability: ${(prob * 100).toFixed(1)}%</div>
-                <div class="card-sub">Confidence: ${(conf * 100).toFixed(1)}%</div>
-                <span class="badge ${tier}">${tier}</span>
-            `;
-
-            const bar = createConfidenceBar(conf);
-            card.appendChild(bar);
-
-            container.appendChild(card);
-        });
-
-    } catch (err) {
-        container.innerHTML = "<p>Error loading signals.</p>";
-        latestSignals = [];
-    }
+  container.innerHTML = html;
 }
 
-// -----------------------------
-// Fetch Games (sorted by HR density)
-// -----------------------------
-async function loadGames() {
-    const container = document.getElementById("gamesContainer");
-    container.innerHTML = "<p>Loading...</p>";
+/* ============================================================
+   TAB 2 — GAMES LIST
+   ============================================================ */
 
-    try {
-        const res = await fetch(`${WORKER}/games`);
-        const data = await res.json();
+function renderGames() {
+  const container = document.getElementById("tab-games");
 
-        container.innerHTML = "";
+  if (!SCHEDULE.games.length) {
+    container.innerHTML = `<p>No games today.</p>`;
+    return;
+  }
 
-        if (!data.games || data.games.length === 0) {
-            container.innerHTML = "<p>No games today.</p>";
-            return;
-        }
+  let html = "";
 
-        const gamesWithIndex = data.games.map(g => ({
-            game: g,
-            index: computeGameHRIndex(g)
-        }));
+  SCHEDULE.games.forEach(g => {
+    html += `
+      <div class="card">
+        <h2>${g.away.teamName} @ ${g.home.teamName}</h2>
+        <p><strong>Time:</strong> ${g.gameTime}</p>
+        <p><strong>Pitchers:</strong><br>
+          ${g.away.probablePitcher.name || "TBD"} (Away)<br>
+          ${g.home.probablePitcher.name || "TBD"} (Home)
+        </p>
+        <p><strong>Weather:</strong> ${g.weather.temp}°F — ${g.weather.forecast}</p>
+        <button onclick="openGameDetail(${g.gamePk})">View Details</button>
+      </div>
+    `;
+  });
 
-        gamesWithIndex.sort((a, b) => b.index - a.index);
-
-        gamesWithIndex.forEach(({ game, index }) => {
-            const home = formatTeam(game.home);
-            const away = formatTeam(game.away);
-            const time = game.time ?? "Unknown Time";
-
-            const card = document.createElement("div");
-            card.className = "card";
-
-            const indexPct = (index * 100).toFixed(1);
-
-            card.innerHTML = `
-                <div class="card-title">${away} @ ${home}</div>
-                <div class="card-sub">${time}</div>
-                <div class="card-sub">HR Density Index: ${indexPct}%</div>
-            `;
-
-            container.appendChild(card);
-        });
-
-    } catch {
-        container.innerHTML = "<p>Error loading games.</p>";
-    }
+  container.innerHTML = html;
 }
 
-// -----------------------------
-// System Diagnostics
-// -----------------------------
-async function loadSystem() {
-    const container = document.getElementById("systemContainer");
-    container.innerHTML = "<p>Loading...</p>";
+/* ============================================================
+   GAME DETAIL MODAL
+   ============================================================ */
 
-    try {
-        const res = await fetch(`${WORKER}/debug`);
-        const data = await res.json();
+function openGameDetail(gamePk) {
+  const g = SCHEDULE.games.find(x => x.gamePk === gamePk);
+  const modal = document.getElementById("game-modal");
+  const body = document.getElementById("game-modal-body");
 
-        const version = data.version ?? "4.1";
-        const lastRefresh = data.lastRefreshTime ?? data.lastRefresh ?? "Unknown";
+  const injuriesHome = g.home.roster.filter(p => p.injury);
+  const injuriesAway = g.away.roster.filter(p => p.injury);
 
-        const card = document.createElement("div");
-        card.className = "card";
+  body.innerHTML = `
+    <h2>${g.away.teamName} @ ${g.home.teamName}</h2>
 
-        card.innerHTML = `
-            <div class="card-title">System Status</div>
-            <div class="card-sub">Version: ${version}</div>
-            <div class="card-sub">Last Refresh: ${lastRefresh}</div>
-        `;
+    <h3>Weather</h3>
+    <p>${g.weather.temp}°F — ${g.weather.forecast}</p>
 
-        container.innerHTML = "";
-        container.appendChild(card);
+    <h3>Pitchers</h3>
+    <p>${g.away.probablePitcher.name || "TBD"} (Away)</p>
+    <p>${g.home.probablePitcher.name || "TBD"} (Home)</p>
 
-    } catch {
-        container.innerHTML = "<p>Error loading system diagnostics.</p>";
-    }
+    <h3>HR Scores</h3>
+    <p>Home: ${g.nexari.homeHRScore.toFixed(2)}</p>
+    <p>Away: ${g.nexari.awayHRScore.toFixed(2)}</p>
+
+    <h3>Injuries</h3>
+    <strong>${g.away.teamName}</strong>
+    ${injuriesAway.length ? injuriesAway.map(i => `<p>${i.name}: ${i.injury.description}</p>`).join("") : "<p>No injuries</p>"}
+
+    <strong>${g.home.teamName}</strong>
+    ${injuriesHome.length ? injuriesHome.map(i => `<p>${i.name}: ${i.injury.description}</p>`).join("") : "<p>No injuries</p>"}
+  `;
+
+  modal.style.display = "block";
 }
 
-// -----------------------------
-// Elite Accuracy Tracker
-// -----------------------------
-async function loadAccuracy() {
-    const container = document.getElementById("accuracyContainer");
-    container.innerHTML = "<p>Loading...</p>";
-
-    try {
-        const res = await fetch(`${WORKER}/accuracy`);
-        if (!res.ok) {
-            container.innerHTML = "<p>Elite accuracy tracking not active yet.</p>";
-            return;
-        }
-
-        const data = await res.json();
-
-        const today = data.today ?? null;
-        const rolling7 = data.rolling7 ?? null;
-        const rolling30 = data.rolling30 ?? null;
-        const lifetime = data.lifetime ?? null;
-
-        const card = document.createElement("div");
-        card.className = "card";
-
-        card.innerHTML = `
-            <div class="card-title">Elite Accuracy</div>
-            <div class="card-sub">Today: ${
-                today ? `${(today.accuracy * 100).toFixed(1)}% (${today.eliteHR}/${today.eliteCount})` : "N/A"
-            }</div>
-            <div class="card-sub">Last 7 Days: ${
-                rolling7 !== null ? `${(rolling7 * 100).toFixed(1)}%` : "N/A"
-            }</div>
-            <div class="card-sub">Last 30 Days: ${
-                rolling30 !== null ? `${(rolling30 * 100).toFixed(1)}%` : "N/A"
-            }</div>
-            <div class="card-sub">Lifetime: ${
-                lifetime !== null ? `${(lifetime * 100).toFixed(1)}%` : "N/A"
-            }</div>
-        `;
-
-        container.innerHTML = "";
-        container.appendChild(card);
-
-    } catch {
-        container.innerHTML = "<p>Elite accuracy tracking not active yet.</p>";
-    }
+function closeGameDetail() {
+  document.getElementById("game-modal").style.display = "none";
 }
 
-// -----------------------------
-// Auto-load on startup
-// -----------------------------
-loadSignals();
-loadGames();
-loadSystem();
-loadAccuracy();
+/* ============================================================
+   TAB 3 — SETTINGS
+   ============================================================ */
+
+function renderSettings() {
+  const container = document.getElementById("tab-settings");
+
+  container.innerHTML = `
+    <div class="card">
+      <h2>Nexari OS</h2>
+      <p>Version: 4.4</p>
+      <p>Data Source: Ultra-Artifact</p>
+      <p>Auto Refresh: Daily @ 9 AM EST</p>
+    </div>
+  `;
+}

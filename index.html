@@ -1,61 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nexari OS — HR Signals</title>
-    <meta name="theme-color" content="#000000" />
-    <link rel="stylesheet" href="style.css" />
-    <link rel="manifest" href="manifest.json" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nexari OS</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+
+  <meta name="theme-color" content="#1C1C1E" />
 </head>
 
 <body>
-    <header class="top-bar">
-        <h1>NEXARI OS — HR SIGNALS</h1>
-    </header>
 
-    <main class="layout">
-        <section class="left-column">
-            <section id="signalsTab" class="tab-page active">
-                <h2 class="section-title mobile-only">Signals</h2>
-                <div id="signalsContainer" class="card-list"></div>
-            </section>
-        </section>
+  <!-- Loading Screen -->
+  <div id="loading" class="loading">Loading Nexari OS…</div>
 
-        <section class="right-column">
-            <section id="gamesTab" class="tab-page active-desktop">
-                <h2 class="section-title">Today's Games</h2>
-                <div id="gamesContainer" class="card-list"></div>
-            </section>
+  <!-- Main App Container -->
+  <div id="app">
 
-            <section id="systemTab" class="tab-page active-desktop">
-                <h2 class="section-title">System Diagnostics</h2>
-                <div id="systemContainer" class="card-list"></div>
+    <!-- Tabs Content -->
+    <div id="tab-hr" class="tab-content"></div>
+    <div id="tab-games" class="tab-content" style="display:none;"></div>
+    <div id="tab-settings" class="tab-content" style="display:none;"></div>
 
-                <h2 class="section-title">Elite Accuracy Tracker</h2>
-                <div id="accuracyContainer" class="card-list"></div>
-            </section>
+    <!-- Bottom Navigation -->
+    <div class="nav">
+      <button onclick="switchTab('hr')" id="nav-hr" class="nav-btn active">HR</button>
+      <button onclick="switchTab('games')" id="nav-games" class="nav-btn">Games</button>
+      <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn">Settings</button>
+    </div>
 
-            <section id="settingsTab" class="tab-page active-desktop">
-                <h2 class="section-title">Settings</h2>
-                <div id="settingsContainer" class="card-list">
-                    <div class="card">
-                        <div class="card-title">Nexari OS</div>
-                        <div class="card-sub">Interface: Apple Dark • Matte Black</div>
-                        <div class="card-sub">Mode: HR Signals Module</div>
-                    </div>
-                </div>
-            </section>
-        </section>
-    </main>
+  </div>
 
-    <nav class="bottom-nav">
-        <button class="tab-btn active" data-tab="signalsTab">Signals</button>
-        <button class="tab-btn" data-tab="gamesTab">Games</button>
-        <button class="tab-btn" data-tab="systemTab">System</button>
-        <button class="tab-btn" data-tab="settingsTab">Settings</button>
-    </nav>
+  <!-- Game Detail Modal -->
+  <div id="game-modal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeGameDetail()">&times;</span>
+      <div id="game-modal-body"></div>
+    </div>
+  </div>
 
-    <script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
