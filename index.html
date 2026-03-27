@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NexariOS V3.1</title>
+  <title>NexariOS V3.2</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000000" />
   <style>
@@ -52,8 +52,6 @@
       padding-bottom: var(--tab-height);
       display: flex;
     }
-
-    /* LAYOUT WRAPPER */
 
     .app-root {
       display: flex;
@@ -220,8 +218,6 @@
       border-color: rgba(0,0,0,0.08);
     }
 
-    /* SIDEBAR STATES */
-
     @media (min-width: 900px) {
       .sidebar {
         display: flex;
@@ -256,7 +252,7 @@
       }
     }
 
-    /* MAIN CONTENT AREA */
+    /* MAIN CONTENT */
 
     .app-main-wrapper {
       flex: 1;
@@ -570,7 +566,7 @@
       border-color: var(--border-light);
     }
 
-    /* BOTTOM NAV (MOBILE) */
+    /* MOBILE SLIDING TAB BAR */
 
     .bottom-nav {
       position: fixed;
@@ -580,11 +576,14 @@
       height: var(--tab-height);
       display: flex;
       align-items: center;
-      justify-content: center;
       z-index: 20;
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
       border-top: 1px solid;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
     }
 
     body[data-theme="dark"] .bottom-nav {
@@ -597,19 +596,50 @@
       border-color: var(--border-light);
     }
 
+    .bottom-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .bottom-nav::before,
+    .bottom-nav::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 24px;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    body[data-theme="dark"] .bottom-nav::before {
+      left: 0;
+      background: linear-gradient(to right, rgba(5,5,9,1), rgba(5,5,9,0));
+    }
+
+    body[data-theme="dark"] .bottom-nav::after {
+      right: 0;
+      background: linear-gradient(to left, rgba(5,5,9,1), rgba(5,5,9,0));
+    }
+
+    body[data-theme="light"] .bottom-nav::before {
+      left: 0;
+      background: linear-gradient(to right, rgba(245,245,247,1), rgba(245,245,247,0));
+    }
+
+    body[data-theme="light"] .bottom-nav::after {
+      right: 0;
+      background: linear-gradient(to left, rgba(245,245,247,1), rgba(245,245,247,0));
+    }
+
     .bottom-nav-inner {
-      max-width: 900px;
-      width: 100%;
-      display: flex;
-      justify-content: space-around;
-      padding: 4px 8px;
-      gap: 4px;
+      display: inline-flex;
+      gap: 6px;
+      padding: 4px 12px;
     }
 
     .tab-button {
-      flex: 1;
       border-radius: 999px;
-      padding: 4px 4px;
+      padding: 4px 6px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -629,6 +659,9 @@
       font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.08em;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 120ms ease-out, transform 120ms ease-out;
     }
 
     body[data-theme="dark"] .tab-button {
@@ -653,6 +686,11 @@
       background: rgba(10,132,255,0.12);
       border-color: rgba(10,132,255,0.5);
       color: var(--text-light);
+    }
+
+    .tab-button.active .tab-label {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     @media (min-width: 900px) {
@@ -837,7 +875,7 @@
           </button>
         </nav>
         <div class="sidebar-footer">
-          NexariOS V3.1 • Desktop
+          NexariOS V3.2 • Desktop
         </div>
       </div>
     </aside>
@@ -1553,6 +1591,11 @@
       document.querySelectorAll(".tab-button").forEach(btn => {
         btn.addEventListener("click", () => {
           setActiveTab(btn.dataset.tab);
+          btn.scrollIntoView({
+            behavior: "smooth",
+            inline: "center",
+            block: "nearest"
+          });
         });
       });
 
