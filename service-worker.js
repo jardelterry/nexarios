@@ -8,5 +8,4 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   // Network-first; Nexari is real-time
-  return;
 });

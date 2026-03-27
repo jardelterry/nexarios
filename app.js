@@ -1,7 +1,11 @@
 const WORKER = "https://<your-worker-domain-here>";
 
+// Optional mode C: ticker follows selected signal when true
+const TICKER_FOLLOWS_SELECTION = false;
+
 let lastSignals = [];
 let lastGames = [];
+let currentGamesDate = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   initTheme();
@@ -10,6 +14,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initNavigation();
   initSystemControls();
   wireDetailBackButtons();
+  initGameDatePicker();
+
   loadSignals();
   loadGames();
   loadStreaks();
@@ -24,7 +30,14 @@ document.addEventListener("DOMContentLoaded", () => {
 function initTheme() {
   const mode = localStorage.getItem("themeMode") || "dark";
   document.body.classList.remove("theme-dark", "theme-light");
-  document.body.classList.add(mode === "light" ? "theme-light" : "theme-dark");
+  if (mode === "light") {
+    document.body.classList.add("theme-light");
+  } else if (mode === "auto") {
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    document.body.classList.add(prefersDark ? "theme-dark" : "theme-light");
+  } else {
+    document.body.classList.add("theme-dark");
+  }
 
   const sel = document.getElementById("themeMode");
   if (sel) {
@@ -136,7 +149,7 @@ async function loadSignals() {
     }
 
     lastSignals = data.signals;
-    updateHRTicker(data.signals);
+    updateHRTicker(data.signals[0]); // A: always top HR signal
 
     data.signals.forEach((sig, index) => {
       const card = document.createElement("div");
@@ -160,11 +173,11 @@ async function loadSignals() {
   }
 }
 
-function updateHRTicker(signals) {
+function updateHRTicker(sig) {
   const ticker = document.getElementById("hrTicker");
-  const top = signals[0];
+  if (!sig || !ticker) return;
   ticker.textContent =
-    `⚾ ${top.playerName} • ${(top.score * 100).toFixed(1)}% HR • ${top.tier}`;
+    `⚾ ${sig.playerName} • ${(sig.score * 100).toFixed(1)}% HR • ${sig.tier}`;
 }
 
 function openSignalDetail(index) {
@@ -174,6 +187,10 @@ function openSignalDetail(index) {
   const mode = getEffectiveMode();
   const tickerLine =
     `⚾ ${sig.playerName} • ${(sig.score * 100).toFixed(1)}% HR • ${sig.tier}`;
+
+  if (TICKER_FOLLOWS_SELECTION) {
+    updateHRTicker(sig); // C: optional mode
+  }
 
   if (mode === "desktop" || mode === "adaptive") {
     const title = document.getElementById("detailTitle");
@@ -207,11 +224,53 @@ function openSignalDetail(index) {
   }
 }
 
-/* GAMES */
+/* GAMES + DATE PICKER (D + C label) */
 
-async function loadGames() {
+function initGameDatePicker() {
+  const btn = document.getElementById("gameDateButton");
+  const picker = document.getElementById("gameDatePicker");
+
+  if (!btn || !picker) return;
+
+  const today = new Date();
+  const iso = today.toISOString().slice(0, 10);
+  picker.value = iso;
+  currentGamesDate = iso;
+  updateGameDateLabel(iso);
+
+  btn.onclick = () => {
+    picker.showPicker ? picker.showPicker() : picker.click();
+  };
+
+  picker.onchange = () => {
+    const val = picker.value;
+    currentGamesDate = val;
+    updateGameDateLabel(val);
+    loadGames(val);
+  };
+}
+
+function updateGameDateLabel(iso) {
+  const label = document.getElementById("gameDateLabel");
+  if (!label || !iso) return;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) {
+    label.textContent = "";
+    return;
+  }
+  label.textContent = d.toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  });
+}
+
+async function loadGames(dateOverride = null) {
   try {
-    const res = await fetch(`${WORKER}/games`);
+    const dateParam = dateOverride || currentGamesDate;
+    const url = dateParam ? `${WORKER}/games?date=${dateParam}` : `${WORKER}/games`;
+    const res = await fetch(url);
     const data = await res.json();
 
     const container = document.getElementById("gamesContainer");
@@ -278,7 +337,7 @@ function openGameDetail(index) {
   }
 }
 
-/* DETAIL BACK BUTTONS (mobile + desktop clear) */
+/* DETAIL BACK BUTTONS */
 
 function wireDetailBackButtons() {
   const backSignals = document.getElementById("backToSignals");
@@ -426,7 +485,7 @@ function initSystemControls() {
       const res = await fetch(`${WORKER}/debug`);
       const data = await res.json();
       devOut.textContent =
-        `Version: ${data.version}\nGenerated: ${data.generatedAt}`;
+        `Version: ${data.version}\nGenerated: ${data.generatedAt}\nDate: ${data.date}`;
     };
   }
 
