@@ -1,45 +1,141 @@
 /* ------------------------------
-   STATE + PROTECTION
+   STATE
 --------------------------------*/
-let lastGoodSignals = [];
-let lastGoodGames = [];
 let currentDate = new Date();
 let hrLimit = 10;
 let autoRefreshTimer = null;
 
+let signalsData = [];
+let gamesData = [];
+let accuracyData = {};
+let masterPlayers = []; // roster patch: full slate
+let selectedBook = "dk";
+
 /* ------------------------------
-   FORMAT DATE
+   HELPERS
 --------------------------------*/
 function formatDate(d) {
     return d.toISOString().slice(0, 10);
 }
 
+function safeName(name, fallback) {
+    if (name && name.trim() !== "" && name !== "Unknown") return name;
+    if (fallback && fallback.trim() !== "") return fallback;
+    return "Player";
+}
+
+/* Build master player list from gamesData (roster patch) */
+function buildMasterPlayers() {
+    const players = [];
+    const seen = new Set();
+
+    (gamesData || []).forEach(g => {
+        const away = g.away || "";
+        const home = g.home || "";
+
+        (g.awayPlayers || []).forEach(p => {
+            const key = `${away}|${p}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            players.push({
+                player: p,
+                team: away,
+                opponent: home
+            });
+        });
+
+        (g.homePlayers || []).forEach(p => {
+            const key = `${home}|${p}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            players.push({
+                player: p,
+                team: home,
+                opponent: away
+            });
+        });
+    });
+
+    // merge HR + odds from signalsData
+    players.forEach(pl => {
+        const match = (signalsData || []).find(s =>
+            safeName(s.player, s.cachedPlayer).toLowerCase() === pl.player.toLowerCase()
+        );
+        if (match) {
+            pl.hr = match.hr ?? 0;
+            pl.tier = match.tier || "Tier";
+            pl.streakType = match.streakType || "N/A";
+            pl.streakCount = match.streakCount || 0;
+            pl.sportsbooks = match.sportsbooks || {};
+        } else {
+            pl.hr = 0; // 0% (No projection)
+            pl.tier = "No projection";
+            pl.streakType = "N/A";
+            pl.streakCount = 0;
+            pl.sportsbooks = {};
+        }
+    });
+
+    masterPlayers = players;
+}
+
+/* Odds panel HTML */
+function renderOddsBlock(sportsbooks) {
+    if (!sportsbooks || typeof sportsbooks !== "object") {
+        return `<div class="oddsBlock">Sportsbook Odds: N/A</div>`;
+    }
+    const lines = [];
+    const dk = sportsbooks.dk ?? null;
+    const fd = sportsbooks.fd ?? null;
+    const mgm = sportsbooks.mgm ?? null;
+    const cz = sportsbooks.cz ?? null;
+
+    if (!dk && !fd && !mgm && !cz) {
+        return `<div class="oddsBlock">Sportsbook Odds: N/A</div>`;
+    }
+
+    if (dk !== null) lines.push(`DK: ${dk}`);
+    if (fd !== null) lines.push(`FD: ${fd}`);
+    if (mgm !== null) lines.push(`MGM: ${mgm}`);
+    if (cz !== null) lines.push(`CZ: ${cz}`);
+
+    return `
+        <div class="oddsBlock">
+            <div>Sportsbook Odds:</div>
+            <div>${lines.join("<br>")}</div>
+        </div>
+    `;
+}
+
 /* ------------------------------
-   DATA FETCH ENGINE
+   DATA LOAD
 --------------------------------*/
 async function loadData() {
     try {
         const dateParam = `?date=${formatDate(currentDate)}`;
 
-        const signalsRes = await fetch("https://nexari.jardelterry.workers.dev/signals" + dateParam);
-        const gamesRes = await fetch("https://nexari.jardelterry.workers.dev/games" + dateParam);
-        const accuracyRes = await fetch("https://nexari.jardelterry.workers.dev/accuracy");
+        const [signalsRes, gamesRes, accuracyRes] = await Promise.all([
+            fetch("https://nexari.jardelterry.workers.dev/signals" + dateParam),
+            fetch("https://nexari.jardelterry.workers.dev/games" + dateParam),
+            fetch("https://nexari.jardelterry.workers.dev/accuracy")
+        ]);
 
         const signalsJson = await signalsRes.json();
         const gamesJson = await gamesRes.json();
         const accuracyJson = await accuracyRes.json();
 
-        window.signalsData = signalsJson.signals || [];
-        window.gamesData = gamesJson.games || [];
-        window.accuracyData = accuracyJson.accuracy || {};
+        signalsData = signalsJson.signals || [];
+        gamesData = gamesJson.games || [];
+        accuracyData = accuracyJson.accuracy || {};
 
         const dateLabel = document.getElementById("currentDateLabel");
         if (dateLabel) dateLabel.textContent = formatDate(currentDate);
 
+        buildMasterPlayers();   // roster patch
         loadSignals();
         loadGames();
         loadAccuracy();
-        runSearch(); // keep search in sync with latest data
+        runSearch();
     } catch (err) {
         console.error("Data load failed:", err);
     }
@@ -71,9 +167,7 @@ navItems.forEach((item, index) => {
     item.addEventListener("click", () => setActivePage(index));
 });
 
-/* ------------------------------
-   EDGE SWIPE NAVIGATION
---------------------------------*/
+/* EDGE SWIPE NAVIGATION */
 let touchStartX = null;
 let touchStartY = null;
 
@@ -113,56 +207,52 @@ document.addEventListener("touchend", (e) => {
 }, { passive: true });
 
 /* ------------------------------
-   PLAYER NAME PROTECTION
+   HR SIGNALS (from masterPlayers)
 --------------------------------*/
-function safeName(name, fallback) {
-    if (name && name.trim() !== "" && name !== "Unknown") return name;
-    if (fallback && fallback.trim() !== "") return fallback;
-    return "Player";
-}
+const hrViewSelect = document.getElementById("hrViewSelect");
 
-/* ------------------------------
-   HR SIGNALS (dropdown + color + animated bars)
---------------------------------*/
 function loadSignals() {
     const container = document.getElementById("signalsContainer");
     if (!container) return;
     container.innerHTML = "";
 
-    let data = Array.isArray(window.signalsData) ? [...window.signalsData] : [];
-    data.sort((a, b) => b.hr - a.hr);
+    let data = Array.isArray(masterPlayers) ? [...masterPlayers] : [];
+    data.sort((a, b) => (b.hr || 0) - (a.hr || 0));
     data = data.slice(0, hrLimit);
 
-    data.forEach(s => {
+    data.forEach(p => {
         const div = document.createElement("div");
         div.className = "signal";
 
-        if (s.tier === "Strong") div.style.borderLeft = "4px solid #ff4444";
-        else if (s.tier === "Playable") div.style.borderLeft = "4px solid #ffaa00";
+        if (p.tier === "Strong") div.style.borderLeft = "4px solid #ff4444";
+        else if (p.tier === "Playable") div.style.borderLeft = "4px solid #ffaa00";
         else div.style.borderLeft = "4px solid #777";
 
+        const name = safeName(p.player, p.cachedPlayer);
+        const hr = p.hr || 0;
+        const tier = p.tier || "Tier";
+        const streakType = p.streakType || "N/A";
+        const streakCount = p.streakCount || 0;
+
         div.innerHTML = `
-            <div class="name">${safeName(s.player, s.cachedPlayer)}</div>
+            <div class="name">${name} — ${hr}% (${hr === 0 ? "No projection" : tier})</div>
             <div class="meta">
-                ${s.team} vs ${s.opponent} • ${s.hr}% • ${s.tier || "Tier"}<br>
-                <span class="streak">Streak: ${s.streakType || "N/A"} (${s.streakCount || 0})</span>
+                ${p.team || ""} vs ${p.opponent || ""}<br>
+                Streak: ${streakType} (${streakCount})
             </div>
-            <div class="hrBar" style="width:0%;" data-target="${s.hr || 0}"></div>
+            ${renderOddsBlock(p.sportsbooks)}
+            <div class="hrBar" style="width:0%;" data-target="${hr}"></div>
         `;
         container.appendChild(div);
     });
 
     setTimeout(() => {
-        document.querySelectorAll(".hrBar").forEach(bar => {
+        container.querySelectorAll(".hrBar").forEach(bar => {
             bar.style.width = bar.dataset.target + "%";
         });
     }, 50);
 }
 
-/* ------------------------------
-   HR DROPDOWN
---------------------------------*/
-const hrViewSelect = document.getElementById("hrViewSelect");
 if (hrViewSelect) {
     hrViewSelect.addEventListener("change", () => {
         hrLimit = Number(hrViewSelect.value);
@@ -171,14 +261,14 @@ if (hrViewSelect) {
 }
 
 /* ------------------------------
-   GAMES (collapsible)
+   GAMES
 --------------------------------*/
 function loadGames() {
     const container = document.getElementById("gamesContainer");
     if (!container) return;
     container.innerHTML = "";
 
-    const data = Array.isArray(window.gamesData) ? window.gamesData : [];
+    const data = Array.isArray(gamesData) ? gamesData : [];
 
     data.forEach(g => {
         const div = document.createElement("div");
@@ -216,7 +306,7 @@ function loadGames() {
 }
 
 /* ------------------------------
-   CALENDAR CLICKER
+   CALENDAR
 --------------------------------*/
 const prevDateBtn = document.getElementById("prevDate");
 const nextDateBtn = document.getElementById("nextDate");
@@ -235,7 +325,7 @@ if (nextDateBtn) {
 }
 
 /* ------------------------------
-   SPARKLINE GENERATOR (BLOCK STYLE)
+   SPARKLINE
 --------------------------------*/
 function makeSparkline(values) {
     if (!values || !values.length) return "";
@@ -250,7 +340,7 @@ function makeSparkline(values) {
 }
 
 /* ------------------------------
-   ACCURACY (futuristic mode)
+   ACCURACY
 --------------------------------*/
 function loadAccuracy() {
     const container = document.getElementById("accuracyContainer");
@@ -265,19 +355,18 @@ function loadAccuracy() {
     const trend7 = document.getElementById("trend7");
     const trend30 = document.getElementById("trend30");
 
-    const data = window.accuracyData || {
+    const data = accuracyData || {
         percent: 0,
         systemStreak: 0,
         playerStreak: 0,
         outcomes: [],
         missed: [],
-        unlisted: [],
         history7: [],
         history30: []
     };
 
-    const hits = data.outcomes.length;
-    const misses = data.missed.length;
+    const hits = (data.outcomes || []).length;
+    const misses = (data.missed || []).length;
     const total = hits + misses;
     const calcAcc = total > 0 ? Math.round((hits / total) * 100) : (data.percent || 0);
 
@@ -306,10 +395,10 @@ function loadAccuracy() {
 
     const tierCounts = { Strong: {hit:0, miss:0}, Playable: {hit:0, miss:0}, Watch: {hit:0, miss:0} };
 
-    data.outcomes.forEach(o => {
+    (data.outcomes || []).forEach(o => {
         if (tierCounts[o.tier]) tierCounts[o.tier].hit++;
     });
-    data.missed.forEach(m => {
+    (data.missed || []).forEach(m => {
         if (tierCounts[m.tier]) tierCounts[m.tier].miss++;
     });
 
@@ -321,11 +410,11 @@ function loadAccuracy() {
     }
 
     const teamStats = {};
-    data.outcomes.forEach(o => {
+    (data.outcomes || []).forEach(o => {
         if (!teamStats[o.team]) teamStats[o.team] = {hit:0, miss:0};
         teamStats[o.team].hit++;
     });
-    data.missed.forEach(m => {
+    (data.missed || []).forEach(m => {
         if (!teamStats[m.team]) teamStats[m.team] = {hit:0, miss:0};
         teamStats[m.team].miss++;
     });
@@ -338,11 +427,11 @@ function loadAccuracy() {
     if (deepTeams) deepTeams.textContent = topTeams.map(t => `${t.team} ${t.acc}%`).join(" • ");
 
     const playerStats = {};
-    data.outcomes.forEach(o => {
+    (data.outcomes || []).forEach(o => {
         if (!playerStats[o.player]) playerStats[o.player] = {hit:0, miss:0};
         playerStats[o.player].hit++;
     });
-    data.missed.forEach(m => {
+    (data.missed || []).forEach(m => {
         if (!playerStats[m.player]) playerStats[m.player] = {hit:0, miss:0};
         playerStats[m.player].miss++;
     });
@@ -358,7 +447,7 @@ function loadAccuracy() {
 }
 
 /* ------------------------------
-   SEARCH TAB
+   SEARCH TAB (full roster)
 --------------------------------*/
 const searchInput = document.getElementById("playerSearchInput");
 const searchResults = document.getElementById("searchResults");
@@ -368,32 +457,37 @@ function runSearch() {
     const q = searchInput.value.trim().toLowerCase();
     searchResults.innerHTML = "";
 
-    const data = Array.isArray(window.signalsData) ? window.signalsData : [];
-    if (!q) return;
+    let data = Array.isArray(masterPlayers) ? [...masterPlayers] : [];
 
-    const matches = data.filter(s => {
-        const name = safeName(s.player, s.cachedPlayer).toLowerCase();
-        const team = (s.team || "").toLowerCase();
-        const opp = (s.opponent || "").toLowerCase();
-        return name.includes(q) || team.includes(q) || opp.includes(q);
-    });
+    if (q) {
+        data = data.filter(p => {
+            const name = (p.player || "").toLowerCase();
+            const team = (p.team || "").toLowerCase();
+            const opp = (p.opponent || "").toLowerCase();
+            return name.includes(q) || team.includes(q) || opp.includes(q);
+        });
+    }
 
-    matches.forEach(s => {
+    // sort by HR probability desc
+    data.sort((a, b) => (b.hr || 0) - (a.hr || 0));
+
+    data.forEach(p => {
         const div = document.createElement("div");
         div.className = "searchResult";
 
-        const name = safeName(s.player, s.cachedPlayer);
-        const hr = s.hr || 0;
-        const tier = s.tier || "Tier";
-        const streakType = s.streakType || "N/A";
-        const streakCount = s.streakCount || 0;
+        const name = safeName(p.player, p.cachedPlayer);
+        const hr = p.hr || 0;
+        const tier = p.tier || "Tier";
+        const streakType = p.streakType || "N/A";
+        const streakCount = p.streakCount || 0;
 
         div.innerHTML = `
-            <div class="name">${name} — ${hr}% (${tier})</div>
+            <div class="name">${name} — ${hr}% (${hr === 0 ? "No projection" : tier})</div>
             <div class="meta">
-                ${s.team} vs ${s.opponent}<br>
+                ${p.team || ""} vs ${p.opponent || ""}<br>
                 Streak: ${streakType} (${streakCount})
             </div>
+            ${renderOddsBlock(p.sportsbooks)}
             <div class="hrBar" style="width:0%;" data-target="${hr}"></div>
         `;
 
@@ -410,6 +504,29 @@ function runSearch() {
 if (searchInput) {
     searchInput.addEventListener("input", runSearch);
 }
+
+/* ------------------------------
+   SPORTSBOOK DROPDOWNS (sync)
+--------------------------------*/
+const sportsbookSelects = document.querySelectorAll(".sportsbookSelect");
+
+function applyBookSelection(book) {
+    selectedBook = book;
+
+    // remap sportsbooks on masterPlayers to only change display? we keep full object,
+    // but selection can be used later if you want book-specific behavior.
+    // For now, we just reload HR + Search to reflect any future book-specific logic.
+    loadSignals();
+    runSearch();
+}
+
+sportsbookSelects.forEach(sel => {
+    sel.value = selectedBook;
+    sel.addEventListener("change", e => {
+        sportsbookSelects.forEach(s => s.value = e.target.value);
+        applyBookSelection(e.target.value);
+    });
+});
 
 /* ------------------------------
    SETTINGS
@@ -447,9 +564,10 @@ if (forceRebuildBtn) {
 
 if (clearCacheBtn) {
     clearCacheBtn.onclick = () => {
-        window.signalsData = [];
-        window.gamesData = [];
-        window.accuracyData = {};
+        signalsData = [];
+        gamesData = [];
+        accuracyData = {};
+        masterPlayers = [];
         loadSignals();
         loadGames();
         loadAccuracy();

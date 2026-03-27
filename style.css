@@ -26,6 +26,7 @@ body {
     color: var(--text-main);
     font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 16px;
+    touch-action: pan-y;
 }
 
 /* PAGES */
@@ -44,7 +45,7 @@ body {
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 78px;
+    height: 82px;
     background: var(--bg-nav);
     backdrop-filter: blur(14px);
     display: flex;
@@ -66,19 +67,19 @@ body {
 #bottomNav .navItem.active {
     color: var(--accent);
     text-shadow: 0 0 12px var(--accent);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
 }
 
 #bottomNav .icon {
     display: block;
-    font-size: 34px;
+    font-size: 42px;
     margin-bottom: 4px;
     transition: transform 0.18s ease, text-shadow 0.18s ease;
 }
 
 #bottomNav .navItem.active .icon {
-    transform: scale(1.4);
-    text-shadow: 0 0 16px var(--accent);
+    transform: scale(1.5);
+    text-shadow: 0 0 18px var(--accent);
 }
 
 #bottomNav .label {
@@ -124,6 +125,7 @@ body {
     align-items: center;
     gap: 8px;
     margin-bottom: 12px;
+    flex-wrap: wrap;
 }
 #hrControls select {
     padding: 6px 10px;
@@ -341,6 +343,20 @@ body {
     color: var(--text-main);
     font-size: 14px;
 }
+.searchControls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.searchControls select {
+    padding: 6px 10px;
+    background: #151827;
+    border: 1px solid #2a3145;
+    color: #fff;
+    border-radius: 6px;
+    font-size: 14px;
+}
 .searchResult {
     padding: 12px;
     margin-bottom: 10px;
@@ -355,11 +371,11 @@ body {
     font-size: 13px;
     opacity: 0.9;
 }
+.searchResult .oddsBlock {
+    margin-top: 6px;
+    font-size: 13px;
+    opacity: 0.95;
+}
 .searchResult .hrBar {
     margin-top: 6px;
-}
-
-/* TOUCH / SWIPE */
-body {
-    touch-action: pan-y;
 }

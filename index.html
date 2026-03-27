@@ -45,6 +45,14 @@
                 <option value="10">Top 10</option>
                 <option value="20">Top 20</option>
             </select>
+
+            <label class="fieldLabel">Sportsbook:</label>
+            <select class="sportsbookSelect">
+                <option value="dk">DK</option>
+                <option value="fd">FD</option>
+                <option value="mgm">MGM</option>
+                <option value="cz">CZ</option>
+            </select>
         </div>
         <div id="signalsContainer"></div>
     </div>
@@ -114,9 +122,21 @@
     <!-- SEARCH PAGE -->
     <div id="searchPage" class="page">
         <h2 class="accHeader">Player Search</h2>
+
         <div class="searchBarWrapper">
             <input type="text" id="playerSearchInput" placeholder="Search player or team...">
         </div>
+
+        <div class="searchControls">
+            <label class="fieldLabel">Sportsbook:</label>
+            <select class="sportsbookSelect">
+                <option value="dk">DK</option>
+                <option value="fd">FD</option>
+                <option value="mgm">MGM</option>
+                <option value="cz">CZ</option>
+            </select>
+        </div>
+
         <div id="searchResults"></div>
     </div>
 
@@ -184,7 +204,7 @@
 
             <div class="infoBlock">
                 <h3>Search</h3>
-                <p>Use the Search tab to look up any player and see their HR probability, even if not in the Top 10–20.</p>
+                <p>Use the Search tab to look up any player and see their HR probability and sportsbook odds, even if not in the Top 10–20.</p>
             </div>
         </div>
     </div>
