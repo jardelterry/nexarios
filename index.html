@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NexariOS V3</title>
+  <title>NexariOS V3.1</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000000" />
   <style>
@@ -26,6 +26,13 @@
       --tab-height: 64px;
       --card-radius: 16px;
       --transition-fast: 0.18s ease-out;
+      --sidebar-collapsed: 60px;
+      --sidebar-expanded: 240px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body[data-theme="dark"] {
@@ -38,18 +45,224 @@
       color: var(--text-light);
     }
 
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-      display: flex;
-      flex-direction: column;
       min-height: 100vh;
       padding-bottom: var(--tab-height);
+      display: flex;
+    }
+
+    /* LAYOUT WRAPPER */
+
+    .app-root {
+      display: flex;
+      width: 100%;
+      min-height: 100vh;
+    }
+
+    /* SIDEBAR (DESKTOP) */
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: var(--sidebar-collapsed);
+      display: none;
+      flex-direction: column;
+      padding: 10px 8px;
+      z-index: 30;
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      background: rgba(15,15,25,0.35);
+      border-right: 1px solid;
+      transition: width 0.22s ease-out, background 0.22s ease-out, transform 0.18s ease-out;
+    }
+
+    body[data-theme="dark"] .sidebar {
+      border-color: var(--border-dark);
+    }
+
+    body[data-theme="light"] .sidebar {
+      border-color: var(--border-light);
+      background: rgba(245,245,247,0.75);
+    }
+
+    .sidebar-inner {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      gap: 12px;
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 4px 8px;
+    }
+
+    .sidebar-brand-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      background: conic-gradient(from 210deg, #0a84ff, #30d158, #ff9f0a, #ff453a, #0a84ff);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 10px 25px rgba(0,0,0,0.5);
+      flex-shrink: 0;
+    }
+
+    .sidebar-brand-text {
+      display: none;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .sidebar-title {
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+
+    .sidebar-sub {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+
+    .sidebar-pin {
+      margin-left: auto;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255,255,255,0.06);
+    }
+
+    body[data-theme="light"] .sidebar-pin {
+      background: rgba(0,0,0,0.04);
+    }
+
+    .sidebar-pin-icon {
+      font-size: 14px;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 8px;
+      flex: 1;
+    }
+
+    .sidebar-nav-button {
+      border-radius: 999px;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      font-size: 12px;
+      transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+      color: var(--text-muted-dark);
+    }
+
+    body[data-theme="light"] .sidebar-nav-button {
+      color: var(--text-muted-light);
+    }
+
+    .sidebar-nav-icon {
+      font-size: 18px;
+      width: 22px;
+      text-align: center;
+    }
+
+    .sidebar-nav-label {
+      display: none;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 10px;
+    }
+
+    .sidebar-nav-button.active {
+      transform: translateX(1px);
+    }
+
+    body[data-theme="dark"] .sidebar-nav-button.active {
+      background: rgba(10,132,255,0.16);
+      border-color: rgba(10,132,255,0.5);
+      color: var(--text-dark);
+    }
+
+    body[data-theme="light"] .sidebar-nav-button.active {
+      background: rgba(10,132,255,0.12);
+      border-color: rgba(10,132,255,0.5);
+      color: var(--text-light);
+    }
+
+    .sidebar-footer {
+      padding-top: 6px;
+      border-top: 1px solid;
+      font-size: 10px;
+      opacity: 0.7;
+    }
+
+    body[data-theme="dark"] .sidebar-footer {
+      border-color: rgba(255,255,255,0.08);
+    }
+
+    body[data-theme="light"] .sidebar-footer {
+      border-color: rgba(0,0,0,0.08);
+    }
+
+    /* SIDEBAR STATES */
+
+    @media (min-width: 900px) {
+      .sidebar {
+        display: flex;
+      }
+
+      body.sidebar-expanded .sidebar {
+        width: var(--sidebar-expanded);
+        background: rgba(15,15,25,0.45);
+      }
+
+      body.sidebar-expanded[data-theme="light"] .sidebar {
+        background: rgba(245,245,247,0.9);
+      }
+
+      .sidebar:hover:not(.sidebar-pinned) {
+        width: var(--sidebar-expanded);
+      }
+
+      .sidebar:hover .sidebar-brand-text,
+      body.sidebar-expanded .sidebar-brand-text {
+        display: flex;
+      }
+
+      .sidebar:hover .sidebar-nav-label,
+      body.sidebar-expanded .sidebar-nav-label {
+        display: inline-block;
+      }
+
+      .sidebar:hover .sidebar-pin,
+      body.sidebar-expanded .sidebar-pin {
+        display: inline-flex;
+      }
+    }
+
+    /* MAIN CONTENT AREA */
+
+    .app-main-wrapper {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      width: 100%;
     }
 
     .app-shell {
@@ -59,6 +272,23 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+      width: 100%;
+    }
+
+    @media (min-width: 900px) {
+      .app-main-wrapper {
+        margin-left: var(--sidebar-collapsed);
+        transition: margin-left 0.22s ease-out;
+      }
+      body.sidebar-expanded .app-main-wrapper {
+        margin-left: var(--sidebar-expanded);
+      }
+      body.mobile-forced .sidebar {
+        display: none;
+      }
+      body.mobile-forced .app-main-wrapper {
+        margin-left: 0;
+      }
     }
 
     header.app-header {
@@ -340,6 +570,8 @@
       border-color: var(--border-light);
     }
 
+    /* BOTTOM NAV (MOBILE) */
+
     .bottom-nav {
       position: fixed;
       left: 0;
@@ -423,6 +655,20 @@
       color: var(--text-light);
     }
 
+    @media (min-width: 900px) {
+      .bottom-nav {
+        display: none;
+      }
+      body.desktop-forced .bottom-nav {
+        display: none;
+      }
+      body.mobile-forced .bottom-nav {
+        display: flex;
+      }
+    }
+
+    /* SETTINGS */
+
     .settings-group {
       margin-bottom: 10px;
     }
@@ -500,6 +746,7 @@
       border-radius: 999px;
       border: 1px solid transparent;
       opacity: 0.8;
+      cursor: pointer;
     }
 
     body[data-theme="dark"] .pill-small {
@@ -545,208 +792,295 @@
   </style>
 </head>
 <body data-theme="dark">
-  <div class="app-shell">
-    <header class="app-header">
-      <div class="brand">
-        <div class="brand-mark"></div>
-        <div class="brand-text">
-          <div class="brand-title">NexariOS</div>
-          <div class="brand-sub">HR Engine • V6.6 • Live</div>
+  <div class="app-root">
+    <!-- DESKTOP SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-inner">
+        <div class="sidebar-header">
+          <div class="sidebar-brand-mark"></div>
+          <div class="sidebar-brand-text">
+            <div class="sidebar-title">NexariOS</div>
+            <div class="sidebar-sub">HR Engine • V6.6</div>
+          </div>
+          <button class="sidebar-pin" id="sidebarPinBtn" title="Pin sidebar">
+            <span class="sidebar-pin-icon">▤</span>
+          </button>
+        </div>
+        <nav class="sidebar-nav">
+          <button class="sidebar-nav-button active" data-tab="hr">
+            <span class="sidebar-nav-icon">🔥</span>
+            <span class="sidebar-nav-label">HR</span>
+          </button>
+          <button class="sidebar-nav-button" data-tab="games">
+            <span class="sidebar-nav-icon">⚾</span>
+            <span class="sidebar-nav-label">Games</span>
+          </button>
+          <button class="sidebar-nav-button" data-tab="matchups">
+            <span class="sidebar-nav-icon">🎯</span>
+            <span class="sidebar-nav-label">Matchups</span>
+          </button>
+          <button class="sidebar-nav-button" data-tab="streaks">
+            <span class="sidebar-nav-icon">📈</span>
+            <span class="sidebar-nav-label">Streaks</span>
+          </button>
+          <button class="sidebar-nav-button" data-tab="players">
+            <span class="sidebar-nav-icon">👤</span>
+            <span class="sidebar-nav-label">Players</span>
+          </button>
+          <button class="sidebar-nav-button" data-tab="accuracy">
+            <span class="sidebar-nav-icon">📊</span>
+            <span class="sidebar-nav-label">Accuracy</span>
+          </button>
+          <button class="sidebar-nav-button" data-tab="settings">
+            <span class="sidebar-nav-icon">⚙️</span>
+            <span class="sidebar-nav-label">Settings</span>
+          </button>
+        </nav>
+        <div class="sidebar-footer">
+          NexariOS V3.1 • Desktop
         </div>
       </div>
-      <div class="date-nav">
-        <div class="date-arrow" id="datePrevBtn">&#x25C0;</div>
-        <div class="date-pill" id="dateDisplay"></div>
-        <div class="date-arrow" id="dateNextBtn">&#x25B6;</div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="app-main-wrapper">
+      <div class="app-shell">
+        <header class="app-header">
+          <div class="brand">
+            <div class="brand-mark"></div>
+            <div class="brand-text">
+              <div class="brand-title">NexariOS</div>
+              <div class="brand-sub">HR Engine • V6.6 • Live</div>
+            </div>
+          </div>
+          <div class="date-nav">
+            <div class="date-arrow" id="datePrevBtn">&#x25C0;</div>
+            <div class="date-pill" id="dateDisplay"></div>
+            <div class="date-arrow" id="dateNextBtn">&#x25B6;</div>
+          </div>
+          <button class="theme-toggle" id="themeToggle">
+            <span id="themeToggleIcon">🌙</span>
+            <span id="themeToggleLabel">Dark</span>
+          </button>
+        </header>
+
+        <main>
+          <!-- HR TAB -->
+          <section id="tab-hr" class="tab-view active">
+            <div class="section-title">HR Picks</div>
+            <div id="hrList"></div>
+          </section>
+
+          <!-- GAMES TAB -->
+          <section id="tab-games" class="tab-view">
+            <div class="section-title">Games</div>
+            <div id="gamesList"></div>
+          </section>
+
+          <!-- MATCHUPS TAB -->
+          <section id="tab-matchups" class="tab-view">
+            <div class="section-title">Active Matchups</div>
+            <div id="matchupsActive"></div>
+            <div class="section-title" style="margin-top:10px;">Upcoming Games</div>
+            <div id="matchupsUpcoming"></div>
+          </section>
+
+          <!-- STREAKS TAB -->
+          <section id="tab-streaks" class="tab-view">
+            <div class="section-title">Hit & RBI Streaks</div>
+            <div id="streaksList"></div>
+          </section>
+
+          <!-- PLAYERS TAB -->
+          <section id="tab-players" class="tab-view">
+            <div class="section-title">Players</div>
+            <div id="playersList"></div>
+          </section>
+
+          <!-- ACCURACY TAB -->
+          <section id="tab-accuracy" class="tab-view">
+            <div class="section-title">Accuracy • HR Outcomes</div>
+            <div id="accuracyCorrect"></div>
+            <div class="section-title" style="margin-top:10px;">Missed HRs</div>
+            <div id="accuracyMissed"></div>
+            <div class="section-title" style="margin-top:10px;">Unlisted HRs</div>
+            <div id="accuracyUnlisted"></div>
+          </section>
+
+          <!-- SETTINGS TAB -->
+          <section id="tab-settings" class="tab-view">
+            <div class="section-title">Settings</div>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">System Controls</div>
+                  <div class="card-sub">Engine behavior & refresh</div>
+                </div>
+              </div>
+              <div class="settings-group">
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Auto-refresh</div>
+                    <div class="settings-sub">Polls engine for updates</div>
+                  </div>
+                  <div class="toggle" id="autoRefreshToggle" data-on="true">
+                    <div class="toggle-thumb"></div>
+                  </div>
+                </div>
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Refresh interval</div>
+                    <div class="settings-sub"><span id="refreshIntervalLabel">30s</span></div>
+                  </div>
+                  <div>
+                    <button class="pill-small" data-interval="15000">15s</button>
+                    <button class="pill-small" data-interval="30000">30s</button>
+                    <button class="pill-small" data-interval="60000">60s</button>
+                  </div>
+                </div>
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Real-time HR ingestion</div>
+                    <div class="settings-sub">External webhook → /event/hr</div>
+                  </div>
+                  <div class="toggle" id="rtHrToggle" data-on="true">
+                    <div class="toggle-thumb"></div>
+                  </div>
+                </div>
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">System Was Right tracking</div>
+                    <div class="settings-sub">Score ≥ 70 HR hits</div>
+                  </div>
+                  <div class="toggle" id="systemRightToggle" data-on="true">
+                    <div class="toggle-thumb"></div>
+                  </div>
+                </div>
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Force rebuild</div>
+                    <div class="settings-sub">Re-run engine for current date</div>
+                  </div>
+                  <button class="pill-small" id="forceRebuildBtn">Rebuild</button>
+                </div>
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Reset to today</div>
+                    <div class="settings-sub">Jump back to current date</div>
+                  </div>
+                  <button class="pill-small" id="resetTodayBtn">Today</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Display</div>
+                  <div class="card-sub">Visual preferences</div>
+                </div>
+              </div>
+              <div class="settings-group">
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Show streak badges</div>
+                    <div class="settings-sub">Highlight hot players</div>
+                  </div>
+                  <div class="toggle" id="showStreaksToggle" data-on="true">
+                    <div class="toggle-thumb"></div>
+                  </div>
+                </div>
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Show weather factors</div>
+                    <div class="settings-sub">Temp, wind, humidity</div>
+                  </div>
+                  <div class="toggle" id="showWeatherToggle" data-on="true">
+                    <div class="toggle-thumb"></div>
+                  </div>
+                </div>
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Show park factors</div>
+                    <div class="settings-sub">HR environment</div>
+                  </div>
+                  <div class="toggle" id="showParkToggle" data-on="true">
+                    <div class="toggle-thumb"></div>
+                  </div>
+                </div>
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Show confidence bars</div>
+                    <div class="settings-sub">Visual scoring strength</div>
+                  </div>
+                  <div class="toggle" id="showConfidenceToggle" data-on="true">
+                    <div class="toggle-thumb"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Layout</div>
+                  <div class="card-sub">Desktop vs mobile behavior</div>
+                </div>
+              </div>
+              <div class="settings-group">
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Layout mode</div>
+                    <div class="settings-sub" id="layoutModeLabel">Auto</div>
+                  </div>
+                  <div>
+                    <button class="pill-small" data-layout="auto">Auto</button>
+                    <button class="pill-small" data-layout="mobile">Mobile</button>
+                    <button class="pill-small" data-layout="desktop">Desktop</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Developer</div>
+                  <div class="card-sub">Debug & introspection</div>
+                </div>
+              </div>
+              <div class="settings-group">
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Show raw schedule</div>
+                    <div class="settings-sub">/schedule</div>
+                  </div>
+                  <button class="pill-small" id="debugScheduleBtn">View</button>
+                </div>
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Show HR-legacy</div>
+                    <div class="settings-sub">/hr-legacy</div>
+                  </div>
+                  <button class="pill-small" id="debugHrBtn">View</button>
+                </div>
+                <div class="settings-row">
+                  <div>
+                    <div class="settings-label">Show system-right</div>
+                    <div class="settings-sub">/system-right</div>
+                  </div>
+                  <button class="pill-small" id="debugSystemRightBtn">View</button>
+                </div>
+              </div>
+              <div class="debug-output" id="debugOutput"></div>
+            </div>
+          </section>
+        </main>
       </div>
-      <button class="theme-toggle" id="themeToggle">
-        <span id="themeToggleIcon">🌙</span>
-        <span id="themeToggleLabel">Dark</span>
-      </button>
-    </header>
-
-    <main>
-      <!-- HR TAB -->
-      <section id="tab-hr" class="tab-view active">
-        <div class="section-title">HR Picks</div>
-        <div id="hrList"></div>
-      </section>
-
-      <!-- GAMES TAB -->
-      <section id="tab-games" class="tab-view">
-        <div class="section-title">Games</div>
-        <div id="gamesList"></div>
-      </section>
-
-      <!-- MATCHUPS TAB -->
-      <section id="tab-matchups" class="tab-view">
-        <div class="section-title">Active Matchups</div>
-        <div id="matchupsActive"></div>
-        <div class="section-title" style="margin-top:10px;">Upcoming Games</div>
-        <div id="matchupsUpcoming"></div>
-      </section>
-
-      <!-- STREAKS TAB -->
-      <section id="tab-streaks" class="tab-view">
-        <div class="section-title">Hit & RBI Streaks</div>
-        <div id="streaksList"></div>
-      </section>
-
-      <!-- PLAYERS TAB -->
-      <section id="tab-players" class="tab-view">
-        <div class="section-title">Players</div>
-        <div id="playersList"></div>
-      </section>
-
-      <!-- SETTINGS TAB -->
-      <section id="tab-settings" class="tab-view">
-        <div class="section-title">Settings</div>
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">System Controls</div>
-              <div class="card-sub">Engine behavior & refresh</div>
-            </div>
-          </div>
-          <div class="settings-group">
-            <div class="settings-row">
-              <div>
-                <div class="settings-label">Auto-refresh</div>
-                <div class="settings-sub">Polls engine for updates</div>
-              </div>
-              <div class="toggle" id="autoRefreshToggle" data-on="true">
-                <div class="toggle-thumb"></div>
-              </div>
-            </div>
-            <div class="settings-row">
-              <div>
-                <div class="settings-label">Refresh interval</div>
-                <div class="settings-sub"><span id="refreshIntervalLabel">30s</span></div>
-              </div>
-              <div>
-                <button class="pill-small" data-interval="15000">15s</button>
-                <button class="pill-small" data-interval="30000">30s</button>
-                <button class="pill-small" data-interval="60000">60s</button>
-              </div>
-            </div>
-            <div class="settings-row">
-              <div>
-                <div class="settings-label">Real-time HR ingestion</div>
-                <div class="settings-sub">External webhook → /event/hr</div>
-              </div>
-              <div class="toggle" id="rtHrToggle" data-on="true">
-                <div class="toggle-thumb"></div>
-              </div>
-            </div>
-            <div class="settings-row">
-              <div>
-                <div class="settings-label">System Was Right tracking</div>
-                <div class="settings-sub">Score ≥ 70 HR hits</div>
-              </div>
-              <div class="toggle" id="systemRightToggle" data-on="true">
-                <div class="toggle-thumb"></div>
-              </div>
-            </div>
-            <div class="settings-row">
-              <div>
-                <div class="settings-label">Force rebuild</div>
-                <div class="settings-sub">Re-run engine for current date</div>
-              </div>
-              <button class="pill-small" id="forceRebuildBtn">Rebuild</button>
-            </div>
-            <div class="settings-row">
-              <div>
-                <div class="settings-label">Reset to today</div>
-                <div class="settings-sub">Jump back to current date</div>
-              </div>
-              <button class="pill-small" id="resetTodayBtn">Today</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Display</div>
-              <div class="card-sub">Visual preferences</div>
-            </div>
-          </div>
-          <div class="settings-group">
-            <div class="settings-row">
-              <div>
-                <div class="settings-label">Show streak badges</div>
-                <div class="settings-sub">Highlight hot players</div>
-              </div>
-              <div class="toggle" id="showStreaksToggle" data-on="true">
-                <div class="toggle-thumb"></div>
-              </div>
-            </div>
-            <div class="settings-row">
-              <div>
-                <div class="settings-label">Show weather factors</div>
-                <div class="settings-sub">Temp, wind, humidity</div>
-              </div>
-              <div class="toggle" id="showWeatherToggle" data-on="true">
-                <div class="toggle-thumb"></div>
-              </div>
-            </div>
-            <div class="settings-row">
-              <div>
-                <div class="settings-label">Show park factors</div>
-                <div class="settings-sub">HR environment</div>
-              </div>
-              <div class="toggle" id="showParkToggle" data-on="true">
-                <div class="toggle-thumb"></div>
-              </div>
-            </div>
-            <div class="settings-row">
-              <div>
-                <div class="settings-label">Show confidence bars</div>
-                <div class="settings-sub">Visual scoring strength</div>
-              </div>
-              <div class="toggle" id="showConfidenceToggle" data-on="true">
-                <div class="toggle-thumb"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Developer</div>
-              <div class="card-sub">Debug & introspection</div>
-            </div>
-          </div>
-          <div class="settings-group">
-            <div class="settings-row">
-              <div>
-                <div class="settings-label">Show raw schedule</div>
-                <div class="settings-sub">/schedule</div>
-              </div>
-              <button class="pill-small" id="debugScheduleBtn">View</button>
-            </div>
-            <div class="settings-row">
-              <div>
-                <div class="settings-label">Show HR-legacy</div>
-                <div class="settings-sub">/hr-legacy</div>
-              </div>
-              <button class="pill-small" id="debugHrBtn">View</button>
-            </div>
-            <div class="settings-row">
-              <div>
-                <div class="settings-label">Show system-right</div>
-                <div class="settings-sub">/system-right</div>
-              </div>
-              <button class="pill-small" id="debugSystemRightBtn">View</button>
-            </div>
-          </div>
-          <div class="debug-output" id="debugOutput"></div>
-        </div>
-      </section>
-    </main>
+    </div>
   </div>
 
+  <!-- MOBILE BOTTOM NAV -->
   <nav class="bottom-nav">
     <div class="bottom-nav-inner">
       <button class="tab-button active" data-tab="hr">
@@ -769,6 +1103,10 @@
         <div class="tab-icon">👤</div>
         <div class="tab-label">Players</div>
       </button>
+      <button class="tab-button" data-tab="accuracy">
+        <div class="tab-icon">📊</div>
+        <div class="tab-label">Accuracy</div>
+      </button>
       <button class="tab-button" data-tab="settings">
         <div class="tab-icon">⚙️</div>
         <div class="tab-label">Settings</div>
@@ -787,7 +1125,8 @@
       showStreakBadges: true,
       showWeather: true,
       showPark: true,
-      showConfidence: true
+      showConfidence: true,
+      layoutMode: "auto"
     };
 
     function formatDateLabel(dateStr) {
@@ -834,6 +1173,9 @@
         el.classList.toggle("active", el.id === "tab-" + tabId);
       });
       document.querySelectorAll(".tab-button").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tabId);
+      });
+      document.querySelectorAll(".sidebar-nav-button").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.tab === tabId);
       });
     }
@@ -1105,6 +1447,50 @@
       });
     }
 
+    function renderAccuracy(systemRight) {
+      const correctContainer = document.getElementById("accuracyCorrect");
+      const missedContainer = document.getElementById("accuracyMissed");
+      const unlistedContainer = document.getElementById("accuracyUnlisted");
+
+      correctContainer.innerHTML = "";
+      missedContainer.innerHTML = "";
+      unlistedContainer.innerHTML = "";
+
+      if (!systemRight || !Array.isArray(systemRight.hits)) {
+        correctContainer.innerHTML = `<div class="card"><div class="card-sub">No correct HR predictions logged yet.</div></div>`;
+        missedContainer.innerHTML = `<div class="card"><div class="card-sub">No missed HRs logged yet.</div></div>`;
+        unlistedContainer.innerHTML = `<div class="card"><div class="card-sub">No unlisted HRs logged yet.</div></div>`;
+        return;
+      }
+
+      const hits = systemRight.hits || [];
+      if (!hits.length) {
+        correctContainer.innerHTML = `<div class="card"><div class="card-sub">No correct HR predictions logged yet.</div></div>`;
+      } else {
+        hits.forEach(h => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <div class="card-header">
+              <div>
+                <div class="card-title">${h.playerName || h.name || "Unknown"}</div>
+                <div class="card-sub">Score at HR • ${(h.score || 0).toFixed(1)}</div>
+              </div>
+              <span class="pill pill-success">Correct</span>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">Timestamp</div>
+              <div class="metric-value">${h.timestamp || "N/A"}</div>
+            </div>
+          `;
+          correctContainer.appendChild(card);
+        });
+      }
+
+      missedContainer.innerHTML = `<div class="card"><div class="card-sub">Missed HR tracking is enabled in the Worker (KV). UI will reflect once data is present.</div></div>`;
+      unlistedContainer.innerHTML = `<div class="card"><div class="card-sub">Unlisted HR tracking is enabled in the Worker (KV). UI will reflect once data is present.</div></div>`;
+    }
+
     function renderDebug(label, data) {
       const out = document.getElementById("debugOutput");
       out.textContent = `${label}:\n` + JSON.stringify(data, null, 2);
@@ -1127,6 +1513,7 @@
       renderMatchups(schedule || { games: [] });
       renderStreaks(schedule || { games: [] });
       renderPlayers(hrLegacy || { all: [] });
+      renderAccuracy(systemRight || { hits: [] });
     }
 
     function setupAutoRefresh() {
@@ -1138,6 +1525,25 @@
       state.refreshTimer = setInterval(refreshAll, state.refreshInterval);
     }
 
+    function applyLayoutMode() {
+      const width = window.innerWidth;
+      document.body.classList.remove("mobile-forced", "desktop-forced", "sidebar-expanded");
+      if (state.layoutMode === "mobile") {
+        document.body.classList.add("mobile-forced");
+      } else if (state.layoutMode === "desktop") {
+        document.body.classList.add("desktop-forced", "sidebar-expanded");
+      } else {
+        if (width >= 900) {
+          document.body.classList.add("desktop-forced", "sidebar-expanded");
+        } else {
+          document.body.classList.add("mobile-forced");
+        }
+      }
+      document.getElementById("layoutModeLabel").textContent =
+        state.layoutMode === "auto" ? "Auto" :
+        state.layoutMode === "mobile" ? "Mobile" : "Desktop";
+    }
+
     function init() {
       const savedTheme = localStorage.getItem("nexari-theme");
       setTheme(savedTheme === "light" ? "light" : "dark");
@@ -1145,6 +1551,12 @@
       document.getElementById("themeToggle").addEventListener("click", toggleTheme);
 
       document.querySelectorAll(".tab-button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          setActiveTab(btn.dataset.tab);
+        });
+      });
+
+      document.querySelectorAll(".sidebar-nav-button").forEach(btn => {
         btn.addEventListener("click", () => {
           setActiveTab(btn.dataset.tab);
         });
@@ -1253,9 +1665,34 @@
         renderDebug("System-right", data);
       });
 
+      document.querySelectorAll('[data-layout]').forEach(btn => {
+        btn.addEventListener("click", () => {
+          const mode = btn.getAttribute("data-layout");
+          state.layoutMode = mode;
+          applyLayoutMode();
+        });
+      });
+
+      const sidebarPinBtn = document.getElementById("sidebarPinBtn");
+      if (sidebarPinBtn) {
+        sidebarPinBtn.addEventListener("click", () => {
+          const expanded = document.body.classList.toggle("sidebar-expanded");
+          if (expanded) {
+            document.body.classList.add("desktop-forced");
+          }
+        });
+      }
+
+      window.addEventListener("resize", () => {
+        if (state.layoutMode === "auto") {
+          applyLayoutMode();
+        }
+      });
+
       state.currentDate = getTodayISO();
       document.getElementById("dateDisplay").textContent = formatDateLabel(state.currentDate);
 
+      applyLayoutMode();
       refreshAll();
       setupAutoRefresh();
     }
