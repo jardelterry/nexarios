@@ -61,15 +61,51 @@
 
     <!-- ACCURACY PAGE -->
     <div id="accuracyPage" class="page">
+
+        <h2 class="accHeader">System Intelligence Summary</h2>
+
         <div id="accuracyContainer"></div>
+
         <div id="accuracyDeep">
-            <h3>Deep Metrics</h3>
-            <div id="accDaily"></div>
-            <div id="acc7"></div>
-            <div id="acc30"></div>
-            <div id="accBreakdown"></div>
-            <div id="accTeams"></div>
-            <div id="accPlayers"></div>
+
+            <div class="accCard">
+                <h3>Daily Accuracy</h3>
+                <div id="accDaily"></div>
+                <div class="microBar" id="accDailyBar"></div>
+            </div>
+
+            <div class="accCard">
+                <h3>7‑Day Trend</h3>
+                <div id="acc7"></div>
+                <div id="trend7" class="sparkline"></div>
+            </div>
+
+            <div class="accCard">
+                <h3>30‑Day Trend</h3>
+                <div id="acc30"></div>
+                <div id="trend30" class="sparkline"></div>
+            </div>
+
+            <div class="accCard">
+                <h3>Tier Breakdown</h3>
+                <div id="accBreakdown"></div>
+            </div>
+
+            <div class="accCard">
+                <h3>Top Teams</h3>
+                <div id="accTeams"></div>
+            </div>
+
+            <div class="accCard">
+                <h3>Top Players</h3>
+                <div id="accPlayers"></div>
+            </div>
+
+            <div class="accCard">
+                <h3>Prediction Volume</h3>
+                <div id="accVolume"></div>
+            </div>
+
         </div>
     </div>
 

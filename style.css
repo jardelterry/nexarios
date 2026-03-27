@@ -22,7 +22,7 @@ body {
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 70px;
+    height: 78px;
     background: rgba(3, 5, 15, 0.95);
     backdrop-filter: blur(14px);
     display: flex;
@@ -43,19 +43,19 @@ body {
 
 #bottomNav .navItem.active {
     color: #0af;
-    text-shadow: 0 0 8px #0af;
+    text-shadow: 0 0 12px #0af;
     transform: translateY(-2px);
 }
 
 #bottomNav .icon {
     display: block;
-    font-size: 22px;
-    margin-bottom: 2px;
+    font-size: 32px;
+    margin-bottom: 4px;
 }
 
 #bottomNav .label {
-    font-size: 11px;
-    opacity: 0.9;
+    font-size: 13px;
+    opacity: 0.95;
 }
 
 #navSlider {
@@ -161,15 +161,48 @@ body {
 }
 
 /* ACCURACY */
-#accuracyDeep div {
-    margin-top: 10px;
-    padding: 10px;
-    background: #10131f;
-    border-radius: 8px;
-    border: 1px solid #1f2435;
+.accHeader {
+    font-size: 20px;
+    margin-bottom: 14px;
+    color: #0af;
+    text-shadow: 0 0 10px #0af;
 }
 
-/* SETTINGS (APPLE-STYLE SECTIONS) */
+.accCard {
+    background: #10131f;
+    padding: 14px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    border: 1px solid #1f2435;
+    box-shadow: 0 0 18px rgba(0, 170, 255, 0.12);
+}
+
+.accCard h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    color: #0af;
+    font-size: 15px;
+}
+
+/* MICRO BAR */
+.microBar {
+    height: 6px;
+    background: linear-gradient(90deg, #0af, #5bffea);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.8s ease;
+}
+
+/* SPARKLINE */
+.sparkline {
+    font-family: monospace;
+    font-size: 14px;
+    letter-spacing: 1px;
+    margin-top: 6px;
+    opacity: 0.9;
+}
+
+/* SETTINGS */
 .settingsSection {
     background: #10131f;
     padding: 14px;
