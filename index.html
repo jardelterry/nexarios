@@ -6,11 +6,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>NexariOS</title>
 
-  <link rel="stylesheet" href="style.css?v=460" />
-  <link rel="manifest" href="manifest.json?v=460" />
-  <script defer src="app.js?v=460"></script>
+  <link rel="stylesheet" href="style.css?v=660" />
+  <link rel="manifest" href="manifest.json?v=660" />
+  <script defer src="app.js?v=660"></script>
 </head>
-<body class="theme-dark accent-blue">
+<body class="theme-dark accent-purple">
 
   <header id="header">
     <h1 id="headerTitle">NexariOS</h1>
@@ -19,7 +19,6 @@
 
   <main id="main">
 
-    <!-- Split-view desktop wrapper -->
     <div id="desktopShell">
       <div id="desktopLeft">
         <section id="signalsPage" class="page active">
@@ -30,6 +29,11 @@
         <section id="gamesPage" class="page">
           <h2>Games</h2>
           <div id="gamesContainer" class="card-list"></div>
+        </section>
+
+        <section id="streaksPage" class="page">
+          <h2>Streaks</h2>
+          <div id="streaksContainer" class="card-list"></div>
         </section>
 
         <section id="systemPage" class="page">
@@ -85,7 +89,7 @@
 
           <div class="settings-section">
             <h3>About Nexari</h3>
-            <p>Version: <span id="aboutVersion">4.4+</span></p>
+            <p>Version: <span id="aboutVersion">6.6</span></p>
             <p>Build: <span id="aboutBuild"></span></p>
             <p>Worker: <span id="aboutWorker"></span></p>
           </div>
@@ -108,7 +112,6 @@
       </div>
     </div>
 
-    <!-- Mobile detail pages -->
     <section id="signalDetailPage" class="page">
       <div class="detail-header">
         <button id="backToSignals">‹ Back</button>
@@ -136,6 +139,10 @@
       <button data-target="gamesPage">
         <span class="nav-icon">📅</span>
         <span class="nav-label">Games</span>
+      </button>
+      <button data-target="streaksPage">
+        <span class="nav-icon">🔥</span>
+        <span class="nav-label">Streaks</span>
       </button>
       <button data-target="systemPage">
         <span class="nav-icon">⚙️</span>

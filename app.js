@@ -1,4 +1,4 @@
-const WORKER = "https://nexari.jardelterry.workers.dev";
+const WORKER = "https://<your-worker-domain-here>";
 
 let lastSignals = [];
 let lastGames = [];
@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   wireDetailBackButtons();
   loadSignals();
   loadGames();
+  loadStreaks();
   loadAccuracy();
   updateAboutSection();
   applyLayoutMode();
@@ -36,7 +37,7 @@ function initTheme() {
 }
 
 function initAccent() {
-  const accent = localStorage.getItem("accentColor") || "blue";
+  const accent = localStorage.getItem("accentColor") || "purple";
   document.body.classList.remove("accent-blue", "accent-purple", "accent-red", "accent-gold");
   document.body.classList.add(`accent-${accent}`);
 
@@ -141,8 +142,8 @@ async function loadSignals() {
       const card = document.createElement("div");
       card.className = "card";
       card.innerHTML = `
-        <h3>⚾ ${sig.player}</h3>
-        <p>${sig.team} vs ${sig.opponent}</p>
+        <h3>⚾ ${sig.playerName}</h3>
+        <p>${sig.teamName} vs ${sig.opponentName}</p>
         <p>Tier: <strong>${sig.tier}</strong></p>
         <p>Score: ${(sig.score * 100).toFixed(1)}%</p>
         <p>Confidence: ${(sig.confidence * 100).toFixed(1)}%</p>
@@ -156,8 +157,6 @@ async function loadSignals() {
 
   } catch (err) {
     console.error("Signals error:", err);
-    document.getElementById("signalsContainer").innerHTML =
-      `<p>Signals error. Check console.</p>`;
   }
 }
 
@@ -165,19 +164,16 @@ function updateHRTicker(signals) {
   const ticker = document.getElementById("hrTicker");
   const top = signals[0];
   ticker.textContent =
-    `⚾ ${top.player} • ${(top.score * 100).toFixed(1)}% HR • ${top.tier}`;
+    `⚾ ${top.playerName} • ${(top.score * 100).toFixed(1)}% HR • ${top.tier}`;
 }
-
-/* SIGNAL DETAIL (desktop + mobile) */
 
 function openSignalDetail(index) {
   const sig = lastSignals[index];
   if (!sig) return;
 
   const mode = getEffectiveMode();
-
   const tickerLine =
-    `⚾ ${sig.player} • ${(sig.score * 100).toFixed(1)}% HR • ${sig.tier}`;
+    `⚾ ${sig.playerName} • ${(sig.score * 100).toFixed(1)}% HR • ${sig.tier}`;
 
   if (mode === "desktop" || mode === "adaptive") {
     const title = document.getElementById("detailTitle");
@@ -185,7 +181,7 @@ function openSignalDetail(index) {
     if (title) title.textContent = tickerLine;
     if (body) {
       body.innerHTML = `
-        <p>${sig.team} vs ${sig.opponent}</p>
+        <p>${sig.teamName} vs ${sig.opponentName}</p>
         <p>Score: ${(sig.score * 100).toFixed(1)}%</p>
         <p>Confidence: ${(sig.confidence * 100).toFixed(1)}%</p>
         <p>Tier: ${sig.tier}</p>
@@ -193,8 +189,7 @@ function openSignalDetail(index) {
       `;
     }
   } else {
-    const pages = document.querySelectorAll(".page");
-    pages.forEach(p => p.classList.remove("active"));
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
     document.getElementById("signalDetailPage").classList.add("active");
 
     const t = document.getElementById("signalDetailTicker");
@@ -202,7 +197,7 @@ function openSignalDetail(index) {
     if (t) t.textContent = tickerLine;
     if (b) {
       b.innerHTML = `
-        <p>${sig.team} vs ${sig.opponent}</p>
+        <p>${sig.teamName} vs ${sig.opponentName}</p>
         <p>Score: ${(sig.score * 100).toFixed(1)}%</p>
         <p>Confidence: ${(sig.confidence * 100).toFixed(1)}%</p>
         <p>Tier: ${sig.tier}</p>
@@ -268,8 +263,7 @@ function openGameDetail(index) {
       `;
     }
   } else {
-    const pages = document.querySelectorAll(".page");
-    pages.forEach(p => p.classList.remove("active"));
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
     document.getElementById("gameDetailPage").classList.add("active");
 
     const t = document.getElementById("gameDetailTicker");
@@ -284,7 +278,7 @@ function openGameDetail(index) {
   }
 }
 
-/* DETAIL BACK BUTTONS (mobile) */
+/* DETAIL BACK BUTTONS (mobile + desktop clear) */
 
 function wireDetailBackButtons() {
   const backSignals = document.getElementById("backToSignals");
@@ -311,6 +305,36 @@ function wireDetailBackButtons() {
       if (title) title.textContent = "";
       if (body) body.innerHTML = "";
     };
+  }
+}
+
+/* STREAKS */
+
+async function loadStreaks() {
+  try {
+    const res = await fetch(`${WORKER}/streaks`);
+    const data = await res.json();
+
+    const container = document.getElementById("streaksContainer");
+    container.innerHTML = "";
+
+    if (!data.ok || !data.streaks || data.streaks.length === 0) {
+      container.innerHTML = `<p>No streaks available.</p>`;
+      return;
+    }
+
+    data.streaks.forEach(s => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <h3>🔥 ${s.playerName}</h3>
+        <p>Type: ${s.type} streak</p>
+        <p>Games: ${s.games}</p>
+      `;
+      container.appendChild(card);
+    });
+  } catch (err) {
+    console.error("Streaks error:", err);
   }
 }
 
@@ -356,6 +380,7 @@ function initSystemControls() {
     forceRefresh.onclick = () => {
       loadSignals();
       loadGames();
+      loadStreaks();
       loadAccuracy();
     };
   }
@@ -410,7 +435,7 @@ function initSystemControls() {
       const res = await fetch(`${WORKER}/debug`);
       const data = await res.json();
       devOut.textContent =
-        `Signals: ${data.signals}\nGames: ${data.games}`;
+        `Signals: ${data.signals}\nGames: ${data.games}\nStreaks: ${data.streaks}`;
     };
   }
 }
