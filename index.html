@@ -1,110 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NexariOS</title>
-    <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <title>NexariOS v6.6</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+<body data-device="auto">
 
-<body>
-
-    <!-- HEADER -->
-    <header id="header">
-        <h1>NexariOS</h1>
-        <div id="ticker">HR Engine • Live</div>
-    </header>
-
-    <!-- MAIN PAGES -->
-    <main>
-
-        <!-- HR SIGNALS -->
-        <section id="signalsPage" class="page active">
-            <div id="signalsContainer"></div>
-        </section>
-
-        <!-- GAMES -->
-        <section id="gamesPage" class="page">
-            <div id="gamesContainer"></div>
-        </section>
-
-        <!-- ACCURACY -->
-        <section id="accuracyPage" class="page">
-            <div id="accuracyContainer"></div>
-        </section>
-
-        <!-- SYSTEM -->
-        <section id="systemPage" class="page">
-            <h2>System Settings</h2>
-
-            <div class="settingBlock">
-                <label>Theme</label>
-                <select id="themeSelect">
-                    <option value="dark">Dark</option>
-                    <option value="light">Light</option>
-                </select>
-            </div>
-
-            <div class="settingBlock">
-                <label>Compatibility Mode</label>
-                <select id="compatSelect">
-                    <option value="auto">Auto</option>
-                    <option value="mobile">Force Mobile</option>
-                    <option value="desktop">Force Desktop</option>
-                </select>
-            </div>
-
-            <div class="settingBlock">
-                <label>Backwards Compatibility</label>
-                <select id="backCompatSelect">
-                    <option value="on">On</option>
-                    <option value="off">Off</option>
-                </select>
-            </div>
-
-            <div class="settingBlock">
-                <label>Device Mode</label>
-                <select id="deviceModeSelect">
-                    <option value="auto">Auto</option>
-                    <option value="mobile">Mobile</option>
-                    <option value="desktop">Desktop</option>
-                </select>
-            </div>
-
-            <div class="settingBlock">
-                <label>Refresh Data</label>
-                <button id="refreshBtn">Refresh</button>
-            </div>
-
-            <h2>Engine</h2>
-            <div id="engineInfo"></div>
-
-            <h2>Debug</h2>
-            <div id="debugInfo"></div>
-
-            <h2>About</h2>
-            <p>NexariOS • HR Engine v6.6</p>
-        </section>
-
-    </main>
-
-    <!-- FLOATING NAV -->
-    <nav id="navBar">
-        <div class="navItem active" data-page="signalsPage">
-            <span class="navIcon">⚾</span>
-        </div>
-        <div class="navItem" data-page="gamesPage">
-            <span class="navIcon">📅</span>
-        </div>
-        <div class="navItem" data-page="accuracyPage">
-            <span class="navIcon">📊</span>
-        </div>
-        <div class="navItem" data-page="systemPage">
-            <span class="navIcon">⚙️</span>
-        </div>
-
+    <!-- NAVIGATION -->
+    <div id="nav">
+        <div class="navItem active" data-page="hrPage">HR</div>
+        <div class="navItem" data-page="gamesPage">Games</div>
+        <div class="navItem" data-page="accuracyPage">Accuracy</div>
+        <div class="navItem" data-page="settingsPage">Settings</div>
         <div id="navSlider"></div>
-    </nav>
+    </div>
+
+    <!-- HR PAGE -->
+    <div id="hrPage" class="page active">
+        <div id="hrControls">
+            <button id="top10Btn" class="toggleBtn active">Top 10</button>
+            <button id="top20Btn" class="toggleBtn">Top 20</button>
+        </div>
+        <div id="signalsContainer"></div>
+    </div>
+
+    <!-- GAMES PAGE -->
+    <div id="gamesPage" class="page">
+        <div id="calendarBar">
+            <button id="prevDate" class="clickerBtn">◀</button>
+            <span id="currentDateLabel"></span>
+            <button id="nextDate" class="clickerBtn">▶</button>
+        </div>
+        <div id="gamesContainer"></div>
+    </div>
+
+    <!-- ACCURACY PAGE -->
+    <div id="accuracyPage" class="page">
+        <div id="accuracyContainer"></div>
+        <div id="accuracyDeep">
+            <h3>Deep Metrics</h3>
+            <div id="accDaily"></div>
+            <div id="acc7"></div>
+            <div id="acc30"></div>
+            <div id="accBreakdown"></div>
+            <div id="accTeams"></div>
+            <div id="accPlayers"></div>
+        </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div id="settingsPage" class="page">
+        <h3>Display</h3>
+        <label>Device Mode:</label>
+        <select id="deviceModeSelect">
+            <option value="auto">Auto</option>
+            <option value="mobile">Mobile</option>
+            <option value="desktop">Desktop</option>
+        </select>
+
+        <label>Font Size:</label>
+        <input type="range" id="fontSizeSlider" min="12" max="22" value="16">
+
+        <h3>Data</h3>
+        <label>Auto Refresh:</label>
+        <select id="autoRefreshSelect">
+            <option value="0">Off</option>
+            <option value="30">30s</option>
+            <option value="60">60s</option>
+            <option value="300">5m</option>
+        </select>
+
+        <button id="forceRebuildBtn">Force Rebuild</button>
+        <button id="clearCacheBtn">Clear Cache</button>
+
+        <h3>System</h3>
+        <div id="systemInfo"></div>
+    </div>
 
     <script src="app.js"></script>
 </body>
