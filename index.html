@@ -1,105 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Cache Buster -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 
     <title>NexariOS</title>
 
-    <!-- PWA -->
-    <meta name="theme-color" content="#000000">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
-
     <!-- Styles -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=445" />
+
+    <!-- App Logic -->
+    <script defer src="app.js?v=445"></script>
 </head>
 
-<body>
+<body class="theme-dark accent-blue">
 
-    <!-- ------------------------------
-         TOP BAR
-    ------------------------------ -->
-    <div class="top-bar">
-        <h1>NexariOS</h1>
-    </div>
+    <!-- HEADER -->
+    <header id="header">
+        <h1 id="headerTitle">NexariOS</h1>
+        <div id="hrTicker"></div>
+    </header>
 
-    <!-- ------------------------------
-         HR TICKER (NEW)
-    ------------------------------ -->
-    <div id="hrTicker" style="
-        display:none;
-        position:fixed;
-        top:0;
-        left:0;
-        right:0;
-        background:#1A1A1A;
-        padding:10px 14px;
-        text-align:center;
-        font-weight:600;
-        z-index:999;
-        border-bottom:1px solid #333;
-    ">
-        <span id="hrTickerText">HR EVENT</span>
-    </div>
+    <!-- MAIN CONTENT -->
+    <main>
 
-    <!-- ------------------------------
-         MAIN LAYOUT
-    ------------------------------ -->
-    <div class="layout">
+        <!-- SIGNALS TAB -->
+        <section id="signalsPage" class="page active">
+            <h2>HR Signals</h2>
+            <div id="signalsContainer" class="card-list"></div>
+        </section>
 
-        <!-- LEFT COLUMN (Signals + Games) -->
-        <div class="left-column">
+        <!-- GAMES TAB -->
+        <section id="gamesPage" class="page">
+            <h2>Games</h2>
+            <div id="gamesContainer" class="card-list"></div>
+        </section>
 
-            <!-- SIGNALS -->
-            <div id="signalsTab" class="tab-page active active-desktop">
-                <div class="section-title">HR Signals</div>
-                <div id="signalsContainer" class="card-list"></div>
+        <!-- SYSTEM TAB -->
+        <section id="systemPage" class="page">
+            <h2>System Settings</h2>
+
+            <!-- DISPLAY SETTINGS -->
+            <div class="settings-section">
+                <h3>Display</h3>
+
+                <label class="setting-item">
+                    <span>Theme Mode</span>
+                    <select id="themeMode">
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                        <option value="auto">Auto</option>
+                    </select>
+                </label>
+
+                <label class="setting-item">
+                    <span>Accent Color</span>
+                    <select id="accentColor">
+                        <option value="blue">Blue</option>
+                        <option value="purple">Purple</option>
+                        <option value="red">Red</option>
+                        <option value="gold">Gold</option>
+                    </select>
+                </label>
             </div>
 
-            <!-- GAMES -->
-            <div id="gamesTab" class="tab-page">
-                <div class="section-title">Games</div>
-                <div id="gamesContainer" class="card-list"></div>
+            <!-- SYSTEM CONTROLS -->
+            <div class="settings-section">
+                <h3>System Controls</h3>
+
+                <button id="forceRefresh">Force Refresh</button>
+                <button id="clearCache">Clear Cache</button>
+                <button id="rebuildEngine">Rebuild Engine</button>
+                <button id="reloadUI">Reload UI</button>
             </div>
 
-        </div>
+            <!-- DEVELOPER TOOLS -->
+            <div class="settings-section">
+                <h3>Developer Tools</h3>
 
-        <!-- RIGHT COLUMN (System + Accuracy) -->
-        <div class="right-column">
+                <button id="showRawJSON">Show Raw JSON</button>
+                <button id="showWorkerInfo">Show Worker Info</button>
+                <button id="showCounts">Show Counts</button>
 
-            <!-- SYSTEM -->
-            <div id="systemTab" class="tab-page active-desktop">
-                <div class="section-title">System</div>
-                <div id="systemContainer" class="card-list"></div>
+                <pre id="devOutput"></pre>
             </div>
 
-            <!-- ACCURACY -->
-            <div id="accuracyTab" class="tab-page active-desktop">
-                <div class="section-title">Elite Accuracy</div>
-                <div id="accuracyContainer" class="card-list"></div>
+            <!-- ABOUT NEXARI -->
+            <div class="settings-section">
+                <h3>About Nexari</h3>
+                <p>Version: <span id="aboutVersion">4.4+</span></p>
+                <p>Build: <span id="aboutBuild"></span></p>
+                <p>Worker: <span id="aboutWorker"></span></p>
             </div>
 
-        </div>
+        </section>
 
-    </div>
+        <!-- ACCURACY TAB -->
+        <section id="accuracyPage" class="page">
+            <h2>Accuracy</h2>
+            <div id="accuracyContainer"></div>
+        </section>
 
-    <!-- ------------------------------
-         BOTTOM NAV (MOBILE)
-    ------------------------------ -->
-    <div class="bottom-nav mobile-only">
-        <div class="bottom-nav-inner">
-            <button class="tab-btn active" data-tab="signalsTab">Signals</button>
-            <button class="tab-btn" data-tab="gamesTab">Games</button>
-            <button class="tab-btn" data-tab="systemTab">System</button>
-            <button class="tab-btn" data-tab="accuracyTab">Accuracy</button>
-        </div>
-    </div>
+    </main>
 
-    <!-- ------------------------------
-         SCRIPTS
-    ------------------------------ -->
-    <script src="app.js"></script>
+    <!-- BOTTOM NAVIGATION -->
+    <nav id="bottomNav">
+        <button data-target="signalsPage">Signals</button>
+        <button data-target="gamesPage">Games</button>
+        <button data-target="systemPage">System</button>
+        <button data-target="accuracyPage">Accuracy</button>
+    </nav>
 
 </body>
 </html>

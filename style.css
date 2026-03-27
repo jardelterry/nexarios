@@ -1,65 +1,99 @@
-/* ---------------------------------------------------------
-   NexariOS — Unified Patched Stylesheet
-   Includes:
-   - Apple‑style dark UI
-   - LIVE ring animation
-   - HR ticker pulse
-   - Bottom nav overflow fix
-   - Card polish
-   - Confidence bars
-   - Mobile + desktop layout
---------------------------------------------------------- */
+/* --------------------------------------------------
+   ROOT VARIABLES
+-------------------------------------------------- */
+
+:root {
+    --bg-dark: #0d0f14;
+    --bg-light: #f5f7fa;
+
+    --text-dark: #e8ecf2;
+    --text-light: #1a1c20;
+
+    --card-dark: #161a22;
+    --card-light: #ffffff;
+
+    --border-dark: #222831;
+    --border-light: #d9d9d9;
+
+    --accent-blue: #3b82f6;
+    --accent-purple: #a855f7;
+    --accent-red: #ef4444;
+    --accent-gold: #facc15;
+
+    --glow-blue: 0 0 12px rgba(59, 130, 246, 0.7);
+    --glow-purple: 0 0 12px rgba(168, 85, 247, 0.7);
+    --glow-red: 0 0 12px rgba(239, 68, 68, 0.7);
+    --glow-gold: 0 0 12px rgba(250, 204, 21, 0.7);
+}
+
+/* Accent Color Switching */
+.accent-blue { --accent: var(--accent-blue); --glow: var(--glow-blue); }
+.accent-purple { --accent: var(--accent-purple); --glow: var(--glow-purple); }
+.accent-red { --accent: var(--accent-red); --glow: var(--glow-red); }
+.accent-gold { --accent: var(--accent-gold); --glow: var(--glow-gold); }
+
+/* Theme Switching */
+.theme-dark {
+    --bg: var(--bg-dark);
+    --text: var(--text-dark);
+    --card: var(--card-dark);
+    --border: var(--border-dark);
+}
+
+.theme-light {
+    --bg: var(--bg-light);
+    --text: var(--text-light);
+    --card: var(--card-light);
+    --border: var(--border-light);
+}
+
+/* --------------------------------------------------
+   GLOBAL
+-------------------------------------------------- */
 
 body {
     margin: 0;
     padding: 0;
-    background: #0D0D0D;
-    color: #FFFFFF;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    transition: background 0.3s, color 0.3s;
 }
 
-/* ------------------------------
-   TOP BAR
------------------------------- */
-.top-bar {
-    background: #111;
-    padding: 18px;
-    text-align: center;
-    border-bottom: 1px solid #222;
+h1, h2, h3 {
+    margin: 0 0 12px;
 }
 
-.top-bar h1 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-}
-
-/* ------------------------------
-   LAYOUT
------------------------------- */
-.layout {
+.page {
+    display: none;
     padding: 16px;
-    padding-bottom: 90px;
 }
 
-.left-column,
-.right-column {
-    width: 100%;
-}
-
-.section-title {
-    font-size: 20px;
-    margin-bottom: 12px;
-    color: #E5E5E7;
-}
-
-.mobile-only {
+.page.active {
     display: block;
 }
 
-/* ------------------------------
+/* --------------------------------------------------
+   HEADER + HR TICKER
+-------------------------------------------------- */
+
+header {
+    padding: 16px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+#hrTicker {
+    margin-top: 6px;
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+/* --------------------------------------------------
    CARD LIST + CARDS
------------------------------- */
+-------------------------------------------------- */
+
 .card-list {
     display: flex;
     flex-direction: column;
@@ -67,197 +101,135 @@ body {
 }
 
 .card {
-    background: #1A1A1A;
-    padding: 16px;
-    border-radius: 14px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
-}
-
-.card-title {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 6px;
-}
-
-.card-sub {
-    font-size: 14px;
-    color: #B3B3B3;
-}
-
-/* ------------------------------
-   BADGES
------------------------------- */
-.badge {
-    padding: 4px 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: 12px;
-    font-size: 12px;
-    font-weight: 600;
-    display: inline-block;
+    padding: 16px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.25);
+}
+
+/* --------------------------------------------------
+   CONFIDENCE BAR
+-------------------------------------------------- */
+
+.conf-bar {
+    height: 8px;
+    width: 100%;
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    overflow: hidden;
     margin-top: 8px;
 }
 
-.badge.Elite { background: #0A84FF; color: #FFF; }
-.badge.Strong { background: #30D158; color: #000; }
-.badge.Playable { background: #5E5CE6; color: #FFF; }
-.badge.Low { background: #8E8E93; color: #000; }
-
-/* ------------------------------
-   CONFIDENCE BAR
------------------------------- */
-.confidence-bar {
-    margin-top: 10px;
-    height: 6px;
-    border-radius: 999px;
-    background: #2C2C2E;
-    overflow: hidden;
-}
-
-.confidence-fill {
+.conf-fill {
     height: 100%;
-    width: 0;
-    border-radius: 999px;
-    transition: width 0.4s ease-out;
+    background: var(--accent);
+    box-shadow: var(--glow);
+    transition: width 0.4s ease;
 }
 
-.conf-low { background: #8E8E93; }
-.conf-midlow { background: #5A6B80; }
-.conf-mid { background: #0A84FF; }
-.conf-high { background: #30D158; }
-.conf-elite { background: #5E5CE6; }
-
-/* ------------------------------
-   HR TICKER (NEW)
------------------------------- */
-@keyframes hrPulse {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,69,58,0.5); }
-    70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(255,69,58,0); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,69,58,0); }
-}
-
-.hr-pulse {
-    animation: hrPulse 0.7s ease-out;
-}
-
-/* ------------------------------
-   LIVE RING (APPLE SPORTS STYLE)
------------------------------- */
-@keyframes liveRingPulse {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,69,58,0.6); }
-    70% { transform: scale(1.06); box-shadow: 0 0 0 8px rgba(255,69,58,0); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,69,58,0); }
-}
-
-.live-ring-wrapper {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
+/* --------------------------------------------------
+   LIVE RING
+-------------------------------------------------- */
 
 .live-ring {
-    position: absolute;
-    width: 32px;
-    height: 32px;
-    border-radius: 999px;
-    border: 2px solid rgba(255,69,58,0.9);
-    animation: liveRingPulse 1.2s ease-out infinite;
-    pointer-events: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: var(--glow);
+    animation: pulse 1.4s infinite ease-in-out;
 }
 
-/* ------------------------------
-   BOTTOM NAV (PATCHED)
------------------------------- */
-.bottom-nav {
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* --------------------------------------------------
+   BOTTOM NAVIGATION
+-------------------------------------------------- */
+
+#bottomNav {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background: #111;
-    border-top: 1px solid #222;
+    background: var(--card);
+    border-top: 1px solid var(--border);
     display: flex;
     justify-content: space-around;
-    padding: 12px 0;
-
-    /* PATCH: prevent black bar */
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
+    padding: 10px 0;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
 }
 
-.bottom-nav::-webkit-scrollbar {
-    display: none;
-}
-
-.bottom-nav-inner {
-    display: inline-flex;
-    gap: 6px;
-    padding-left: 12px;
-    padding-right: 0; /* PATCH FIX */
-}
-
-.tab-btn {
+#bottomNav button {
     background: none;
     border: none;
-    color: #AAA;
+    color: var(--text);
     font-size: 14px;
-    font-weight: 500;
+    opacity: 0.7;
+    transition: opacity 0.2s, color 0.2s;
 }
 
-.tab-btn.active {
-    color: #0A84FF;
+#bottomNav button.active {
+    opacity: 1;
+    color: var(--accent);
+    text-shadow: var(--glow);
 }
 
-/* ------------------------------
-   TAB PAGES
------------------------------- */
-.tab-page {
-    display: none;
+/* --------------------------------------------------
+   SETTINGS SECTIONS
+-------------------------------------------------- */
+
+.settings-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
 }
 
-.tab-page.active {
-    display: block;
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
 }
 
-/* ------------------------------
-   DESKTOP LAYOUT
------------------------------- */
-@media (min-width: 900px) {
-    .layout {
-        display: flex;
-        gap: 20px;
-        padding-bottom: 24px;
-    }
+.settings-section button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    box-shadow: var(--glow);
+    font-size: 15px;
+}
 
-    .left-column {
-        flex: 2;
-    }
+/* --------------------------------------------------
+   DEVELOPER OUTPUT
+-------------------------------------------------- */
 
-    .right-column {
-        flex: 1.2;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
+#devOutput {
+    background: #00000055;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 12px;
+}
 
-    .bottom-nav {
-        display: none;
-    }
+/* --------------------------------------------------
+   ABOUT SECTION
+-------------------------------------------------- */
 
-    .mobile-only {
-        display: none;
-    }
-
-    .tab-page.active-desktop {
-        display: block;
-    }
-
-    #signalsTab {
-        display: block;
-    }
+#aboutVersion,
+#aboutBuild,
+#aboutWorker {
+    color: var(--accent);
+    text-shadow: var(--glow);
 }
