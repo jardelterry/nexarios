@@ -1,225 +1,150 @@
-/* GLOBAL -------------------------------------------------- */
-
+/* GLOBAL */
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: #05070b;
-  color: #f3f4f6;
-  line-height: 1.25;
-}
-
-/* HEADER -------------------------------------------------- */
-
-header {
-  padding: 10px 16px 8px;
-  border-bottom: 1px solid #1f2933;
-  background: #0b0e14;
+    margin: 0;
+    padding: 0;
+    background: #0b0b0d;
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
 }
 
 h1 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
 }
 
-#hrTicker {
-  margin-top: 2px;
-  font-size: 12.5px;
-  opacity: 0.9;
+#ticker {
+    opacity: 0.55;
+    font-size: 13px;
+    margin-top: 4px;
 }
 
-/* MAIN -------------------------------------------------- */
-
-main {
-  padding: 10px 16px 78px;
+header {
+    padding: 22px 20px 10px 20px;
 }
 
+/* PAGES */
 .page {
-  display: none;
+    display: none;
+    padding: 20px;
 }
 
 .page.active {
-  display: block;
+    display: block;
 }
 
-h2 {
-  margin: 0 0 8px;
-  font-size: 16px;
-  font-weight: 600;
+/* FLOATING NAV */
+#navBar {
+    position: fixed;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 88%;
+    height: 68px;
+    background: rgba(20,20,22,0.72);
+    backdrop-filter: blur(22px);
+    border-radius: 22px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
 }
 
-/* SIGNALS -------------------------------------------------- */
-
-#signalsList {
-  font-size: 14px;
+.navItem {
+    width: 25%;
+    text-align: center;
 }
 
-.signal-entry {
-  margin-bottom: 10px;
+.navIcon {
+    font-size: 28px;
+    opacity: 0.55;
+    transition: 0.25s;
 }
 
-.signal-line-main {
-  font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 1px;
+.navItem.active .navIcon {
+    opacity: 1;
+    text-shadow: 0 0 12px rgba(255,255,255,0.75);
 }
 
-.signal-line-sub {
-  font-size: 13px;
-  opacity: 0.9;
-  margin-bottom: 1px;
-}
-
-.signal-line-streak {
-  font-size: 12.5px;
-  opacity: 0.85;
-}
-
-/* GAMES -------------------------------------------------- */
-
-#gamesDateBar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
-  font-size: 14px;
-}
-
-#gamesDateBar button {
-  background: none;
-  border: 1px solid #1f2933;
-  color: #f3f4f6;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 13px;
-}
-
-#gamesDateLabel {
-  flex: 1;
-  text-align: center;
-  font-size: 14px;
-}
-
-#gamesList {
-  font-size: 14px;
-}
-
-.game-entry {
-  margin-bottom: 10px;
-}
-
-.game-line-main {
-  font-weight: 600;
-  margin-bottom: 1px;
-}
-
-.game-line-sub {
-  font-size: 13px;
-  opacity: 0.9;
-}
-
-/* ACCURACY -------------------------------------------------- */
-
-#accuracyBlock {
-  font-size: 14px;
-}
-
-.accuracy-section {
-  margin-bottom: 14px;
-}
-
-.accuracy-label {
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-
-.accuracy-value {
-  font-size: 26px;
-  font-weight: 600;
-}
-
-.accuracy-desc {
-  font-size: 12px;
-  opacity: 0.8;
-  margin-top: 2px;
-}
-
-/* SYSTEM -------------------------------------------------- */
-
-.system-section {
-  margin-bottom: 14px;
-  font-size: 14px;
-}
-
-.system-section h3 {
-  margin: 0 0 4px;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.system-section button {
-  margin-right: 6px;
-  margin-bottom: 6px;
-  background: #111827;
-  border: 1px solid #1f2933;
-  color: #f3f4f6;
-  padding: 6px 10px;
-  border-radius: 4px;
-  font-size: 13px;
-}
-
-#debugOutput {
-  background: #020309;
-  border: 1px solid #1f2933;
-  padding: 8px;
-  border-radius: 4px;
-  max-height: 200px;
-  overflow-y: auto;
-  font-size: 12px;
-}
-
-/* BOTTOM NAV -------------------------------------------------- */
-
-#bottomNav {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: #05070b;
-  border-top: 1px solid #1f2933;
-  padding: 4px 0 2px;
-}
-
-#navButtons {
-  display: flex;
-  justify-content: space-around;
-  font-size: 13px;
-}
-
-#navButtons button {
-  background: none;
-  border: none;
-  color: #9ca3af;
-  padding: 2px 0;
-  font-size: 12px;
-  line-height: 1.1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-#navButtons button.active {
-  color: #ffffff;
-  font-weight: 600;
-  text-shadow: 0 0 4px rgba(255,255,255,0.4);
-}
-
+/* SLIDER */
 #navSlider {
-  height: 2px;
-  width: 25%;
-  background: #ffffff;
-  margin: 3px auto 0;
-  border-radius: 999px;
-  transform: translateX(0%);
-  transition: transform 0.2s ease;
+    position: absolute;
+    bottom: 0;
+    height: 3px;
+    width: 25%;
+    background: white;
+    border-radius: 3px;
+    transition: 0.25s;
+}
+
+/* HR SIGNALS */
+.signal {
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.signal .name {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.signal .meta {
+    opacity: 0.55;
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.streak {
+    opacity: 0.55;
+    font-size: 13px;
+}
+
+/* GAMES */
+.game {
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.game .title {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.game .weather {
+    opacity: 0.55;
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.lineup {
+    margin-top: 10px;
+    opacity: 0.85;
+    font-size: 14px;
+}
+
+/* ACCURACY */
+#accuracyContainer {
+    font-size: 16px;
+}
+
+/* SYSTEM */
+.settingBlock {
+    margin-bottom: 20px;
+}
+
+.settingBlock label {
+    display: block;
+    margin-bottom: 6px;
+    opacity: 0.75;
+}
+
+select {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    background: #1a1a1d;
+    color: white;
+    border: none;
 }

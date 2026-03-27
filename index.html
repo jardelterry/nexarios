@@ -17,6 +17,7 @@
 
     <!-- MAIN PAGES -->
     <main>
+
         <!-- HR SIGNALS -->
         <section id="signalsPage" class="page active">
             <div id="signalsContainer"></div>
@@ -24,11 +25,6 @@
 
         <!-- GAMES -->
         <section id="gamesPage" class="page">
-            <div id="gamesDateBar">
-                <span id="prevDate" class="dateArrow">‹</span>
-                <span id="gamesDate"></span>
-                <span id="nextDate" class="dateArrow">›</span>
-            </div>
             <div id="gamesContainer"></div>
         </section>
 
@@ -59,6 +55,14 @@
             </div>
 
             <div class="settingBlock">
+                <label>Backwards Compatibility</label>
+                <select id="backCompatSelect">
+                    <option value="on">On</option>
+                    <option value="off">Off</option>
+                </select>
+            </div>
+
+            <div class="settingBlock">
                 <label>Device Mode</label>
                 <select id="deviceModeSelect">
                     <option value="auto">Auto</option>
@@ -76,6 +80,7 @@
             <h2>About</h2>
             <p>NexariOS • HR Engine v6.6</p>
         </section>
+
     </main>
 
     <!-- FLOATING NAV -->
