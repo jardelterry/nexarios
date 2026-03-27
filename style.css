@@ -1,8 +1,8 @@
 body {
     margin: 0;
-    background: #111;
+    background: #05060a;
     color: #fff;
-    font-family: system-ui, sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 16px;
 }
 
@@ -16,34 +16,35 @@ body {
     display: block;
 }
 
-/* BOTTOM NAV (GLOWING) */
+/* BOTTOM NAV (GLOWING, 5 ITEMS) */
 #bottomNav {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
     height: 70px;
-    background: rgba(0,0,0,0.85);
-    backdrop-filter: blur(10px);
+    background: rgba(3, 5, 15, 0.95);
+    backdrop-filter: blur(14px);
     display: flex;
     justify-content: space-around;
     align-items: center;
-    border-top: 1px solid #222;
+    border-top: 1px solid #151827;
     z-index: 999;
 }
 
 #bottomNav .navItem {
     flex: 1;
     text-align: center;
-    color: #888;
+    color: #7a8195;
     padding-top: 6px;
     cursor: pointer;
-    transition: color 0.2s;
+    transition: color 0.2s, transform 0.15s;
 }
 
 #bottomNav .navItem.active {
     color: #0af;
     text-shadow: 0 0 8px #0af;
+    transform: translateY(-2px);
 }
 
 #bottomNav .icon {
@@ -53,67 +54,93 @@ body {
 }
 
 #bottomNav .label {
-    font-size: 12px;
+    font-size: 11px;
     opacity: 0.9;
 }
 
 #navSlider {
     position: absolute;
     bottom: 0;
-    width: 25%;
+    width: 20%;
     height: 3px;
     background: #0af;
     box-shadow: 0 0 10px #0af;
     transition: left 0.25s;
 }
 
+/* FIELD LABELS */
+.fieldLabel {
+    font-size: 14px;
+    opacity: 0.8;
+    margin-right: 8px;
+}
+
 /* HR SIGNALS */
 .signal {
     padding: 12px;
     margin-bottom: 10px;
-    border-radius: 6px;
-    background: #1a1a1a;
+    border-radius: 10px;
+    background: radial-gradient(circle at top left, #151a2a, #0b0d14);
+    border: 1px solid #1f2435;
 }
 
-/* HR SCROLL FIX */
+/* HR SCROLL */
 #signalsContainer {
     max-height: calc(100vh - 200px);
     overflow-y: auto;
 }
 
 /* HR DROPDOWN */
+#hrControls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
 #hrControls select {
-    width: 120px;
-    padding: 6px;
-    background: #222;
-    border: 1px solid #444;
+    padding: 6px 10px;
+    background: #151827;
+    border: 1px solid #2a3145;
     color: #fff;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+/* HR BAR (ANIMATED) */
+.hrBar {
+    height: 6px;
+    background: linear-gradient(90deg, #0af, #5bffea);
     border-radius: 4px;
+    margin-top: 6px;
+    box-shadow: 0 0 6px #0af;
+    width: 0%;
+    transition: width 0.8s ease;
 }
 
 /* GAMES */
 .game {
     padding: 12px;
     margin-bottom: 12px;
-    background: #1a1a1a;
-    border-radius: 6px;
+    background: #10131f;
+    border-radius: 10px;
+    border: 1px solid #1f2435;
 }
 
 .gameHeader {
     display: flex;
     justify-content: space-between;
     cursor: pointer;
-    padding: 8px 0;
+    padding: 4px 0;
 }
 
 .gameHeader:hover {
-    opacity: 0.8;
+    opacity: 0.85;
 }
 
 .gameDetails {
     margin-top: 8px;
     padding-top: 8px;
-    border-top: 1px solid #333;
+    border-top: 1px solid #252b3d;
 }
 
 /* CALENDAR */
@@ -124,30 +151,65 @@ body {
     margin-bottom: 12px;
 }
 .clickerBtn {
-    background: #222;
-    border: 1px solid #444;
+    background: #151827;
+    border: 1px solid #2a3145;
     color: #fff;
     padding: 6px 12px;
     cursor: pointer;
     margin: 0 10px;
+    border-radius: 6px;
 }
 
 /* ACCURACY */
 #accuracyDeep div {
     margin-top: 10px;
     padding: 10px;
-    background: #1a1a1a;
-    border-radius: 6px;
+    background: #10131f;
+    border-radius: 8px;
+    border: 1px solid #1f2435;
 }
 
-/* SETTINGS */
+/* SETTINGS (APPLE-STYLE SECTIONS) */
+.settingsSection {
+    background: #10131f;
+    padding: 14px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 0 18px rgba(0, 170, 255, 0.12);
+    border: 1px solid #1f2435;
+}
+
+.settingsSection h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #0af;
+    text-shadow: 0 0 6px #0af;
+    font-size: 15px;
+}
+
 #settingsPage select,
 #settingsPage input[type=range],
 #settingsPage button {
     width: 100%;
     margin: 8px 0;
     padding: 8px;
-    background: #222;
-    border: 1px solid #444;
+    background: #151827;
+    border: 1px solid #2a3145;
     color: #fff;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+/* INFO PAGE */
+.infoBlock {
+    background: #10131f;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    border: 1px solid #1f2435;
+}
+.infoBlock h3 {
+    margin-top: 0;
+    color: #0af;
+    font-size: 15px;
 }

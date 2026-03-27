@@ -29,13 +29,18 @@
             <span class="label">Settings</span>
         </div>
 
+        <div class="navItem" data-page="infoPage">
+            <span class="icon">❓</span>
+            <span class="label">Info</span>
+        </div>
+
         <div id="navSlider"></div>
     </div>
 
     <!-- HR PAGE -->
     <div id="hrPage" class="page active">
         <div id="hrControls">
-            <label style="font-size:14px; opacity:0.8;">HR View:</label>
+            <label class="fieldLabel">HR View:</label>
             <select id="hrViewSelect">
                 <option value="10">Top 10</option>
                 <option value="20">Top 20</option>
@@ -70,31 +75,64 @@
 
     <!-- SETTINGS PAGE -->
     <div id="settingsPage" class="page">
-        <h3>Display</h3>
-        <label>Device Mode:</label>
-        <select id="deviceModeSelect">
-            <option value="auto">Auto</option>
-            <option value="mobile">Mobile</option>
-            <option value="desktop">Desktop</option>
-        </select>
+        <div class="settingsSection">
+            <h3>Display</h3>
+            <label>Device Mode:</label>
+            <select id="deviceModeSelect">
+                <option value="auto">Auto</option>
+                <option value="mobile">Mobile</option>
+                <option value="desktop">Desktop</option>
+            </select>
 
-        <label>Font Size:</label>
-        <input type="range" id="fontSizeSlider" min="12" max="22" value="16">
+            <label>Font Size:</label>
+            <input type="range" id="fontSizeSlider" min="12" max="22" value="16">
+        </div>
 
-        <h3>Data</h3>
-        <label>Auto Refresh:</label>
-        <select id="autoRefreshSelect">
-            <option value="0">Off</option>
-            <option value="30">30s</option>
-            <option value="60">60s</option>
-            <option value="300">5m</option>
-        </select>
+        <div class="settingsSection">
+            <h3>Data</h3>
+            <label>Auto Refresh:</label>
+            <select id="autoRefreshSelect">
+                <option value="0">Off</option>
+                <option value="30">30s</option>
+                <option value="60">60s</option>
+                <option value="300">5m</option>
+            </select>
 
-        <button id="forceRebuildBtn">Force Rebuild</button>
-        <button id="clearCacheBtn">Clear Cache</button>
+            <button id="forceRebuildBtn">Force Rebuild</button>
+            <button id="clearCacheBtn">Clear Cache</button>
+        </div>
 
-        <h3>System</h3>
-        <div id="systemInfo"></div>
+        <div class="settingsSection">
+            <h3>System</h3>
+            <div id="systemInfo"></div>
+        </div>
+    </div>
+
+    <!-- INFO PAGE -->
+    <div id="infoPage" class="page">
+        <h2>How to Use NexariOS</h2>
+
+        <div class="infoBlock">
+            <h3>HR Signals</h3>
+            <p>Shows the strongest home run candidates ranked by probability.</p>
+            <p>Red = Strong, Yellow = Playable, Gray = Watch.</p>
+            <p>The animated bar under each player visualizes HR probability.</p>
+        </div>
+
+        <div class="infoBlock">
+            <h3>Games</h3>
+            <p>Tap a game row to expand lineups, weather, and LIVE status.</p>
+        </div>
+
+        <div class="infoBlock">
+            <h3>Accuracy</h3>
+            <p>Tracks system performance, streaks, and outcomes over time.</p>
+        </div>
+
+        <div class="infoBlock">
+            <h3>Settings</h3>
+            <p>Adjust device mode, font size, refresh rate, and system tools.</p>
+        </div>
     </div>
 
     <script src="app.js"></script>

@@ -58,7 +58,7 @@ navItems.forEach((item, index) => {
         pages.forEach(p => p.classList.remove("active"));
         document.getElementById(item.dataset.page).classList.add("active");
 
-        slider.style.left = `${index * 25}%`;
+        slider.style.left = `${index * 20}%`;
     });
 });
 
@@ -72,7 +72,7 @@ function safeName(name, fallback) {
 }
 
 /* ------------------------------
-   HR SIGNALS (dropdown + color coding)
+   HR SIGNALS (dropdown + color + animated bars)
 --------------------------------*/
 function loadSignals() {
     const container = document.getElementById("signalsContainer");
@@ -96,9 +96,17 @@ function loadSignals() {
                 ${s.team} vs ${s.opponent} • ${s.hr}% • ${s.tier}<br>
                 <span class="streak">Streak: ${s.streakType} (${s.streakCount})</span>
             </div>
+            <div class="hrBar" style="width:0%;" data-target="${s.hr}"></div>
         `;
         container.appendChild(div);
     });
+
+    // Animate HR bars
+    setTimeout(() => {
+        document.querySelectorAll(".hrBar").forEach(bar => {
+            bar.style.width = bar.dataset.target + "%";
+        });
+    }, 50);
 }
 
 /* ------------------------------
