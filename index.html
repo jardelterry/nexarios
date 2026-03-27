@@ -2,179 +2,1265 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <title>NexariOS V3</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NexariOS v5 — HR Engine</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="theme-color" content="#000000" />
+  <style>
+    :root {
+      --bg-dark: #050509;
+      --bg-dark-elevated: #111119;
+      --bg-dark-soft: #181822;
+      --bg-light: #f5f5f7;
+      --bg-light-elevated: #ffffff;
+      --bg-light-soft: #e5e5ea;
+      --accent: #0a84ff;
+      --accent-soft: rgba(10,132,255,0.15);
+      --danger: #ff453a;
+      --success: #30d158;
+      --text-dark: #f9f9ff;
+      --text-muted-dark: #a1a1b3;
+      --text-light: #111118;
+      --text-muted-light: #6b6b7a;
+      --border-dark: #262636;
+      --border-light: #d0d0dd;
+      --tab-height: 64px;
+      --card-radius: 16px;
+      --transition-fast: 0.18s ease-out;
+    }
+
+    body[data-theme="dark"] {
+      background: radial-gradient(circle at top, #151521 0, #050509 55%);
+      color: var(--text-dark);
+    }
+
+    body[data-theme="light"] {
+      background: radial-gradient(circle at top, #ffffff 0, #f5f5f7 55%);
+      color: var(--text-light);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      padding-bottom: var(--tab-height);
+    }
+
+    .app-shell {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 12px 12px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    header.app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      background: conic-gradient(from 210deg, #0a84ff, #30d158, #ff9f0a, #ff453a, #0a84ff);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .brand-title {
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+
+    .date-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .date-pill {
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      border: 1px solid;
+      transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+    }
+
+    body[data-theme="dark"] .date-pill {
+      background: rgba(255,255,255,0.02);
+      border-color: var(--border-dark);
+      color: var(--text-dark);
+    }
+
+    body[data-theme="light"] .date-pill {
+      background: rgba(0,0,0,0.02);
+      border-color: var(--border-light);
+      color: var(--text-light);
+    }
+
+    .date-arrow {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: 1px solid;
+      font-size: 14px;
+      transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    body[data-theme="dark"] .date-arrow {
+      background: rgba(255,255,255,0.02);
+      border-color: var(--border-dark);
+      color: var(--text-dark);
+    }
+
+    body[data-theme="light"] .date-arrow {
+      background: rgba(0,0,0,0.02);
+      border-color: var(--border-light);
+      color: var(--text-light);
+    }
+
+    .date-arrow:active {
+      transform: scale(0.94);
+    }
+
+    .theme-toggle {
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      border: 1px solid;
+      transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+    }
+
+    body[data-theme="dark"] .theme-toggle {
+      background: rgba(255,255,255,0.02);
+      border-color: var(--border-dark);
+      color: var(--text-dark);
+    }
+
+    body[data-theme="light"] .theme-toggle {
+      background: rgba(0,0,0,0.02);
+      border-color: var(--border-light);
+      color: var(--text-light);
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .tab-view {
+      display: none;
+      animation: fadeIn 0.18s ease-out;
+    }
+
+    .tab-view.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.7;
+      margin: 4px 2px 6px;
+    }
+
+    .card {
+      border-radius: var(--card-radius);
+      padding: 10px 12px;
+      border: 1px solid;
+      margin-bottom: 8px;
+      transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    body[data-theme="dark"] .card {
+      background: rgba(15,15,25,0.9);
+      border-color: var(--border-dark);
+      box-shadow: 0 14px 30px rgba(0,0,0,0.55);
+    }
+
+    body[data-theme="light"] .card {
+      background: rgba(255,255,255,0.96);
+      border-color: var(--border-light);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .card-sub {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid transparent;
+    }
+
+    .pill-accent {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .pill-soft {
+      opacity: 0.8;
+    }
+
+    .pill-danger {
+      background: rgba(255,69,58,0.12);
+      color: var(--danger);
+    }
+
+    .pill-success {
+      background: rgba(48,209,88,0.12);
+      color: var(--success);
+    }
+
+    .metric-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .metric-label {
+      opacity: 0.7;
+    }
+
+    .metric-value {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bar {
+      position: relative;
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.06);
+    }
+
+    body[data-theme="light"] .bar {
+      background: rgba(0,0,0,0.06);
+    }
+
+    .bar-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #0a84ff, #30d158);
+      transform-origin: left center;
+      transform: scaleX(0);
+      transition: transform 0.25s ease-out;
+    }
+
+    .streak-badge {
+      font-size: 10px;
+      border-radius: 999px;
+      padding: 2px 6px;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    body[data-theme="dark"] .streak-badge {
+      background: rgba(255,255,255,0.03);
+      border-color: var(--border-dark);
+    }
+
+    body[data-theme="light"] .streak-badge {
+      background: rgba(0,0,0,0.03);
+      border-color: var(--border-light);
+    }
+
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: var(--tab-height);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-top: 1px solid;
+    }
+
+    body[data-theme="dark"] .bottom-nav {
+      background: rgba(5,5,9,0.92);
+      border-color: var(--border-dark);
+    }
+
+    body[data-theme="light"] .bottom-nav {
+      background: rgba(245,245,247,0.96);
+      border-color: var(--border-light);
+    }
+
+    .bottom-nav-inner {
+      max-width: 900px;
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+      padding: 4px 8px;
+      gap: 4px;
+    }
+
+    .tab-button {
+      flex: 1;
+      border-radius: 999px;
+      padding: 4px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      font-size: 10px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .tab-icon {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .tab-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    body[data-theme="dark"] .tab-button {
+      color: var(--text-muted-dark);
+    }
+
+    body[data-theme="light"] .tab-button {
+      color: var(--text-muted-light);
+    }
+
+    .tab-button.active {
+      transform: translateY(-1px);
+    }
+
+    body[data-theme="dark"] .tab-button.active {
+      background: rgba(10,132,255,0.16);
+      border-color: rgba(10,132,255,0.5);
+      color: var(--text-dark);
+    }
+
+    body[data-theme="light"] .tab-button.active {
+      background: rgba(10,132,255,0.12);
+      border-color: rgba(10,132,255,0.5);
+      color: var(--text-light);
+    }
+
+    .settings-group {
+      margin-bottom: 10px;
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      padding: 6px 0;
+      border-bottom: 1px solid;
+    }
+
+    body[data-theme="dark"] .settings-row {
+      border-color: rgba(255,255,255,0.04);
+    }
+
+    body[data-theme="light"] .settings-row {
+      border-color: rgba(0,0,0,0.06);
+    }
+
+    .settings-row:last-child {
+      border-bottom: none;
+    }
+
+    .settings-label {
+      font-weight: 500;
+    }
+
+    .settings-sub {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+
+    .toggle {
+      width: 40px;
+      height: 22px;
+      border-radius: 999px;
+      border: 1px solid;
+      position: relative;
+      cursor: pointer;
+      transition: background var(--transition-fast), border-color var(--transition-fast);
+    }
+
+    body[data-theme="dark"] .toggle {
+      background: rgba(255,255,255,0.04);
+      border-color: var(--border-dark);
+    }
+
+    body[data-theme="light"] .toggle {
+      background: rgba(0,0,0,0.04);
+      border-color: var(--border-light);
+    }
+
+    .toggle-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      background: #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      transition: transform var(--transition-fast);
+    }
+
+    .toggle[data-on="true"] .toggle-thumb {
+      transform: translateX(16px);
+    }
+
+    .pill-small {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      opacity: 0.8;
+    }
+
+    body[data-theme="dark"] .pill-small {
+      background: rgba(255,255,255,0.03);
+      border-color: var(--border-dark);
+    }
+
+    body[data-theme="light"] .pill-small {
+      background: rgba(0,0,0,0.03);
+      border-color: var(--border-light);
+    }
+
+    .debug-output {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 11px;
+      max-height: 160px;
+      overflow: auto;
+      padding: 6px 8px;
+      border-radius: 10px;
+      border: 1px solid;
+      margin-top: 6px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    body[data-theme="dark"] .debug-output {
+      background: rgba(0,0,0,0.6);
+      border-color: var(--border-dark);
+      color: var(--text-muted-dark);
+    }
+
+    body[data-theme="light"] .debug-output {
+      background: rgba(255,255,255,0.9);
+      border-color: var(--border-light);
+      color: var(--text-muted-light);
+    }
+
+    @media (min-width: 768px) {
+      .app-shell {
+        padding-top: 16px;
+      }
+    }
+  </style>
 </head>
-<body>
-  <header>
-    <h1>NexariOS v5</h1>
-    <h2>Home Run Probability Engine</h2>
-  </header>
-
-  <section id="date-bar">
-    <button id="date-prev" class="date-btn">&lt;</button>
-    <div id="date-label">Loading date…</div>
-    <button id="date-next" class="date-btn">&gt;</button>
-  </section>
-
-  <section id="status">Loading…</section>
-
-  <!-- Screens -->
-  <main>
-    <!-- HR Signals -->
-    <section id="screen-hr" class="screen active">
-      <div class="hr-controls">
-        <button id="toggle-top" class="toggle-btn active">Top 10</button>
-        <button id="toggle-all" class="toggle-btn">All Hitters</button>
-      </div>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Player</th>
-              <th>Score</th>
-              <th>HR/PA</th>
-              <th>Avg EV</th>
-            </tr>
-          </thead>
-          <tbody id="hr-body"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Games -->
-    <section id="screen-games" class="screen">
-      <div id="games-list" class="games-list"></div>
-    </section>
-
-    <!-- Matchups -->
-    <section id="screen-matchups" class="screen">
-      <div id="matchups-list" class="matchups-list"></div>
-    </section>
-
-    <!-- Players -->
-    <section id="screen-players" class="screen">
-      <div class="players-search">
-        <input id="players-search-input" type="text" placeholder="Search players…" />
-      </div>
-      <div id="players-list" class="players-list"></div>
-    </section>
-
-    <!-- Settings -->
-    <section id="screen-settings" class="screen">
-      <div class="settings-group">
-        <h3>Display</h3>
-        <div class="settings-row">
-          <span>Theme</span>
-          <button id="theme-toggle" class="pill-btn">Dark</button>
+<body data-theme="dark">
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div class="brand-text">
+          <div class="brand-title">NexariOS</div>
+          <div class="brand-sub">HR Engine • V6.6 • Live</div>
         </div>
       </div>
-
-      <div class="settings-group">
-        <h3>System</h3>
-        <div class="settings-row">
-          <span>Manual refresh</span>
-          <button id="refresh-btn" class="pill-btn">Refresh</button>
-        </div>
-        <div class="settings-row">
-          <span>Last rebuild</span>
-          <span id="last-rebuild">Unknown</span>
-        </div>
-        <div class="settings-row">
-          <span>Version</span>
-          <span>NexariOS v5.0</span>
-        </div>
+      <div class="date-nav">
+        <div class="date-arrow" id="datePrevBtn">&#x25C0;</div>
+        <div class="date-pill" id="dateDisplay"></div>
+        <div class="date-arrow" id="dateNextBtn">&#x25B6;</div>
       </div>
+      <button class="theme-toggle" id="themeToggle">
+        <span id="themeToggleIcon">🌙</span>
+        <span id="themeToggleLabel">Dark</span>
+      </button>
+    </header>
 
-      <div class="settings-group">
-        <h3>About</h3>
-        <p>NexariOS v5 — HR probability engine with matchup‑aware scoring and elite tracking.</p>
-      </div>
-    </section>
-  </main>
+    <main>
+      <!-- HR TAB -->
+      <section id="tab-hr" class="tab-view active">
+        <div class="section-title">HR Picks</div>
+        <div id="hrList"></div>
+      </section>
 
-  <!-- Floating Tab Bar -->
-  <nav id="tab-bar">
-    <button class="tab-btn active" data-screen="hr">
-      <div class="tab-icon">🔥</div>
-      <div class="tab-label">HR</div>
-    </button>
-    <button class="tab-btn" data-screen="games">
-      <div class="tab-icon">⚾</div>
-      <div class="tab-label">Games</div>
-    </button>
-    <button class="tab-btn" data-screen="matchups">
-      <div class="tab-icon">🎯</div>
-      <div class="tab-label">Matchups</div>
-    </button>
-    <button class="tab-btn" data-screen="players">
-      <div class="tab-icon">👤</div>
-      <div class="tab-label">Players</div>
-    </button>
-    <button class="tab-btn" data-screen="settings">
-      <div class="tab-icon">⚙️</div>
-      <div class="tab-label">Settings</div>
-    </button>
-  </nav>
+      <!-- GAMES TAB -->
+      <section id="tab-games" class="tab-view">
+        <div class="section-title">Games</div>
+        <div id="gamesList"></div>
+      </section>
 
-  <!-- Player Modal -->
-  <div id="player-modal-backdrop" class="modal-backdrop hidden">
-    <div id="player-modal" class="modal">
-      <div class="modal-header">
-        <h3 id="modal-player-name">Player Name</h3>
-        <button id="modal-close" class="modal-close">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="modal-row">
-          <span class="modal-label">Score</span>
-          <span id="modal-score" class="modal-value"></span>
-        </div>
-        <div class="modal-row">
-          <span class="modal-label">HR / PA</span>
-          <span id="modal-hrpa" class="modal-value"></span>
-        </div>
-        <div class="modal-row">
-          <span class="modal-label">Avg EV</span>
-          <span id="modal-ev" class="modal-value"></span>
-        </div>
-        <div class="modal-row">
-          <span class="modal-label">Confidence</span>
-          <span id="modal-confidence" class="modal-value"></span>
-        </div>
-        <div class="modal-row">
-          <span class="modal-label">Risk</span>
-          <span id="modal-risk" class="modal-value"></span>
-        </div>
+      <!-- MATCHUPS TAB -->
+      <section id="tab-matchups" class="tab-view">
+        <div class="section-title">Active Matchups</div>
+        <div id="matchupsActive"></div>
+        <div class="section-title" style="margin-top:10px;">Upcoming Games</div>
+        <div id="matchupsUpcoming"></div>
+      </section>
 
-        <h4>Matchup Factors</h4>
-        <div id="modal-matchup" class="modal-matchup">
-          <div class="modal-row">
-            <span class="modal-label">ERA factor</span>
-            <span id="modal-era" class="modal-value"></span>
+      <!-- STREAKS TAB -->
+      <section id="tab-streaks" class="tab-view">
+        <div class="section-title">Hit & RBI Streaks</div>
+        <div id="streaksList"></div>
+      </section>
+
+      <!-- PLAYERS TAB -->
+      <section id="tab-players" class="tab-view">
+        <div class="section-title">Players</div>
+        <div id="playersList"></div>
+      </section>
+
+      <!-- SETTINGS TAB -->
+      <section id="tab-settings" class="tab-view">
+        <div class="section-title">Settings</div>
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">System Controls</div>
+              <div class="card-sub">Engine behavior & refresh</div>
+            </div>
           </div>
-          <div class="modal-row">
-            <span class="modal-label">HR/9 factor</span>
-            <span id="modal-hr9" class="modal-value"></span>
-          </div>
-          <div class="modal-row">
-            <span class="modal-label">EV allowed</span>
-            <span id="modal-ev-allowed" class="modal-value"></span>
-          </div>
-          <div class="modal-row">
-            <span class="modal-label">Handedness</span>
-            <span id="modal-handed" class="modal-value"></span>
-          </div>
-          <div class="modal-row">
-            <span class="modal-label">Pitch type</span>
-            <span id="modal-pitch-type" class="modal-value"></span>
+          <div class="settings-group">
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Auto-refresh</div>
+                <div class="settings-sub">Polls engine for updates</div>
+              </div>
+              <div class="toggle" id="autoRefreshToggle" data-on="true">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Refresh interval</div>
+                <div class="settings-sub"><span id="refreshIntervalLabel">30s</span></div>
+              </div>
+              <div>
+                <button class="pill-small" data-interval="15000">15s</button>
+                <button class="pill-small" data-interval="30000">30s</button>
+                <button class="pill-small" data-interval="60000">60s</button>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Real-time HR ingestion</div>
+                <div class="settings-sub">External webhook → /event/hr</div>
+              </div>
+              <div class="toggle" id="rtHrToggle" data-on="true">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">System Was Right tracking</div>
+                <div class="settings-sub">Score ≥ 70 HR hits</div>
+              </div>
+              <div class="toggle" id="systemRightToggle" data-on="true">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Force rebuild</div>
+                <div class="settings-sub">Re-run engine for current date</div>
+              </div>
+              <button class="pill-small" id="forceRebuildBtn">Rebuild</button>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Reset to today</div>
+                <div class="settings-sub">Jump back to current date</div>
+              </div>
+              <button class="pill-small" id="resetTodayBtn">Today</button>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Display</div>
+              <div class="card-sub">Visual preferences</div>
+            </div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Show streak badges</div>
+                <div class="settings-sub">Highlight hot players</div>
+              </div>
+              <div class="toggle" id="showStreaksToggle" data-on="true">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Show weather factors</div>
+                <div class="settings-sub">Temp, wind, humidity</div>
+              </div>
+              <div class="toggle" id="showWeatherToggle" data-on="true">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Show park factors</div>
+                <div class="settings-sub">HR environment</div>
+              </div>
+              <div class="toggle" id="showParkToggle" data-on="true">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Show confidence bars</div>
+                <div class="settings-sub">Visual scoring strength</div>
+              </div>
+              <div class="toggle" id="showConfidenceToggle" data-on="true">
+                <div class="toggle-thumb"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Developer</div>
+              <div class="card-sub">Debug & introspection</div>
+            </div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Show raw schedule</div>
+                <div class="settings-sub">/schedule</div>
+              </div>
+              <button class="pill-small" id="debugScheduleBtn">View</button>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Show HR-legacy</div>
+                <div class="settings-sub">/hr-legacy</div>
+              </div>
+              <button class="pill-small" id="debugHrBtn">View</button>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Show system-right</div>
+                <div class="settings-sub">/system-right</div>
+              </div>
+              <button class="pill-small" id="debugSystemRightBtn">View</button>
+            </div>
+          </div>
+          <div class="debug-output" id="debugOutput"></div>
+        </div>
+      </section>
+    </main>
   </div>
 
-  <script src="app.js"></script>
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <button class="tab-button active" data-tab="hr">
+        <div class="tab-icon">🔥</div>
+        <div class="tab-label">HR</div>
+      </button>
+      <button class="tab-button" data-tab="games">
+        <div class="tab-icon">⚾</div>
+        <div class="tab-label">Games</div>
+      </button>
+      <button class="tab-button" data-tab="matchups">
+        <div class="tab-icon">🎯</div>
+        <div class="tab-label">Matchups</div>
+      </button>
+      <button class="tab-button" data-tab="streaks">
+        <div class="tab-icon">📈</div>
+        <div class="tab-label">Streaks</div>
+      </button>
+      <button class="tab-button" data-tab="players">
+        <div class="tab-icon">👤</div>
+        <div class="tab-label">Players</div>
+      </button>
+      <button class="tab-button" data-tab="settings">
+        <div class="tab-icon">⚙️</div>
+        <div class="tab-label">Settings</div>
+      </button>
+    </div>
+  </nav>
+
+  <script>
+    const WORKER_BASE = "https://nexari-auto.jardelterry.workers.dev";
+
+    const state = {
+      currentDate: null,
+      autoRefresh: true,
+      refreshInterval: 30000,
+      refreshTimer: null,
+      showStreakBadges: true,
+      showWeather: true,
+      showPark: true,
+      showConfidence: true
+    };
+
+    function formatDateLabel(dateStr) {
+      const d = new Date(dateStr + "T00:00:00");
+      return d.toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+      });
+    }
+
+    function getTodayISO() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function shiftDate(dateStr, deltaDays) {
+      const d = new Date(dateStr + "T00:00:00Z");
+      d.setUTCDate(d.getUTCDate() + deltaDays);
+      return d.toISOString().slice(0, 10);
+    }
+
+    function setTheme(theme) {
+      document.body.setAttribute("data-theme", theme);
+      const icon = document.getElementById("themeToggleIcon");
+      const label = document.getElementById("themeToggleLabel");
+      if (theme === "dark") {
+        icon.textContent = "🌙";
+        label.textContent = "Dark";
+      } else {
+        icon.textContent = "☀️";
+        label.textContent = "Light";
+      }
+      localStorage.setItem("nexari-theme", theme);
+    }
+
+    function toggleTheme() {
+      const current = document.body.getAttribute("data-theme") || "dark";
+      setTheme(current === "dark" ? "light" : "dark");
+    }
+
+    function setActiveTab(tabId) {
+      document.querySelectorAll(".tab-view").forEach(el => {
+        el.classList.toggle("active", el.id === "tab-" + tabId);
+      });
+      document.querySelectorAll(".tab-button").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tabId);
+      });
+    }
+
+    async function apiGet(path) {
+      try {
+        const r = await fetch(WORKER_BASE + path, { cache: "no-store" });
+        if (!r.ok) return null;
+        return await r.json();
+      } catch {
+        return null;
+      }
+    }
+
+    async function apiRebuild(date) {
+      const url = `${WORKER_BASE}/rebuild?date=${encodeURIComponent(date)}`;
+      try {
+        const r = await fetch(url, { cache: "no-store" });
+        if (!r.ok) return null;
+        return await r.json();
+      } catch {
+        return null;
+      }
+    }
+
+    function renderHR(hrData) {
+      const container = document.getElementById("hrList");
+      container.innerHTML = "";
+      if (!hrData || !Array.isArray(hrData.top)) {
+        container.innerHTML = `<div class="card"><div class="card-sub">No HR data available.</div></div>`;
+        return;
+      }
+
+      hrData.top.forEach(p => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const streakBadge = (p.hitStreak || p.rbiStreak) && state.showStreakBadges
+          ? `<span class="streak-badge">${p.hitStreak || 0}H • ${p.rbiStreak || 0}RBI</span>`
+          : "";
+
+        const weatherPill = state.showWeather
+          ? `<span class="pill pill-soft">Wx ${(p.weatherFactor || 1).toFixed(2)}</span>`
+          : "";
+
+        const parkPill = state.showPark
+          ? `<span class="pill pill-soft">Park ${(p.parkFactor || 1).toFixed(2)}</span>`
+          : "";
+
+        card.innerHTML = `
+          <div class="card-header">
+            <div>
+              <div class="card-title">${p.name}</div>
+              <div class="card-sub">HR Score • ${p.score.toFixed(1)}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+              <span class="pill pill-accent">HR/PA ${(p.hrPerPA || 0).toFixed(3)}</span>
+              <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
+                ${streakBadge}
+                ${weatherPill}
+                ${parkPill}
+              </div>
+            </div>
+          </div>
+          <div class="metric-row">
+            <div class="metric-label">Confidence</div>
+            <div class="metric-value">${Math.round((p.confidence || 0) * 100)}%</div>
+          </div>
+          <div class="bar">
+            <div class="bar-fill" style="transform:scaleX(${state.showConfidence ? (p.confidence || 0) : 0});"></div>
+          </div>
+          <div class="metric-row">
+            <div class="metric-label">Risk</div>
+            <div class="metric-value">${Math.round((p.risk || 0) * 100)}%</div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderGames(schedule) {
+      const container = document.getElementById("gamesList");
+      container.innerHTML = "";
+      if (!schedule || !Array.isArray(schedule.games)) {
+        container.innerHTML = `<div class="card"><div class="card-sub">No games available.</div></div>`;
+        return;
+      }
+
+      schedule.games.forEach(g => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const start = g.startTime
+          ? new Date(g.startTime).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
+          : "TBD";
+
+        const wx = g.weather || {};
+        const wxLabel = wx.temp != null
+          ? `${Math.round(wx.temp)}° • Wind ${Math.round(wx.windSpeed || 0)} • Hum ${Math.round(wx.humidity || 0)}%`
+          : "Weather pending";
+
+        card.innerHTML = `
+          <div class="card-header">
+            <div>
+              <div class="card-title">${g.awayName} @ ${g.homeName}</div>
+              <div class="card-sub">${start}</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="pill pill-soft">GamePk ${g.gamePk}</div>
+              <div class="card-sub" style="margin-top:2px;">${wxLabel}</div>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderMatchups(schedule) {
+      const activeContainer = document.getElementById("matchupsActive");
+      const upcomingContainer = document.getElementById("matchupsUpcoming");
+      activeContainer.innerHTML = "";
+      upcomingContainer.innerHTML = "";
+
+      if (!schedule || !Array.isArray(schedule.games)) {
+        activeContainer.innerHTML = `<div class="card"><div class="card-sub">No games available.</div></div>`;
+        upcomingContainer.innerHTML = "";
+        return;
+      }
+
+      schedule.games.forEach(g => {
+        const hasData = g.hasData || (g.hitters && Object.keys(g.hitters).length > 0);
+        const target = hasData ? activeContainer : upcomingContainer;
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const start = g.startTime
+          ? new Date(g.startTime).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
+          : "TBD";
+
+        const wx = g.weather || {};
+        const wxLabel = wx.temp != null
+          ? `${Math.round(wx.temp)}° • Wind ${Math.round(wx.windSpeed || 0)} • Hum ${Math.round(wx.humidity || 0)}%`
+          : "Weather pending";
+
+        const parkHome = g.parkFactorHome || 1;
+        const parkAway = g.parkFactorAway || 1;
+
+        card.innerHTML = `
+          <div class="card-header">
+            <div>
+              <div class="card-title">${g.awayName} @ ${g.homeName}</div>
+              <div class="card-sub">${start}</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="pill pill-soft">Home Park ${parkHome.toFixed(2)}</div>
+              <div class="pill pill-soft">Away Park ${parkAway.toFixed(2)}</div>
+            </div>
+          </div>
+          <div class="metric-row">
+            <div class="metric-label">Weather</div>
+            <div class="metric-value">${wxLabel}</div>
+          </div>
+          <div class="metric-row">
+            <div class="metric-label">Data</div>
+            <div class="metric-value">${hasData ? "Active matchup" : "Pre-game / pending data"}</div>
+          </div>
+        `;
+        target.appendChild(card);
+      });
+
+      if (!activeContainer.innerHTML.trim()) {
+        activeContainer.innerHTML = `<div class="card"><div class="card-sub">No active matchups yet.</div></div>`;
+      }
+      if (!upcomingContainer.innerHTML.trim()) {
+        upcomingContainer.innerHTML = `<div class="card"><div class="card-sub">No upcoming games.</div></div>`;
+      }
+    }
+
+    function renderStreaks(schedule) {
+      const container = document.getElementById("streaksList");
+      container.innerHTML = "";
+
+      if (!schedule || !Array.isArray(schedule.games)) {
+        container.innerHTML = `<div class="card"><div class="card-sub">No streak data available.</div></div>`;
+        return;
+      }
+
+      const streakPlayers = [];
+
+      schedule.games.forEach(g => {
+        const hitters = g.hitters || {};
+        Object.values(hitters).forEach(h => {
+          const hs = h.hitStreak || 0;
+          const rs = h.rbiStreak || 0;
+          if (hs > 0 || rs > 0) {
+            streakPlayers.push({
+              name: h.name || h.playerName || "Unknown",
+              hitStreak: hs,
+              rbiStreak: rs,
+              score: h.score || 0
+            });
+          }
+        });
+      });
+
+      if (!streakPlayers.length) {
+        container.innerHTML = `<div class="card"><div class="card-sub">No active hit or RBI streaks.</div></div>`;
+        return;
+      }
+
+      streakPlayers.sort((a, b) => (b.hitStreak + b.rbiStreak) - (a.hitStreak + a.rbiStreak));
+
+      streakPlayers.forEach(p => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const badge = state.showStreakBadges
+          ? `<span class="streak-badge">${p.hitStreak}H • ${p.rbiStreak}RBI</span>`
+          : "";
+
+        card.innerHTML = `
+          <div class="card-header">
+            <div>
+              <div class="card-title">${p.name}</div>
+              <div class="card-sub">Streak impact • Score ${p.score.toFixed(1)}</div>
+            </div>
+            <div>${badge}</div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderPlayers(hrData) {
+      const container = document.getElementById("playersList");
+      container.innerHTML = "";
+      if (!hrData || !Array.isArray(hrData.all)) {
+        container.innerHTML = `<div class="card"><div class="card-sub">No player data available.</div></div>`;
+        return;
+      }
+
+      hrData.all.forEach(p => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const streakBadge = (p.hitStreak || p.rbiStreak) && state.showStreakBadges
+          ? `<span class="streak-badge">${p.hitStreak || 0}H • ${p.rbiStreak || 0}RBI</span>`
+          : "";
+
+        card.innerHTML = `
+          <div class="card-header">
+            <div>
+              <div class="card-title">${p.name}</div>
+              <div class="card-sub">HR Score • ${p.score.toFixed(1)}</div>
+            </div>
+            <div>${streakBadge}</div>
+          </div>
+          <div class="metric-row">
+            <div class="metric-label">HR/PA</div>
+            <div class="metric-value">${(p.hrPerPA || 0).toFixed(3)}</div>
+          </div>
+          <div class="metric-row">
+            <div class="metric-label">Avg EV</div>
+            <div class="metric-value">${(p.avgEV || 0).toFixed(1)}</div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderDebug(label, data) {
+      const out = document.getElementById("debugOutput");
+      out.textContent = `${label}:\n` + JSON.stringify(data, null, 2);
+    }
+
+    async function refreshAll() {
+      const [schedule, hrLegacy, systemRight] = await Promise.all([
+        apiGet("/schedule"),
+        apiGet("/hr-legacy"),
+        apiGet("/system-right")
+      ]);
+
+      if (schedule && schedule.date) {
+        state.currentDate = schedule.date;
+        document.getElementById("dateDisplay").textContent = formatDateLabel(schedule.date);
+      }
+
+      renderHR(hrLegacy || { top: [], all: [] });
+      renderGames(schedule || { games: [] });
+      renderMatchups(schedule || { games: [] });
+      renderStreaks(schedule || { games: [] });
+      renderPlayers(hrLegacy || { all: [] });
+    }
+
+    function setupAutoRefresh() {
+      if (state.refreshTimer) {
+        clearInterval(state.refreshTimer);
+        state.refreshTimer = null;
+      }
+      if (!state.autoRefresh) return;
+      state.refreshTimer = setInterval(refreshAll, state.refreshInterval);
+    }
+
+    function init() {
+      const savedTheme = localStorage.getItem("nexari-theme");
+      setTheme(savedTheme === "light" ? "light" : "dark");
+
+      document.getElementById("themeToggle").addEventListener("click", toggleTheme);
+
+      document.querySelectorAll(".tab-button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          setActiveTab(btn.dataset.tab);
+        });
+      });
+
+      document.getElementById("datePrevBtn").addEventListener("click", async () => {
+        const base = state.currentDate || getTodayISO();
+        const newDate = shiftDate(base, -1);
+        const res = await apiRebuild(newDate);
+        if (res && res.realDate) {
+          state.currentDate = res.realDate;
+          document.getElementById("dateDisplay").textContent = formatDateLabel(res.realDate);
+          await refreshAll();
+        }
+      });
+
+      document.getElementById("dateNextBtn").addEventListener("click", async () => {
+        const base = state.currentDate || getTodayISO();
+        const newDate = shiftDate(base, 1);
+        const res = await apiRebuild(newDate);
+        if (res && res.realDate) {
+          state.currentDate = res.realDate;
+          document.getElementById("dateDisplay").textContent = formatDateLabel(res.realDate);
+          await refreshAll();
+        }
+      });
+
+      document.getElementById("autoRefreshToggle").addEventListener("click", () => {
+        const el = document.getElementById("autoRefreshToggle");
+        const on = el.getAttribute("data-on") === "true";
+        el.setAttribute("data-on", on ? "false" : "true");
+        state.autoRefresh = !on;
+        setupAutoRefresh();
+      });
+
+      document.querySelectorAll('[data-interval]').forEach(btn => {
+        btn.addEventListener("click", () => {
+          const ms = parseInt(btn.getAttribute("data-interval"), 10);
+          state.refreshInterval = ms;
+          document.getElementById("refreshIntervalLabel").textContent = (ms / 1000) + "s";
+          setupAutoRefresh();
+        });
+      });
+
+      document.getElementById("showStreaksToggle").addEventListener("click", () => {
+        const el = document.getElementById("showStreaksToggle");
+        const on = el.getAttribute("data-on") === "true";
+        el.setAttribute("data-on", on ? "false" : "true");
+        state.showStreakBadges = !on;
+        refreshAll();
+      });
+
+      document.getElementById("showWeatherToggle").addEventListener("click", () => {
+        const el = document.getElementById("showWeatherToggle");
+        const on = el.getAttribute("data-on") === "true";
+        el.setAttribute("data-on", on ? "false" : "true");
+        state.showWeather = !on;
+        refreshAll();
+      });
+
+      document.getElementById("showParkToggle").addEventListener("click", () => {
+        const el = document.getElementById("showParkToggle");
+        const on = el.getAttribute("data-on") === "true";
+        el.setAttribute("data-on", on ? "false" : "true");
+        state.showPark = !on;
+        refreshAll();
+      });
+
+      document.getElementById("showConfidenceToggle").addEventListener("click", () => {
+        const el = document.getElementById("showConfidenceToggle");
+        const on = el.getAttribute("data-on") === "true";
+        el.setAttribute("data-on", on ? "false" : "true");
+        state.showConfidence = !on;
+        refreshAll();
+      });
+
+      document.getElementById("forceRebuildBtn").addEventListener("click", async () => {
+        const date = state.currentDate || getTodayISO();
+        const res = await apiRebuild(date);
+        renderDebug("Force rebuild", res || { error: "no-response" });
+        await refreshAll();
+      });
+
+      document.getElementById("resetTodayBtn").addEventListener("click", async () => {
+        const today = getTodayISO();
+        const res = await apiRebuild(today);
+        if (res && res.realDate) {
+          state.currentDate = res.realDate;
+          document.getElementById("dateDisplay").textContent = formatDateLabel(res.realDate);
+          await refreshAll();
+        }
+      });
+
+      document.getElementById("debugScheduleBtn").addEventListener("click", async () => {
+        const data = await apiGet("/schedule");
+        renderDebug("Schedule", data);
+      });
+
+      document.getElementById("debugHrBtn").addEventListener("click", async () => {
+        const data = await apiGet("/hr-legacy");
+        renderDebug("HR-legacy", data);
+      });
+
+      document.getElementById("debugSystemRightBtn").addEventListener("click", async () => {
+        const data = await apiGet("/system-right");
+        renderDebug("System-right", data);
+      });
+
+      state.currentDate = getTodayISO();
+      document.getElementById("dateDisplay").textContent = formatDateLabel(state.currentDate);
+
+      refreshAll();
+      setupAutoRefresh();
+    }
+
+    document.addEventListener("DOMContentLoaded", init);
+  </script>
 </body>
 </html>
