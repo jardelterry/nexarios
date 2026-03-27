@@ -231,6 +231,4 @@ function renderAccuracy() {
   const top = signals[0];
   if (top) {
     document.getElementById("playerHitStreak").textContent =
-      `Hit Streak: ${top.streak} games`;
-
-    document.getElementById("playerRbiStreak").text
+      `Hit Streak: ${top.st

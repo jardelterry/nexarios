@@ -34,49 +34,6 @@
       <div id="gamesList"></div>
     </section>
 
-    <!-- System -->
-    <section id="systemPage" class="page">
-      <h2>System</h2>
-
-      <div class="system-section">
-        <h3>Display</h3>
-        <label>
-          Theme:
-          <select id="themeMode">
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-          </select>
-        </label>
-        <br><br>
-        <label>
-          Compatibility Mode:
-          <select id="compatMode">
-            <option value="v66">v6.6 Classic</option>
-            <option value="modern">Modern</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="system-section">
-        <h3>Engine</h3>
-        <button id="btnRefresh">Refresh Data</button>
-        <button id="btnRebuild">Rebuild Engine</button>
-      </div>
-
-      <div class="system-section">
-        <h3>Debug</h3>
-        <button id="btnDebug">Show Debug</button>
-        <pre id="debugOutput"></pre>
-      </div>
-
-      <div class="system-section">
-        <h3>About</h3>
-        <p>Version: <span id="aboutVersion">6.6</span></p>
-        <p>Build: <span id="aboutBuild"></span></p>
-        <p>Worker: <span id="aboutWorker"></span></p>
-      </div>
-    </section>
-
     <!-- Accuracy -->
     <section id="accuracyPage" class="page">
       <h2>Accuracy</h2>
@@ -121,6 +78,49 @@
       </div>
     </section>
 
+    <!-- System -->
+    <section id="systemPage" class="page">
+      <h2>System</h2>
+
+      <div class="system-section">
+        <h3>Display</h3>
+        <label>
+          Theme:
+          <select id="themeMode">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+          </select>
+        </label>
+        <br><br>
+        <label>
+          Compatibility Mode:
+          <select id="compatMode">
+            <option value="v66">v6.6 Classic</option>
+            <option value="modern">Modern</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="system-section">
+        <h3>Engine</h3>
+        <button id="btnRefresh">Refresh Data</button>
+        <button id="btnRebuild">Rebuild Engine</button>
+      </div>
+
+      <div class="system-section">
+        <h3>Debug</h3>
+        <button id="btnDebug">Show Debug</button>
+        <pre id="debugOutput"></pre>
+      </div>
+
+      <div class="system-section">
+        <h3>About</h3>
+        <p>Version: <span id="aboutVersion">6.6</span></p>
+        <p>Build: <span id="aboutBuild"></span></p>
+        <p>Worker: <span id="aboutWorker"></span></p>
+      </div>
+    </section>
+
   </main>
 
   <!-- Bottom Navigation -->
@@ -128,8 +128,8 @@
     <div id="navButtons">
       <button data-target="signalsPage" class="active">⚾<br>HR</button>
       <button data-target="gamesPage">📅<br>Games</button>
-      <button data-target="systemPage">⚙️<br>System</button>
       <button data-target="accuracyPage">🎯<br>Accuracy</button>
+      <button data-target="systemPage">⚙️<br>System</button>
     </div>
     <div id="navSlider"></div>
   </nav>
