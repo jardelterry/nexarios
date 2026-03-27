@@ -3,8 +3,8 @@
 --------------------------------*/
 let lastGoodSignals = [];
 let lastGoodGames = [];
-let currentDate = new Date();   // for calendar clicker
-let hrLimit = 10;               // default HR view
+let currentDate = new Date();
+let hrLimit = 10;
 
 /* ------------------------------
    FORMAT DATE
@@ -32,7 +32,6 @@ async function loadData() {
         window.gamesData = gamesJson.games || [];
         window.accuracyData = accuracyJson.accuracy || {};
 
-        // Update date label
         const dateLabel = document.getElementById("currentDateLabel");
         if (dateLabel) dateLabel.textContent = formatDate(currentDate);
 
@@ -45,10 +44,10 @@ async function loadData() {
 }
 
 /* ------------------------------
-   PAGE NAVIGATION + SLIDER
+   NAVIGATION
 --------------------------------*/
+const navItems = document.querySelectorAll("#bottomNav .navItem");
 const pages = document.querySelectorAll(".page");
-const navItems = document.querySelectorAll(".navItem");
 const slider = document.getElementById("navSlider");
 
 navItems.forEach((item, index) => {
@@ -64,7 +63,7 @@ navItems.forEach((item, index) => {
 });
 
 /* ------------------------------
-   PLAYER NAME PROTECTION v2
+   PLAYER NAME PROTECTION
 --------------------------------*/
 function safeName(name, fallback) {
     if (name && name.trim() !== "" && name !== "Unknown") return name;
@@ -87,7 +86,6 @@ function loadSignals() {
         const div = document.createElement("div");
         div.className = "signal";
 
-        // Color coding
         if (s.tier === "Strong") div.style.borderLeft = "4px solid #ff4444";
         else if (s.tier === "Playable") div.style.borderLeft = "4px solid #ffaa00";
         else div.style.borderLeft = "4px solid #777";
@@ -106,29 +104,22 @@ function loadSignals() {
 /* ------------------------------
    HR TOGGLE BUTTONS
 --------------------------------*/
-const top10Btn = document.getElementById("top10Btn");
-const top20Btn = document.getElementById("top20Btn");
+document.getElementById("top10Btn").onclick = () => {
+    hrLimit = 10;
+    top10Btn.classList.add("active");
+    top20Btn.classList.remove("active");
+    loadSignals();
+};
 
-if (top10Btn) {
-    top10Btn.addEventListener("click", () => {
-        hrLimit = 10;
-        top10Btn.classList.add("active");
-        top20Btn.classList.remove("active");
-        loadSignals();
-    });
-}
-
-if (top20Btn) {
-    top20Btn.addEventListener("click", () => {
-        hrLimit = 20;
-        top20Btn.classList.add("active");
-        top10Btn.classList.remove("active");
-        loadSignals();
-    });
-}
+document.getElementById("top20Btn").onclick = () => {
+    hrLimit = 20;
+    top20Btn.classList.add("active");
+    top10Btn.classList.remove("active");
+    loadSignals();
+};
 
 /* ------------------------------
-   GAMES (players + LIVE + weather)
+   GAMES
 --------------------------------*/
 function loadGames() {
     const container = document.getElementById("gamesContainer");
@@ -166,22 +157,15 @@ function loadGames() {
 /* ------------------------------
    CALENDAR CLICKER
 --------------------------------*/
-const prevBtn = document.getElementById("prevDate");
-const nextBtn = document.getElementById("nextDate");
+document.getElementById("prevDate").onclick = () => {
+    currentDate.setDate(currentDate.getDate() - 1);
+    loadData();
+};
 
-if (prevBtn) {
-    prevBtn.addEventListener("click", () => {
-        currentDate.setDate(currentDate.getDate() - 1);
-        loadData();
-    });
-}
-
-if (nextBtn) {
-    nextBtn.addEventListener("click", () => {
-        currentDate.setDate(currentDate.getDate() + 1);
-        loadData();
-    });
-}
+document.getElementById("nextDate").onclick = () => {
+    currentDate.setDate(currentDate.getDate() + 1);
+    loadData();
+};
 
 /* ------------------------------
    ACCURACY (expanded)
@@ -224,43 +208,32 @@ function loadAccuracy() {
 }
 
 /* ------------------------------
-   SETTINGS (expanded)
+   SETTINGS
 --------------------------------*/
-const deviceModeSelect = document.getElementById("deviceModeSelect");
-const autoRefreshSelect = document.getElementById("autoRefreshSelect");
-const forceRebuildBtn = document.getElementById("forceRebuildBtn");
-const clearCacheBtn = document.getElementById("clearCacheBtn");
+document.getElementById("deviceModeSelect").onchange = e => {
+    document.body.dataset.device = e.target.value;
+};
 
-let autoRefreshTimer = null;
+document.getElementById("fontSizeSlider").oninput = e => {
+    document.body.style.fontSize = e.target.value + "px";
+};
 
-if (deviceModeSelect) {
-    deviceModeSelect.addEventListener("change", e => {
-        document.body.dataset.device = e.target.value;
-    });
-}
+document.getElementById("autoRefreshSelect").onchange = e => {
+    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+    const val = Number(e.target.value);
+    if (val > 0) autoRefreshTimer = setInterval(loadData, val * 1000);
+};
 
-if (autoRefreshSelect) {
-    autoRefreshSelect.addEventListener("change", e => {
-        if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-        const val = Number(e.target.value);
-        if (val > 0) autoRefreshTimer = setInterval(loadData, val * 1000);
-    });
-}
+document.getElementById("forceRebuildBtn").onclick = () => loadData();
 
-if (forceRebuildBtn) {
-    forceRebuildBtn.addEventListener("click", () => loadData());
-}
-
-if (clearCacheBtn) {
-    clearCacheBtn.addEventListener("click", () => {
-        window.signalsData = [];
-        window.gamesData = [];
-        window.accuracyData = {};
-        loadSignals();
-        loadGames();
-        loadAccuracy();
-    });
-}
+document.getElementById("clearCacheBtn").onclick = () => {
+    window.signalsData = [];
+    window.gamesData = [];
+    window.accuracyData = {};
+    loadSignals();
+    loadGames();
+    loadAccuracy();
+};
 
 /* ------------------------------
    INITIAL LOAD
