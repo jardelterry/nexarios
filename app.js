@@ -117,13 +117,17 @@ function updateAbout() {
 /* SIGNALS -------------------------------------------------- */
 
 async function loadSignals() {
-  const res = await fetch(`${WORKER}/signals`);
-  const data = await res.json();
-  if (!data.ok) return;
+  try {
+    const res = await fetch(`${WORKER}/signals`);
+    const data = await res.json();
+    if (!data.ok) return;
 
-  signals = data.signals;
-  renderSignals();
-  updateTicker();
+    signals = data.signals;
+    renderSignals();
+    updateTicker();
+  } catch (e) {
+    console.error("Signals error", e);
+  }
 }
 
 function renderSignals() {
@@ -174,13 +178,17 @@ function updateGamesDateLabel() {
 }
 
 async function loadGames() {
-  const iso = formatISODate(currentDate);
-  const res = await fetch(`${WORKER}/games?date=${iso}`);
-  const data = await res.json();
-  if (!data.ok) return;
+  try {
+    const iso = formatISODate(currentDate);
+    const res = await fetch(`${WORKER}/games?date=${iso}`);
+    const data = await res.json();
+    if (!data.ok) return;
 
-  games = data.games;
-  renderGames();
+    games = data.games;
+    renderGames();
+  } catch (e) {
+    console.error("Games error", e);
+  }
 }
 
 function renderGames() {
@@ -208,12 +216,16 @@ function renderGames() {
 /* ACCURACY -------------------------------------------------- */
 
 async function loadAccuracy() {
-  const res = await fetch(`${WORKER}/accuracy`);
-  const data = await res.json();
-  if (!data.ok) return;
+  try {
+    const res = await fetch(`${WORKER}/accuracy`);
+    const data = await res.json();
+    if (!data.ok) return;
 
-  accuracy = data.accuracy;
-  renderAccuracy();
+    accuracy = data.accuracy;
+    renderAccuracy();
+  } catch (e) {
+    console.error("Accuracy error", e);
+  }
 }
 
 function renderAccuracy() {
@@ -231,4 +243,9 @@ function renderAccuracy() {
   const top = signals[0];
   if (top) {
     document.getElementById("playerHitStreak").textContent =
-      `Hit Streak: ${top.st
+      `Hit Streak: ${top.streak} games`;
+
+    document.getElementById("playerRbiStreak").textContent =
+      `RBI Streak: ${top.streak} games`;
+  }
+}
