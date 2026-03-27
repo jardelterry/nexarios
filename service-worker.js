@@ -1,25 +1,26 @@
 // ---------------------------------------------------------
-// NexariOS — Patched Service Worker
-// Fixes: cache freeze, stale UI, old index served forever
-// Forces instant updates + clean cache versioning
+// NexariOS — Service Worker (GitHub Pages /nexarios/ patched)
 // ---------------------------------------------------------
 
-const CACHE_VERSION = "nexarios-v4";
+const CACHE_VERSION = "nexarios-v5";
+const BASE_PATH = "/nexarios";
 const CACHE_ASSETS = [
-  "/",
-  "/index.html",
-  "/style.css",
-  "/app.js",
-  "/manifest.json",
-  "/icon-192.svg",
-  "/icon-512.svg",
-  "/apple-touch-icon.png"
+  `${BASE_PATH}/`,
+  `${BASE_PATH}/index.html`,
+  `${BASE_PATH}/style.css`,
+  `${BASE_PATH}/app.js`,
+  `${BASE_PATH}/manifest.json`,
+  `${BASE_PATH}/icon-192.svg`,
+  `${BASE_PATH}/icon-512.svg`,
+  `${BASE_PATH}/apple-touch-icon.png`
 ];
 
 self.addEventListener("install", event => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_VERSION).then(cache => cache.addAll(CACHE_ASSETS).catch(() => {}))
+    caches.open(CACHE_VERSION).then(cache =>
+      cache.addAll(CACHE_ASSETS).catch(() => {})
+    )
   );
 });
 
@@ -36,19 +37,23 @@ self.addEventListener("fetch", event => {
   const req = event.request;
   const url = new URL(req.url);
 
+  // Always prefer fresh HTML for navigations
   if (req.mode === "navigate") {
     event.respondWith(
       fetch(req)
         .then(res => {
           const clone = res.clone();
-          caches.open(CACHE_VERSION).then(cache => cache.put("/", clone));
+          caches.open(CACHE_VERSION).then(cache =>
+            cache.put(`${BASE_PATH}/`, clone)
+          );
           return res;
         })
-        .catch(() => caches.match("/index.html"))
+        .catch(() => caches.match(`${BASE_PATH}/index.html`))
     );
     return;
   }
 
+  // Static assets cache-first
   if (CACHE_ASSETS.includes(url.pathname)) {
     event.respondWith(
       caches.match(req).then(cached => {
@@ -65,6 +70,7 @@ self.addEventListener("fetch", event => {
     return;
   }
 
+  // Fallback: network-first, then cache
   event.respondWith(
     fetch(req)
       .then(res => {
