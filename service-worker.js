@@ -4,10 +4,9 @@
 // Forces instant updates + clean cache versioning
 // ---------------------------------------------------------
 
-// 🔥 Bump this version ANY time you deploy
-const CACHE_VERSION = "nexarios-v4";  
+const CACHE_VERSION = "nexarios-v4";
 const CACHE_ASSETS = [
-  "/", 
+  "/",
   "/index.html",
   "/style.css",
   "/app.js",
@@ -17,51 +16,30 @@ const CACHE_ASSETS = [
   "/apple-touch-icon.png"
 ];
 
-// ---------------------------------------------------------
-// 1. INSTALL — force new SW to activate immediately
-// ---------------------------------------------------------
 self.addEventListener("install", event => {
-  self.skipWaiting(); // 🔥 critical: replaces old SW instantly
-
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_VERSION).then(cache => {
-      return cache.addAll(CACHE_ASSETS).catch(() => {
-        // Ignore failures (offline install)
-      });
-    })
+    caches.open(CACHE_VERSION).then(cache => cache.addAll(CACHE_ASSETS).catch(() => {}))
   );
 });
 
-// ---------------------------------------------------------
-// 2. ACTIVATE — delete old caches + take control immediately
-// ---------------------------------------------------------
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(key => key !== CACHE_VERSION)
-          .map(key => caches.delete(key)) // 🔥 removes old frozen caches
-      )
+      Promise.all(keys.filter(k => k !== CACHE_VERSION).map(k => caches.delete(k)))
     )
   );
-
-  clients.claim(); // 🔥 ensures new SW controls all tabs instantly
+  clients.claim();
 });
 
-// ---------------------------------------------------------
-// 3. FETCH — network-first for HTML, cache-first for assets
-// ---------------------------------------------------------
 self.addEventListener("fetch", event => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // Always fetch fresh index.html (prevents stale UI)
   if (req.mode === "navigate") {
     event.respondWith(
       fetch(req)
         .then(res => {
-          // Update cache with fresh index
           const clone = res.clone();
           caches.open(CACHE_VERSION).then(cache => cache.put("/", clone));
           return res;
@@ -71,7 +49,6 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // For static assets → cache-first
   if (CACHE_ASSETS.includes(url.pathname)) {
     event.respondWith(
       caches.match(req).then(cached => {
@@ -88,7 +65,6 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // Everything else → network-first fallback to cache
   event.respondWith(
     fetch(req)
       .then(res => {
