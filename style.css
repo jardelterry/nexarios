@@ -1,389 +1,196 @@
-:root {
-  --bg-dark: #0d0f14;
-  --bg-light: #f5f7fa;
-
-  --text-dark: #e8ecf2;
-  --text-light: #1a1c20;
-
-  --card-dark: #161a22;
-  --card-light: #ffffff;
-
-  --border-dark: #222831;
-  --border-light: #d9d9d9;
-
-  --accent-blue: #3b82f6;
-  --accent-purple: #a855f7;
-  --accent-red: #ef4444;
-  --accent-gold: #facc15;
-
-  --glow-blue: 0 0 12px rgba(59, 130, 246, 0.7);
-  --glow-purple: 0 0 12px rgba(168, 85, 247, 0.7);
-  --glow-red: 0 0 12px rgba(239, 68, 68, 0.7);
-  --glow-gold: 0 0 12px rgba(250, 204, 21, 0.7);
-}
-
-.accent-blue { --accent: var(--accent-blue); --glow: var(--glow-blue); }
-.accent-purple { --accent: var(--accent-purple); --glow: var(--glow-purple); }
-.accent-red { --accent: var(--accent-red); --glow: var(--glow-red); }
-.accent-gold { --accent: var(--accent-gold); --glow: var(--glow-gold); }
-
-.theme-dark {
-  --bg: var(--bg-dark);
-  --text: var(--text-dark);
-  --card: var(--card-dark);
-  --border: var(--border-dark);
-}
-
-.theme-light {
-  --bg: var(--bg-light);
-  --text: var(--text-light);
-  --card: var(--card-light);
-  --border: var(--border-light);
-}
-
 body {
   margin: 0;
-  padding: 0;
-  background: var(--bg);
-  color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  transition: background 0.3s, color 0.3s;
+  background: #05070b;
+  color: #f3f4f6;
 }
 
 header {
-  padding: 16px;
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  padding: 12px 16px;
+  border-bottom: 1px solid #1f2933;
+  background: #0b0e14;
+}
+
+h1 {
+  margin: 0;
+  font-size: 20px;
 }
 
 #hrTicker {
-  margin-top: 6px;
-  font-size: 14px;
-  opacity: 0.85;
+  margin-top: 4px;
+  font-size: 13px;
+  opacity: 0.9;
 }
 
-h1, h2, h3 {
-  margin: 0 0 12px;
-}
-
-h3 {
-  font-weight: 600;
-  font-size: 17px;
+main {
+  padding: 12px 16px 80px;
 }
 
 .page {
   display: none;
-  padding: 16px;
-  padding-bottom: 80px;
 }
 
 .page.active {
   display: block;
 }
 
-.card-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
 }
 
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 18px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+/* Signals list – flat, spaced */
+
+#signalsList {
+  font-size: 14px;
 }
 
-.conf-bar {
-  height: 8px;
-  width: 100%;
-  background: rgba(255,255,255,0.1);
-  border-radius: 6px;
-  overflow: hidden;
-  margin-top: 8px;
-}
-
-.conf-fill {
-  height: 100%;
-  background: var(--accent);
-  box-shadow: var(--glow);
-  transition: width 0.4s ease;
-}
-
-.live-ring {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: var(--glow);
-  animation: pulse 1.4s infinite ease-in-out;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.4); opacity: 0.5; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-/* Bottom nav */
-
-#bottomNav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(10, 12, 18, 0.9);
-  border-top: 1px solid var(--border);
-  padding: 8px 0 4px;
-  box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
-  backdrop-filter: blur(20px);
-  height: 70px;
-}
-
-#navButtons {
-  display: flex;
-  justify-content: space-around;
-  padding-bottom: 6px;
-}
-
-#bottomNav button {
-  background: none;
-  border: none;
-  color: var(--text);
-  font-size: 13px;
-  opacity: 0.7;
-  transition: opacity 0.2s, color 0.2s;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-#bottomNav button.active {
-  opacity: 1;
-  color: var(--accent);
-  text-shadow: var(--glow);
-}
-
-.nav-icon {
-  font-size: 16px;
-}
-
-.nav-label {
-  font-size: 11px;
-}
-
-#navSlider {
-  height: 4px;
-  width: 20%;
-  background: var(--accent);
-  box-shadow: var(--glow);
-  border-radius: 999px;
-  transition: transform 0.25s ease;
-  transform: translateX(0%);
-}
-
-/* System settings */
-
-.settings-section {
-  background: var(--card);
-  border: 1px solid var(--border);
-  padding: 16px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-}
-
-.setting-item {
-  display: flex;
-  justify-content: space-between;
+.signal-entry {
   margin-bottom: 12px;
 }
 
-.settings-section button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  box-shadow: var(--glow);
+.signal-entry:last-child {
+  margin-bottom: 0;
+}
+
+.signal-line-main {
+  font-weight: 600;
+}
+
+.signal-line-sub,
+.signal-line-streak {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+/* Games */
+
+#gamesDateBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+#gamesDateBar button {
+  background: none;
+  border: 1px solid #1f2933;
+  color: #f3f4f6;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+#gamesDateLabel {
+  flex: 1;
+  text-align: center;
+}
+
+#gamesList {
+  font-size: 14px;
+}
+
+.game-entry {
+  margin-bottom: 10px;
+}
+
+.game-line-main {
+  font-weight: 600;
+}
+
+.game-line-sub {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+/* Accuracy */
+
+#accuracyBlock {
+  font-size: 14px;
+}
+
+.accuracy-section {
+  margin-bottom: 16px;
+}
+
+.accuracy-label {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.accuracy-value {
+  font-size: 24px;
+}
+
+/* System */
+
+.system-section {
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.system-section h3 {
+  margin: 0 0 6px;
   font-size: 15px;
 }
 
-#devOutput {
-  background: #00000055;
-  padding: 12px;
-  border-radius: 8px;
-  margin-top: 12px;
+.system-section button {
+  margin-right: 8px;
+  margin-bottom: 6px;
+  background: #111827;
+  border: 1px solid #1f2933;
+  color: #f3f4f6;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+#debugOutput {
+  background: #020309;
+  border: 1px solid #1f2933;
+  padding: 8px;
+  border-radius: 4px;
   max-height: 200px;
   overflow-y: auto;
   font-size: 12px;
 }
 
-#aboutVersion,
-#aboutBuild,
-#aboutWorker {
-  color: var(--accent);
-  text-shadow: var(--glow);
+/* Bottom nav + slider */
+
+#bottomNav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #05070b;
+  border-top: 1px solid #1f2933;
+  padding: 6px 0 4px;
 }
 
-/* Detail headers (mobile) */
-
-.detail-header {
+#navButtons {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.detail-header button {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font-size: 16px;
-}
-
-.detail-header div {
-  font-size: 14px;
-}
-
-/* Desktop split view */
-
-#desktopShell {
-  display: block;
-}
-
-#desktopLeft,
-#desktopRight {
-  width: 100%;
-}
-
-/* Desktop ≥ 1200px: 25/75 split */
-
-@media (min-width: 1200px) {
-  #main {
-    padding-bottom: 0;
-  }
-
-  #desktopShell {
-    display: grid;
-    grid-template-columns: 25% 75%;
-    min-height: calc(100vh - 120px);
-  }
-
-  #desktopLeft {
-    border-right: 1px solid var(--border);
-  }
-
-  #desktopRight {
-    padding: 16px;
-  }
-
-  #bottomNav {
-    display: none;
-  }
-
-  .page {
-    padding-bottom: 16px;
-  }
-}
-
-/* Adaptive 900–1199px */
-
-@media (min-width: 900px) and (max-width: 1199px) {
-  #desktopShell {
-    display: block;
-  }
-
-  #desktopLeft {
-    border-right: none;
-  }
-
-  #desktopRight {
-    padding: 16px;
-  }
-}
-
-/* Mobile < 900px */
-
-@media (max-width: 899px) {
-  #desktopShell {
-    display: block;
-  }
-
-  #desktopRight {
-    display: none;
-  }
-}
-
-/* Desktop detail shell */
-
-#detailShell {
-  max-width: 640px;
-  margin: 0 auto;
-}
-
-#detailHeader {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-#detailBack {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font-size: 16px;
-}
-
-#detailBack.hidden {
-  display: none;
-}
-
-#detailTitle {
-  font-size: 14px;
-  opacity: 0.85;
-}
-
-/* Game date picker */
-
-#gameDateShell {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 12px;
-}
-
-#gameDateButton {
-  align-self: flex-start;
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 6px 14px;
-  color: var(--text);
-  font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-#gameDateButton:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  box-shadow: var(--glow);
-}
-
-#gameDateLabel {
+  justify-content: space-around;
   font-size: 13px;
-  opacity: 0.8;
 }
 
-#gameDatePicker {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
+#navButtons button {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  padding: 4px 0;
+}
+
+#navButtons button.active {
+  color: #f3f4f6;
+}
+
+#navSlider {
+  height: 3px;
+  width: 25%;
+  background: #f3f4f6;
+  margin: 4px auto 0;
+  border-radius: 999px;
+  transform: translateX(0%);
+  transition: transform 0.2s ease;
 }

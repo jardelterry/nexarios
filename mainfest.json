@@ -1,9 +1,9 @@
 {
   "name": "NexariOS",
   "short_name": "NexariOS",
-  "start_url": "./index.html",
+  "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#0d0f14",
-  "theme_color": "#0d0f14",
+  "background_color": "#05070b",
+  "theme_color": "#05070b",
   "icons": []
 }

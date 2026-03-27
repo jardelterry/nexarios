@@ -2,166 +2,94 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>NexariOS</title>
-
-  <link rel="stylesheet" href="style.css?v=660" />
-  <link rel="manifest" href="manifest.json?v=660" />
-  <script defer src="app.js?v=660"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css?v=66-flat" />
+  <script defer src="app.js?v=66-flat"></script>
 </head>
-<body class="theme-dark accent-purple">
-
+<body>
   <header id="header">
-    <h1 id="headerTitle">NexariOS</h1>
+    <h1>NexariOS</h1>
     <div id="hrTicker"></div>
   </header>
 
   <main id="main">
+    <section id="signalsPage" class="page active">
+      <h2>Signals</h2>
+      <div id="signalsList"></div>
+    </section>
 
-    <div id="desktopShell">
-      <div id="desktopLeft">
-        <section id="signalsPage" class="page active">
-          <h2>HR Signals</h2>
-          <div id="signalsContainer" class="card-list"></div>
-        </section>
+    <section id="gamesPage" class="page">
+      <h2>Games</h2>
+      <div id="gamesDateBar">
+        <button id="gamesPrev">◀</button>
+        <span id="gamesDateLabel"></span>
+        <button id="gamesNext">▶</button>
+      </div>
+      <div id="gamesList"></div>
+    </section>
 
-        <section id="gamesPage" class="page">
-          <h2>Games</h2>
-
-          <div id="gameDateShell">
-            <button id="gameDateButton">📅 Select Date</button>
-            <div id="gameDateLabel"></div>
-            <input type="date" id="gameDatePicker" />
-          </div>
-
-          <div id="gamesContainer" class="card-list"></div>
-        </section>
-
-        <section id="streaksPage" class="page">
-          <h2>Streaks</h2>
-          <div id="streaksContainer" class="card-list"></div>
-        </section>
-
-        <section id="systemPage" class="page">
-          <h2>System Settings</h2>
-
-          <div class="settings-section">
-            <h3>Display</h3>
-            <label class="setting-item">
-              <span>Theme Mode</span>
-              <select id="themeMode">
-                <option value="dark">Dark</option>
-                <option value="light">Light</option>
-                <option value="auto">Auto</option>
-              </select>
-            </label>
-
-            <label class="setting-item">
-              <span>Accent Color</span>
-              <select id="accentColor">
-                <option value="blue">Blue</option>
-                <option value="purple">Purple</option>
-                <option value="red">Red</option>
-                <option value="gold">Gold</option>
-              </select>
-            </label>
-
-            <label class="setting-item">
-              <span>Device Mode</span>
-              <select id="deviceMode">
-                <option value="auto">Auto</option>
-                <option value="mobile">Force Mobile</option>
-                <option value="desktop">Force Desktop</option>
-                <option value="adaptive">Force Adaptive</option>
-              </select>
-            </label>
-          </div>
-
-          <div class="settings-section">
-            <h3>System Controls</h3>
-            <button id="forceRefresh">Force Refresh</button>
-            <button id="clearCache">Clear Cache</button>
-            <button id="rebuildEngine">Rebuild Engine</button>
-            <button id="reloadUI">Reload UI</button>
-          </div>
-
-          <div class="settings-section">
-            <h3>Developer Tools</h3>
-            <button id="showRawJSON">Show Raw JSON</button>
-            <button id="showWorkerInfo">Show Worker Info</button>
-            <button id="showCounts">Show Counts</button>
-            <pre id="devOutput"></pre>
-          </div>
-
-          <div class="settings-section">
-            <h3>About Nexari</h3>
-            <p>Version: <span id="aboutVersion">6.6</span></p>
-            <p>Build: <span id="aboutBuild"></span></p>
-            <p>Worker: <span id="aboutWorker"></span></p>
-          </div>
-        </section>
-
-        <section id="accuracyPage" class="page">
-          <h2>Accuracy</h2>
-          <div id="accuracyContainer" class="card-list"></div>
-        </section>
+    <section id="systemPage" class="page">
+      <h2>System</h2>
+      <div class="system-section">
+        <h3>Display</h3>
+        <label>
+          Theme:
+          <select id="themeMode">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+          </select>
+        </label>
       </div>
 
-      <div id="desktopRight">
-        <div id="detailShell">
-          <div id="detailHeader">
-            <button id="detailBack" class="hidden">‹ Back</button>
-            <div id="detailTitle"></div>
+      <div class="system-section">
+        <h3>Engine</h3>
+        <button id="btnRefresh">Refresh Data</button>
+        <button id="btnRebuild">Rebuild Engine</button>
+      </div>
+
+      <div class="system-section">
+        <h3>Debug</h3>
+        <button id="btnDebug">Show Debug</button>
+        <pre id="debugOutput"></pre>
+      </div>
+
+      <div class="system-section">
+        <h3>About</h3>
+        <p>Version: <span id="aboutVersion">6.6</span></p>
+        <p>Build: <span id="aboutBuild"></span></p>
+        <p>Worker: <span id="aboutWorker"></span></p>
+      </div>
+    </section>
+
+    <section id="accuracyPage" class="page">
+      <h2>Accuracy</h2>
+      <div id="accuracyBlock">
+        <div class="accuracy-section">
+          <div class="accuracy-label">Overall Hit Rate</div>
+          <div id="overallHitRate" class="accuracy-value">–</div>
+        </div>
+
+        <div class="accuracy-section">
+          <div class="accuracy-label">Streaks</div>
+          <div id="streaksLines">
+            <div id="hrStreakLine">HR Streak: –</div>
+            <div id="rbiStreakLine">RBI Streak: –</div>
           </div>
-          <div id="detailBody" class="card"></div>
         </div>
       </div>
-    </div>
-
-    <section id="signalDetailPage" class="page">
-      <div class="detail-header">
-        <button id="backToSignals">‹ Back</button>
-        <div id="signalDetailTicker"></div>
-      </div>
-      <div id="signalDetailBody" class="card"></div>
     </section>
-
-    <section id="gameDetailPage" class="page">
-      <div class="detail-header">
-        <button id="backToGames">‹ Back</button>
-        <div id="gameDetailTicker"></div>
-      </div>
-      <div id="gameDetailBody" class="card"></div>
-    </section>
-
   </main>
 
   <nav id="bottomNav">
     <div id="navButtons">
-      <button data-target="signalsPage">
-        <span class="nav-icon">📡</span>
-        <span class="nav-label">Signals</span>
-      </button>
-      <button data-target="gamesPage">
-        <span class="nav-icon">📅</span>
-        <span class="nav-label">Games</span>
-      </button>
-      <button data-target="streaksPage">
-        <span class="nav-icon">🔥</span>
-        <span class="nav-label">Streaks</span>
-      </button>
-      <button data-target="systemPage">
-        <span class="nav-icon">⚙️</span>
-        <span class="nav-label">System</span>
-      </button>
-      <button data-target="accuracyPage">
-        <span class="nav-icon">🎯</span>
-        <span class="nav-label">Accuracy</span>
-      </button>
+      <button data-target="signalsPage" class="active">Signals</button>
+      <button data-target="gamesPage">Games</button>
+      <button data-target="systemPage">System</button>
+      <button data-target="accuracyPage">Accuracy</button>
     </div>
     <div id="navSlider"></div>
   </nav>
-
 </body>
 </html>

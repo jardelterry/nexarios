@@ -1,11 +1,11 @@
-self.addEventListener("install", event => {
+self.addEventListener("install", e => {
   self.skipWaiting();
 });
 
-self.addEventListener("activate", event => {
+self.addEventListener("activate", e => {
   clients.claim();
 });
 
-self.addEventListener("fetch", event => {
-  // Network-first; Nexari is real-time
+self.addEventListener("fetch", e => {
+  // network-first; no offline cache logic for now
 });

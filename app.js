@@ -1,126 +1,51 @@
-const WORKER = "https://<your-worker-domain-here>";
+const WORKER = "https://WORKER_URL_HERE";
 
-// Optional mode C: ticker follows selected signal when true
-const TICKER_FOLLOWS_SELECTION = false;
-
-let lastSignals = [];
-let lastGames = [];
-let currentGamesDate = null;
+// state
+let signals = [];
+let games = [];
+let accuracy = null;
+let currentDate = new Date(); // for games clicker
 
 document.addEventListener("DOMContentLoaded", () => {
-  initTheme();
-  initAccent();
-  initDeviceMode();
-  initNavigation();
-  initSystemControls();
-  wireDetailBackButtons();
-  initGameDatePicker();
+  initNav();
+  initSystem();
+  initGamesClicker();
+  updateAbout();
 
   loadSignals();
   loadGames();
-  loadStreaks();
   loadAccuracy();
-  updateAboutSection();
-  applyLayoutMode();
-  window.addEventListener("resize", applyLayoutMode);
 });
 
-/* THEME / ACCENT / DEVICE MODE */
-
-function initTheme() {
-  const mode = localStorage.getItem("themeMode") || "dark";
-  document.body.classList.remove("theme-dark", "theme-light");
-  if (mode === "light") {
-    document.body.classList.add("theme-light");
-  } else if (mode === "auto") {
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    document.body.classList.add(prefersDark ? "theme-dark" : "theme-light");
-  } else {
-    document.body.classList.add("theme-dark");
-  }
-
-  const sel = document.getElementById("themeMode");
-  if (sel) {
-    sel.value = mode;
-    sel.onchange = e => {
-      localStorage.setItem("themeMode", e.target.value);
-      initTheme();
-    };
-  }
+function formatDateLabel(d) {
+  return d.toLocaleDateString(undefined, {
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  });
 }
 
-function initAccent() {
-  const accent = localStorage.getItem("accentColor") || "purple";
-  document.body.classList.remove("accent-blue", "accent-purple", "accent-red", "accent-gold");
-  document.body.classList.add(`accent-${accent}`);
-
-  const sel = document.getElementById("accentColor");
-  if (sel) {
-    sel.value = accent;
-    sel.onchange = e => {
-      localStorage.setItem("accentColor", e.target.value);
-      initAccent();
-    };
-  }
+function formatISODate(d) {
+  return d.toISOString().slice(0, 10);
 }
 
-function initDeviceMode() {
-  const mode = localStorage.getItem("deviceMode") || "auto";
-  const sel = document.getElementById("deviceMode");
-  if (sel) {
-    sel.value = mode;
-    sel.onchange = e => {
-      localStorage.setItem("deviceMode", e.target.value);
-      applyLayoutMode();
-    };
-  }
-}
+/* NAV + SLIDER */
 
-function getEffectiveMode() {
-  const override = localStorage.getItem("deviceMode") || "auto";
-  if (override !== "auto") return override;
-
-  const w = window.innerWidth;
-  if (w >= 1200) return "desktop";
-  if (w >= 900) return "adaptive";
-  return "mobile";
-}
-
-function applyLayoutMode() {
-  const mode = getEffectiveMode();
-  const bottomNav = document.getElementById("bottomNav");
-  const desktopRight = document.getElementById("desktopRight");
-  const detailBack = document.getElementById("detailBack");
-
-  if (mode === "desktop") {
-    if (bottomNav) bottomNav.style.display = "none";
-    if (desktopRight) desktopRight.style.display = "block";
-    if (detailBack) detailBack.classList.add("hidden");
-  } else if (mode === "adaptive") {
-    if (bottomNav) bottomNav.style.display = "none";
-    if (desktopRight) desktopRight.style.display = "block";
-    if (detailBack) detailBack.classList.remove("hidden");
-  } else {
-    if (bottomNav) bottomNav.style.display = "block";
-    if (desktopRight) desktopRight.style.display = "none";
-  }
-}
-
-/* NAVIGATION + SLIDER */
-
-function initNavigation() {
-  const buttons = document.querySelectorAll("#bottomNav button");
+function initNav() {
+  const buttons = document.querySelectorAll("#navButtons button");
   const pages = document.querySelectorAll(".page");
   const slider = document.getElementById("navSlider");
 
-  function setActive(index, targetId) {
+  function setActive(idx, targetId) {
     pages.forEach(p => p.classList.remove("active"));
     document.getElementById(targetId).classList.add("active");
 
     buttons.forEach(b => b.classList.remove("active"));
-    buttons[index].classList.add("active");
+    buttons[idx].classList.add("active");
 
-    if (slider) slider.style.transform = `translateX(${index * 100}%)`;
+    if (slider) {
+      slider.style.transform = `translateX(${idx * 100}%)`;
+    }
   }
 
   buttons.forEach((btn, idx) => {
@@ -133,268 +58,211 @@ function initNavigation() {
   setActive(0, "signalsPage");
 }
 
+/* SYSTEM */
+
+function initSystem() {
+  const themeSel = document.getElementById("themeMode");
+  const btnRefresh = document.getElementById("btnRefresh");
+  const btnRebuild = document.getElementById("btnRebuild");
+  const btnDebug = document.getElementById("btnDebug");
+
+  const savedTheme = localStorage.getItem("themeMode") || "dark";
+  themeSel.value = savedTheme;
+  applyTheme(savedTheme);
+
+  themeSel.onchange = e => {
+    localStorage.setItem("themeMode", e.target.value);
+    applyTheme(e.target.value);
+  };
+
+  if (btnRefresh) {
+    btnRefresh.onclick = () => {
+      loadSignals();
+      loadGames();
+      loadAccuracy();
+    };
+  }
+
+  if (btnRebuild) {
+    btnRebuild.onclick = async () => {
+      try {
+        await fetch(`${WORKER}/rebuild`);
+        alert("Engine rebuild triggered.");
+      } catch (e) {
+        console.error(e);
+      }
+    };
+  }
+
+  if (btnDebug) {
+    btnDebug.onclick = async () => {
+      const out = document.getElementById("debugOutput");
+      try {
+        const res = await fetch(`${WORKER}/debug`);
+        const data = await res.json();
+        out.textContent = JSON.stringify(data, null, 2);
+      } catch (e) {
+        out.textContent = "Debug error.";
+      }
+    };
+  }
+}
+
+function applyTheme(mode) {
+  if (mode === "light") {
+    document.body.style.background = "#f9fafb";
+    document.body.style.color = "#111827";
+  } else {
+    document.body.style.background = "#05070b";
+    document.body.style.color = "#f3f4f6";
+  }
+}
+
+function updateAbout() {
+  const build = document.getElementById("aboutBuild");
+  const worker = document.getElementById("aboutWorker");
+  if (build) build.textContent = new Date().toLocaleString();
+  if (worker) worker.textContent = WORKER;
+}
+
 /* SIGNALS */
 
 async function loadSignals() {
   try {
     const res = await fetch(`${WORKER}/signals`);
     const data = await res.json();
+    if (!data.ok || !data.signals) return;
 
-    const container = document.getElementById("signalsContainer");
-    container.innerHTML = "";
-
-    if (!data.ok || !data.signals || data.signals.length === 0) {
-      container.innerHTML = `<p>No signals available.</p>`;
-      return;
-    }
-
-    lastSignals = data.signals;
-    updateHRTicker(data.signals[0]); // A: always top HR signal
-
-    data.signals.forEach((sig, index) => {
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <h3>⚾ ${sig.playerName}</h3>
-        <p>${sig.teamName} vs ${sig.opponentName}</p>
-        <p>Tier: <strong>${sig.tier}</strong></p>
-        <p>Score: ${(sig.score * 100).toFixed(1)}%</p>
-        <p>Confidence: ${(sig.confidence * 100).toFixed(1)}%</p>
-        <div class="conf-bar">
-          <div class="conf-fill" style="width:${sig.confidence * 100}%"></div>
-        </div>
-      `;
-      card.onclick = () => openSignalDetail(index);
-      container.appendChild(card);
-    });
-
-  } catch (err) {
-    console.error("Signals error:", err);
+    signals = data.signals;
+    renderSignals();
+    updateTickerFromTopSignal();
+  } catch (e) {
+    console.error("Signals error", e);
   }
 }
 
-function updateHRTicker(sig) {
-  const ticker = document.getElementById("hrTicker");
-  if (!sig || !ticker) return;
-  ticker.textContent =
-    `⚾ ${sig.playerName} • ${(sig.score * 100).toFixed(1)}% HR • ${sig.tier}`;
-}
+function renderSignals() {
+  const container = document.getElementById("signalsList");
+  container.innerHTML = "";
 
-function openSignalDetail(index) {
-  const sig = lastSignals[index];
-  if (!sig) return;
-
-  const mode = getEffectiveMode();
-  const tickerLine =
-    `⚾ ${sig.playerName} • ${(sig.score * 100).toFixed(1)}% HR • ${sig.tier}`;
-
-  if (TICKER_FOLLOWS_SELECTION) {
-    updateHRTicker(sig); // C: optional mode
-  }
-
-  if (mode === "desktop" || mode === "adaptive") {
-    const title = document.getElementById("detailTitle");
-    const body = document.getElementById("detailBody");
-    if (title) title.textContent = tickerLine;
-    if (body) {
-      body.innerHTML = `
-        <p>${sig.teamName} vs ${sig.opponentName}</p>
-        <p>Score: ${(sig.score * 100).toFixed(1)}%</p>
-        <p>Confidence: ${(sig.confidence * 100).toFixed(1)}%</p>
-        <p>Tier: ${sig.tier}</p>
-        <p>Streak: ${sig.streak} games</p>
-      `;
-    }
-  } else {
-    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-    document.getElementById("signalDetailPage").classList.add("active");
-
-    const t = document.getElementById("signalDetailTicker");
-    const b = document.getElementById("signalDetailBody");
-    if (t) t.textContent = tickerLine;
-    if (b) {
-      b.innerHTML = `
-        <p>${sig.teamName} vs ${sig.opponentName}</p>
-        <p>Score: ${(sig.score * 100).toFixed(1)}%</p>
-        <p>Confidence: ${(sig.confidence * 100).toFixed(1)}%</p>
-        <p>Tier: ${sig.tier}</p>
-        <p>Streak: ${sig.streak} games</p>
-      `;
-    }
-  }
-}
-
-/* GAMES + DATE PICKER (D + C label) */
-
-function initGameDatePicker() {
-  const btn = document.getElementById("gameDateButton");
-  const picker = document.getElementById("gameDatePicker");
-
-  if (!btn || !picker) return;
-
-  const today = new Date();
-  const iso = today.toISOString().slice(0, 10);
-  picker.value = iso;
-  currentGamesDate = iso;
-  updateGameDateLabel(iso);
-
-  btn.onclick = () => {
-    picker.showPicker ? picker.showPicker() : picker.click();
-  };
-
-  picker.onchange = () => {
-    const val = picker.value;
-    currentGamesDate = val;
-    updateGameDateLabel(val);
-    loadGames(val);
-  };
-}
-
-function updateGameDateLabel(iso) {
-  const label = document.getElementById("gameDateLabel");
-  if (!label || !iso) return;
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) {
-    label.textContent = "";
+  if (!signals.length) {
+    container.textContent = "No signals available.";
     return;
   }
-  label.textContent = d.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric"
+
+  signals.forEach(sig => {
+    const div = document.createElement("div");
+    div.className = "signal-entry";
+
+    const main = document.createElement("div");
+    main.className = "signal-line-main";
+    main.textContent =
+      `⚾ ${sig.playerName} • ${(sig.score * 100).toFixed(1)}% HR • ${sig.tier}`;
+
+    const sub = document.createElement("div");
+    sub.className = "signal-line-sub";
+    sub.textContent = `${sig.teamName} vs ${sig.opponentName}`;
+
+    const streak = document.createElement("div");
+    streak.className = "signal-line-streak";
+    streak.textContent = `Streak: ${sig.streak} games`;
+
+    div.appendChild(main);
+    div.appendChild(sub);
+    div.appendChild(streak);
+
+    container.appendChild(div);
   });
 }
 
-async function loadGames(dateOverride = null) {
+function updateTickerFromTopSignal() {
+  const ticker = document.getElementById("hrTicker");
+  if (!ticker || !signals.length) return;
+  const top = signals[0];
+  ticker.textContent =
+    `⚾ ${top.playerName} • ${(top.score * 100).toFixed(1)}% HR • ${top.tier}`;
+}
+
+/* GAMES + CLICKER */
+
+function initGamesClicker() {
+  const prev = document.getElementById("gamesPrev");
+  const next = document.getElementById("gamesNext");
+
+  updateGamesDateLabel();
+
+  if (prev) {
+    prev.onclick = () => {
+      currentDate.setDate(currentDate.getDate() - 1);
+      updateGamesDateLabel();
+      loadGames();
+    };
+  }
+
+  if (next) {
+    next.onclick = () => {
+      currentDate.setDate(currentDate.getDate() + 1);
+      updateGamesDateLabel();
+      loadGames();
+    };
+  }
+}
+
+function updateGamesDateLabel() {
+  const label = document.getElementById("gamesDateLabel");
+  if (!label) return;
+  label.textContent = formatDateLabel(currentDate); // March 27, 2026
+}
+
+async function loadGames() {
   try {
-    const dateParam = dateOverride || currentGamesDate;
-    const url = dateParam ? `${WORKER}/games?date=${dateParam}` : `${WORKER}/games`;
-    const res = await fetch(url);
+    const iso = formatISODate(currentDate);
+    const res = await fetch(`${WORKER}/games?date=${iso}`);
     const data = await res.json();
-
-    const container = document.getElementById("gamesContainer");
-    container.innerHTML = "";
-
     if (!data.ok || !data.games) return;
 
-    lastGames = data.games;
+    games = data.games;
+    renderGames();
+  } catch (e) {
+    console.error("Games error", e);
+  }
+}
 
-    data.games.forEach((g, index) => {
-      const localTime = new Date(g.time).toLocaleString(undefined, {
-        hour: "numeric",
-        minute: "2-digit"
-      });
+function renderGames() {
+  const container = document.getElementById("gamesList");
+  container.innerHTML = "";
 
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <h3>${g.homeName} vs ${g.awayName}</h3>
-        <p>${localTime}</p>
-        <p>Status: ${g.status}</p>
-        ${g.isLive ? `<div class="live-ring"></div>` : ""}
-      `;
-      card.onclick = () => openGameDetail(index);
-      container.appendChild(card);
+  if (!games.length) {
+    container.textContent = "No games for this date.";
+    return;
+  }
+
+  games.forEach(g => {
+    const div = document.createElement("div");
+    div.className = "game-entry";
+
+    const main = document.createElement("div");
+    main.className = "game-line-main";
+    main.textContent = `${g.homeName} vs ${g.awayName}`;
+
+    const sub = document.createElement("div");
+    sub.className = "game-line-sub";
+
+    const timeStr = new Date(g.time).toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit"
     });
 
-  } catch (err) {
-    console.error("Games error:", err);
-  }
-}
-
-function openGameDetail(index) {
-  const g = lastGames[index];
-  if (!g) return;
-
-  const mode = getEffectiveMode();
-  const localTime = new Date(g.time).toLocaleString();
-  const tickerLine = `${g.homeName} vs ${g.awayName}`;
-
-  if (mode === "desktop" || mode === "adaptive") {
-    const title = document.getElementById("detailTitle");
-    const body = document.getElementById("detailBody");
-    if (title) title.textContent = tickerLine;
-    if (body) {
-      body.innerHTML = `
-        <p>Time: ${localTime}</p>
-        <p>Status: ${g.status}</p>
-      `;
-    }
-  } else {
-    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-    document.getElementById("gameDetailPage").classList.add("active");
-
-    const t = document.getElementById("gameDetailTicker");
-    const b = document.getElementById("gameDetailBody");
-    if (t) t.textContent = tickerLine;
-    if (b) {
-      b.innerHTML = `
-        <p>Time: ${localTime}</p>
-        <p>Status: ${g.status}</p>
-      `;
-    }
-  }
-}
-
-/* DETAIL BACK BUTTONS */
-
-function wireDetailBackButtons() {
-  const backSignals = document.getElementById("backToSignals");
-  if (backSignals) {
-    backSignals.onclick = () => {
-      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-      document.getElementById("signalsPage").classList.add("active");
-    };
-  }
-
-  const backGames = document.getElementById("backToGames");
-  if (backGames) {
-    backGames.onclick = () => {
-      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-      document.getElementById("gamesPage").classList.add("active");
-    };
-  }
-
-  const detailBack = document.getElementById("detailBack");
-  if (detailBack) {
-    detailBack.onclick = () => {
-      const title = document.getElementById("detailTitle");
-      const body = document.getElementById("detailBody");
-      if (title) title.textContent = "";
-      if (body) body.innerHTML = "";
-    };
-  }
-}
-
-/* STREAKS */
-
-async function loadStreaks() {
-  try {
-    const res = await fetch(`${WORKER}/streaks`);
-    const data = await res.json();
-
-    const container = document.getElementById("streaksContainer");
-    container.innerHTML = "";
-
-    if (!data.ok || !data.streaks || data.streaks.length === 0) {
-      container.innerHTML = `<p>No streaks available.</p>`;
-      return;
+    if (g.isLive) {
+      sub.textContent = `LIVE • ${timeStr}`;
+    } else {
+      sub.textContent = timeStr;
     }
 
-    data.streaks.forEach(s => {
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <h3>🔥 ${s.playerName}</h3>
-        <p>Type: ${s.type} streak</p>
-        <p>Games: ${s.games}</p>
-      `;
-      container.appendChild(card);
-    });
-  } catch (err) {
-    console.error("Streaks error:", err);
-  }
+    div.appendChild(main);
+    div.appendChild(sub);
+    container.appendChild(div);
+  });
 }
 
 /* ACCURACY */
@@ -403,107 +271,28 @@ async function loadAccuracy() {
   try {
     const res = await fetch(`${WORKER}/accuracy`);
     const data = await res.json();
-
-    const container = document.getElementById("accuracyContainer");
-    container.innerHTML = "";
-
     if (!data.ok || !data.accuracy) return;
 
-    const acc = data.accuracy;
-
-    container.innerHTML = `
-      <div class="card">
-        <h3>Overall Hit Rate</h3>
-        <p>${(acc.overallHitRate * 100).toFixed(1)}%</p>
-      </div>
-      <div class="card">
-        <h3>Streaks</h3>
-        <p>HR Streak: ${acc.hrStreak} games</p>
-        <p>RBI Streak: ${acc.rbiStreak} games</p>
-      </div>
-    `;
-  } catch (err) {
-    console.error("Accuracy error:", err);
+    accuracy = data.accuracy;
+    renderAccuracy();
+  } catch (e) {
+    console.error("Accuracy error", e);
   }
 }
 
-/* SYSTEM CONTROLS */
+function renderAccuracy() {
+  if (!accuracy) return;
+  const overall = document.getElementById("overallHitRate");
+  const hrLine = document.getElementById("hrStreakLine");
+  const rbiLine = document.getElementById("rbiStreakLine");
 
-function initSystemControls() {
-  const forceRefresh = document.getElementById("forceRefresh");
-  const clearCacheBtn = document.getElementById("clearCache");
-  const rebuildEngine = document.getElementById("rebuildEngine");
-  const reloadUI = document.getElementById("reloadUI");
-
-  if (forceRefresh) {
-    forceRefresh.onclick = () => {
-      loadSignals();
-      loadGames();
-      loadStreaks();
-      loadAccuracy();
-    };
+  if (overall) {
+    overall.textContent = `${(accuracy.overallHitRate * 100).toFixed(1)}%`;
   }
-
-  if (clearCacheBtn) {
-    clearCacheBtn.onclick = async () => {
-      if ("caches" in window) {
-        const names = await caches.keys();
-        for (const n of names) await caches.delete(n);
-      }
-      alert("Cache cleared.");
-    };
+  if (hrLine) {
+    hrLine.textContent = `HR Streak: ${accuracy.hrStreak} games`;
   }
-
-  if (rebuildEngine) {
-    rebuildEngine.onclick = async () => {
-      await fetch(`${WORKER}/rebuild`);
-      alert("Engine rebuild triggered.");
-    };
+  if (rbiLine) {
+    rbiLine.textContent = `RBI Streak: ${accuracy.rbiStreak} games`;
   }
-
-  if (reloadUI) {
-    reloadUI.onclick = () => {
-      location.reload(true);
-    };
-  }
-
-  const devOut = document.getElementById("devOutput");
-  const showRaw = document.getElementById("showRawJSON");
-  const showInfo = document.getElementById("showWorkerInfo");
-  const showCounts = document.getElementById("showCounts");
-
-  if (showRaw) {
-    showRaw.onclick = async () => {
-      const res = await fetch(`${WORKER}/debug`);
-      const data = await res.json();
-      devOut.textContent = JSON.stringify(data, null, 2);
-    };
-  }
-
-  if (showInfo) {
-    showInfo.onclick = async () => {
-      const res = await fetch(`${WORKER}/debug`);
-      const data = await res.json();
-      devOut.textContent =
-        `Version: ${data.version}\nGenerated: ${data.generatedAt}\nDate: ${data.date}`;
-    };
-  }
-
-  if (showCounts) {
-    showCounts.onclick = async () => {
-      const res = await fetch(`${WORKER}/debug`);
-      const data = await res.json();
-      devOut.textContent =
-        `Signals: ${data.signals}\nGames: ${data.games}\nStreaks: ${data.streaks}`;
-    };
-  }
-}
-
-/* ABOUT */
-
-function updateAboutSection() {
-  const build = document.getElementById("aboutBuild");
-  const worker = document.getElementById("aboutWorker");
-  if (build) build.textContent = new Date().toLocaleString();
-  if (worker) worker.textContent = WORKER;
 }
