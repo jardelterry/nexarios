@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NexariOS V3.3</title>
+  <title>NexariOS V3.4</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000000" />
   <style>
@@ -575,6 +575,7 @@
       object-fit: contain;
       background: rgba(255,255,255,0.04);
       padding: 2px;
+      position: relative;
     }
 
     body[data-theme="light"] .team-logo {
@@ -612,6 +613,79 @@
       animation: hrPulse 0.7s ease-out;
     }
 
+    /* LIVE RING (APPLE SPORTS STYLE) */
+
+    @keyframes liveRingPulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,69,58,0.6); }
+      70% { transform: scale(1.06); box-shadow: 0 0 0 8px rgba(255,69,58,0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,69,58,0); }
+    }
+
+    .live-ring-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .live-ring {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      border: 2px solid rgba(255,69,58,0.9);
+      animation: liveRingPulse 1.2s ease-out infinite;
+      pointer-events: none;
+    }
+
+    .live-pill {
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255,69,58,0.12);
+      color: var(--danger);
+    }
+
+    /* HR LIVE TICKER */
+
+    .hr-ticker {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      margin: 0 -4px 4px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      border: 1px solid;
+    }
+
+    body[data-theme="dark"] .hr-ticker {
+      background: rgba(15,15,25,0.95);
+      border-color: var(--border-dark);
+    }
+
+    body[data-theme="light"] .hr-ticker {
+      background: rgba(255,255,255,0.98);
+      border-color: var(--border-light);
+    }
+
+    .hr-ticker-icon {
+      font-size: 13px;
+      color: var(--danger);
+    }
+
+    .hr-ticker-close {
+      margin-left: auto;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
     /* MOBILE SLIDING TAB BAR */
 
     .bottom-nav {
@@ -630,6 +704,7 @@
       white-space: nowrap;
       -webkit-overflow-scrolling: touch;
       scroll-behavior: smooth;
+      overscroll-behavior-x: contain;
     }
 
     body[data-theme="dark"] .bottom-nav {
@@ -680,7 +755,8 @@
     .bottom-nav-inner {
       display: inline-flex;
       gap: 6px;
-      padding: 4px 12px;
+      padding-left: 12px;
+      padding-right: 0; /* fix black bar */
     }
 
     .tab-button {
@@ -945,7 +1021,7 @@
           <div class="sidebar-brand-mark"></div>
           <div class="sidebar-brand-text">
             <div class="sidebar-title">NexariOS</div>
-            <div class="sidebar-sub">HR Engine • V6.6</div>
+            <div class="sidebar-sub">HR Engine • V6.7</div>
           </div>
           <button class="sidebar-pin" id="sidebarPinBtn" title="Pin sidebar">
             <span class="sidebar-pin-icon">▤</span>
@@ -982,7 +1058,7 @@
           </button>
         </nav>
         <div class="sidebar-footer">
-          NexariOS V3.3 • Desktop
+          NexariOS V3.4 • Desktop
         </div>
       </div>
     </aside>
@@ -995,7 +1071,7 @@
             <div class="brand-mark"></div>
             <div class="brand-text">
               <div class="brand-title">NexariOS</div>
-              <div class="brand-sub">HR Engine • V6.6 • Live</div>
+              <div class="brand-sub">HR Engine • V6.7 • Live</div>
             </div>
           </div>
           <div class="date-nav">
@@ -1013,6 +1089,11 @@
           <!-- HR TAB -->
           <section id="tab-hr" class="tab-view active">
             <div class="section-title">HR Picks</div>
+            <div class="hr-ticker" id="hrTicker">
+              <span class="hr-ticker-icon">💣</span>
+              <span id="hrTickerText"></span>
+              <span class="hr-ticker-close" id="hrTickerClose">✕</span>
+            </div>
             <div id="hrList"></div>
           </section>
 
@@ -1268,7 +1349,6 @@
       </button>
     </div>
   </nav>
-
   <script>
     const WORKER_BASE = "https://nexari-auto.jardelterry.workers.dev";
 
@@ -1281,7 +1361,10 @@
       showWeather: true,
       showPark: true,
       showConfidence: true,
-      layoutMode: "auto"
+      layoutMode: "auto",
+      lastSchedule: null,
+      lastHrLegacy: null,
+      lastSystemRight: null
     };
 
     function formatDateLabel(dateStr) {
@@ -1357,9 +1440,9 @@
     }
 
     function teamLogoUrl(team) {
-      const abbr = team?.abbrev || team?.abbreviation || team?.code || "";
-      if (!abbr) return "";
-      return `https://www.mlbstatic.com/team-logos/team-${(team.id || "").toString().replace(/[^0-9]/g,"")}.svg`;
+      const id = team?.id || team?.teamId;
+      if (!id) return "";
+      return `https://www.mlbstatic.com/team-logos/team-${String(id).replace(/[^0-9]/g,"")}.svg`;
     }
 
     function headshotUrl(player) {
@@ -1378,6 +1461,46 @@
           setTimeout(() => card.classList.remove("hr-pulse"), 800);
         }
       });
+    }
+
+    function showHRTicker(text) {
+      const bar = document.getElementById("hrTicker");
+      const label = document.getElementById("hrTickerText");
+      if (!bar || !label) return;
+      label.textContent = text;
+      bar.style.display = "flex";
+      bar.classList.add("hr-pulse");
+      setTimeout(() => bar.classList.remove("hr-pulse"), 800);
+      if (bar._hideTimer) clearTimeout(bar._hideTimer);
+      bar._hideTimer = setTimeout(() => {
+        bar.style.display = "none";
+      }, 8000);
+    }
+
+    function attachLiveRing(container, isLive) {
+      if (!container) return;
+      const existing = container.querySelector(".live-ring");
+      if (!isLive) {
+        if (existing) existing.remove();
+        return;
+      }
+      if (existing) return;
+      const ring = document.createElement("div");
+      ring.className = "live-ring";
+      container.appendChild(ring);
+    }
+
+    function gameCountdownLabel(startTime) {
+      if (!startTime) return "";
+      const now = Date.now();
+      const start = new Date(startTime).getTime();
+      const diff = start - now;
+      const minutes = Math.round(diff / 60000);
+      if (minutes <= -5) return "";
+      if (minutes <= 0) return "Starting…";
+      if (minutes <= 60) return `Starts in ${minutes}m`;
+      const hours = Math.round(minutes / 60);
+      return `Starts in ${hours}h`;
     }
 
     function renderHR(hrData) {
@@ -1444,7 +1567,10 @@
       });
 
       if (Array.isArray(hrData.recentHRs)) {
-        hrData.recentHRs.forEach(ev => triggerHRPulseForName(ev.playerName));
+        hrData.recentHRs.forEach(ev => {
+          triggerHRPulseForName(ev.playerName);
+          showHRTicker(`HR: ${ev.playerName} (${ev.teamAbbrev || ""})`);
+        });
       }
     }
 
@@ -1476,18 +1602,25 @@
         const winAway = g.winProbAway != null ? Math.round(g.winProbAway * 100) : null;
         const hrProb = g.hrProb != null ? Math.round(g.hrProb * 100) : null;
 
+        const isLive = g.status === "In Progress" || g.isLive;
+        const countdown = !isLive ? gameCountdownLabel(g.startTime) : "";
+
         card.innerHTML = `
           <div class="card-header">
             <div class="card-header-left">
-              ${awayLogo ? `<img class="team-logo" src="${awayLogo}" alt="${g.awayName}">` : ""}
-              ${homeLogo ? `<img class="team-logo" src="${homeLogo}" alt="${g.homeName}">` : ""}
+              <div class="live-ring-wrapper">
+                ${awayLogo ? `<img class="team-logo" src="${awayLogo}" alt="${g.awayName}">` : ""}
+              </div>
+              <div class="live-ring-wrapper">
+                ${homeLogo ? `<img class="team-logo" src="${homeLogo}" alt="${g.homeName}">` : ""}
+              </div>
               <div>
                 <div class="card-title">${g.awayName} @ ${g.homeName}</div>
-                <div class="card-sub">${start}</div>
+                <div class="card-sub">${start}${countdown ? " • " + countdown : ""}</div>
               </div>
             </div>
             <div style="text-align:right;">
-              <div class="pill pill-soft">GamePk ${g.gamePk}</div>
+              ${isLive ? `<span class="live-pill">● LIVE</span>` : ""}
               <div class="card-sub" style="margin-top:2px;">${wxLabel}</div>
             </div>
           </div>
@@ -1504,6 +1637,9 @@
           </div>
         `;
         container.appendChild(card);
+
+        const logoWrappers = card.querySelectorAll(".live-ring-wrapper");
+        logoWrappers.forEach(w => attachLiveRing(w, isLive));
       });
     }
 
@@ -1541,17 +1677,25 @@
         const homeLogo = teamLogoUrl(g.homeTeam || g.home);
         const awayLogo = teamLogoUrl(g.awayTeam || g.away);
 
+        const isLive = g.status === "In Progress" || g.isLive;
+        const countdown = !isLive ? gameCountdownLabel(g.startTime) : "";
+
         card.innerHTML = `
           <div class="card-header">
             <div class="card-header-left">
-              ${awayLogo ? `<img class="team-logo" src="${awayLogo}" alt="${g.awayName}">` : ""}
-              ${homeLogo ? `<img class="team-logo" src="${homeLogo}" alt="${g.homeName}">` : ""}
+              <div class="live-ring-wrapper">
+                ${awayLogo ? `<img class="team-logo" src="${awayLogo}" alt="${g.awayName}">` : ""}
+              </div>
+              <div class="live-ring-wrapper">
+                ${homeLogo ? `<img class="team-logo" src="${homeLogo}" alt="${g.homeName}">` : ""}
+              </div>
               <div>
                 <div class="card-title">${g.awayName} @ ${g.homeName}</div>
-                <div class="card-sub">${start}</div>
+                <div class="card-sub">${start}${countdown ? " • " + countdown : ""}</div>
               </div>
             </div>
             <div style="text-align:right;">
+              ${isLive ? `<span class="live-pill">● LIVE</span>` : ""}
               <div class="pill pill-soft">Home Park ${parkHome.toFixed(2)}</div>
               <div class="pill pill-soft">Away Park ${parkAway.toFixed(2)}</div>
             </div>
@@ -1566,6 +1710,9 @@
           </div>
         `;
         target.appendChild(card);
+
+        const logoWrappers = card.querySelectorAll(".live-ring-wrapper");
+        logoWrappers.forEach(w => attachLiveRing(w, isLive));
       });
 
       if (!activeContainer.innerHTML.trim()) {
@@ -1651,7 +1798,8 @@
               name: p.name || p.playerName || "Unknown",
               kStreak: ks,
               kPer9: p.kPer9 || 0,
-              team: p.teamName || ""
+              team: p.teamName || "",
+              oppKRate: p.oppKRate || null
             });
           }
         });
@@ -1665,6 +1813,9 @@
       pitchers.sort((a, b) => b.kStreak - a.kStreak);
 
       pitchers.forEach(p => {
+        const trend = p.kPer9 >= 10 ? "⬆" : p.kPer9 <= 7 ? "⬇" : "⟷";
+        const oppLabel = p.oppKRate != null ? `Opp K% ${Math.round(p.oppKRate * 100)}%` : "Opp K% N/A";
+
         const card = document.createElement("div");
         card.className = "card";
         card.innerHTML = `
@@ -1677,7 +1828,11 @@
           </div>
           <div class="metric-row">
             <div class="metric-label">K/9</div>
-            <div class="metric-value">${p.kPer9.toFixed(1)}</div>
+            <div class="metric-value">${p.kPer9.toFixed(1)} ${trend}</div>
+          </div>
+          <div class="metric-row">
+            <div class="metric-label">Opponent</div>
+            <div class="metric-value">${oppLabel}</div>
           </div>
         `;
         container.appendChild(card);
@@ -1816,6 +1971,9 @@
       card.className = "card";
 
       let rowsHtml = "";
+      let best = null;
+      let worst = null;
+
       history.forEach(day => {
         const label = day.date || "";
         const acc = day.accuracy != null ? day.accuracy : 0;
@@ -1829,13 +1987,23 @@
             <div class="metric-value" style="width:40px;text-align:right;">${acc.toFixed(0)}%</div>
           </div>
         `;
+        if (best == null || acc > best.accuracy) best = { date: label, accuracy: acc };
+        if (worst == null || acc < worst.accuracy) worst = { date: label, accuracy: acc };
       });
+
+      const last = history[history.length - 1]?.accuracy || 0;
+      const prev = history[history.length - 2]?.accuracy || last;
+      const trend = last > prev ? "⬆" : last < prev ? "⬇" : "⟷";
 
       card.innerHTML = `
         <div class="card-header">
           <div>
             <div class="card-title">Last ${history.length} days</div>
-            <div class="card-sub">HR prediction accuracy</div>
+            <div class="card-sub">HR prediction accuracy • ${trend}</div>
+          </div>
+          <div style="text-align:right;font-size:11px;">
+            <div>Best: ${best ? `${best.accuracy.toFixed(0)}% (${best.date})` : "N/A"}</div>
+            <div>Worst: ${worst ? `${worst.accuracy.toFixed(0)}% (${worst.date})` : "N/A"}</div>
           </div>
         </div>
         ${rowsHtml}
@@ -1854,6 +2022,10 @@
         apiGet("/hr-legacy"),
         apiGet("/system-right")
       ]);
+
+      state.lastSchedule = schedule;
+      state.lastHrLegacy = hrLegacy;
+      state.lastSystemRight = systemRight;
 
       if (schedule && schedule.date) {
         state.currentDate = schedule.date;
@@ -1878,6 +2050,43 @@
       }
       if (!state.autoRefresh) return;
       state.refreshTimer = setInterval(refreshAll, state.refreshInterval);
+    }
+
+    async function gameStateWatcher() {
+      const schedule = await apiGet("/schedule");
+      if (!schedule || !Array.isArray(schedule.games)) return;
+
+      const now = Date.now();
+      let anyLive = false;
+
+      for (const g of schedule.games) {
+        if (!g.startTime) continue;
+
+        const start = new Date(g.startTime).getTime();
+        const diff = start - now;
+
+        if (diff < 10 * 60 * 1000 && diff > -5 * 60 * 1000) {
+          refreshAll();
+        }
+
+        if (g.status === "In Progress" || g.isLive) {
+          anyLive = true;
+        }
+      }
+
+      if (anyLive) {
+        if (state.refreshInterval !== 10000) {
+          state.refreshInterval = 10000;
+          document.getElementById("refreshIntervalLabel").textContent = "10s";
+          setupAutoRefresh();
+        }
+      } else {
+        if (state.refreshInterval !== 30000) {
+          state.refreshInterval = 30000;
+          document.getElementById("refreshIntervalLabel").textContent = "30s";
+          setupAutoRefresh();
+        }
+      }
     }
 
     function applyLayoutMode() {
@@ -2043,6 +2252,14 @@
         });
       }
 
+      const hrTicker = document.getElementById("hrTicker");
+      const hrTickerClose = document.getElementById("hrTickerClose");
+      if (hrTicker && hrTickerClose) {
+        hrTickerClose.addEventListener("click", () => {
+          hrTicker.style.display = "none";
+        });
+      }
+
       window.addEventListener("resize", () => {
         if (state.layoutMode === "auto") {
           applyLayoutMode();
@@ -2055,6 +2272,8 @@
       applyLayoutMode();
       refreshAll();
       setupAutoRefresh();
+
+      setInterval(gameStateWatcher, 60000);
     }
 
     document.addEventListener("DOMContentLoaded", init);
