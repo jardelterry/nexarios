@@ -1,138 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>NexariOS</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="style.css?v=66-classic" />
-  <script defer src="app.js?v=66-classic"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NexariOS</title>
+    <link rel="stylesheet" href="style.css" />
 </head>
 
-<body data-compat="v66">
-  <header id="header">
-    <h1>NexariOS</h1>
-    <div id="hrTicker"></div>
-  </header>
+<body>
 
-  <main id="main">
+    <!-- HEADER -->
+    <header id="header">
+        <h1>NexariOS</h1>
+        <div id="ticker">HR Engine • Live</div>
+    </header>
 
-    <!-- PAGE 1 — HR -->
-    <section id="signalsPage" class="page active">
-      <h2>HR Signals</h2>
-      <div id="signalsList"></div>
-    </section>
+    <!-- MAIN PAGES -->
+    <main>
+        <!-- HR SIGNALS -->
+        <section id="signalsPage" class="page active">
+            <div id="signalsContainer"></div>
+        </section>
 
-    <!-- PAGE 2 — Games -->
-    <section id="gamesPage" class="page">
-      <h2>Games</h2>
-      <div id="gamesDateBar">
-        <button id="gamesPrev">◀</button>
-        <span id="gamesDateLabel"></span>
-        <button id="gamesNext">▶</button>
-      </div>
-      <div id="gamesList"></div>
-    </section>
+        <!-- GAMES -->
+        <section id="gamesPage" class="page">
+            <div id="gamesDateBar">
+                <span id="prevDate" class="dateArrow">‹</span>
+                <span id="gamesDate"></span>
+                <span id="nextDate" class="dateArrow">›</span>
+            </div>
+            <div id="gamesContainer"></div>
+        </section>
 
-    <!-- PAGE 3 — Accuracy -->
-    <section id="accuracyPage" class="page">
-      <h2>Accuracy</h2>
+        <!-- ACCURACY -->
+        <section id="accuracyPage" class="page">
+            <div id="accuracyContainer"></div>
+        </section>
 
-      <div id="accuracyBlock">
+        <!-- SYSTEM -->
+        <section id="systemPage" class="page">
+            <h2>System Settings</h2>
 
-        <div class="accuracy-section">
-          <div class="accuracy-label">Overall Hit Rate</div>
-          <div id="overallHitRate" class="accuracy-value">–</div>
-          <div class="accuracy-desc">
-            This is the system-wide accuracy rate for HR predictions across all players.
-          </div>
+            <div class="settingBlock">
+                <label>Theme</label>
+                <select id="themeSelect">
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
+                </select>
+            </div>
+
+            <div class="settingBlock">
+                <label>Compatibility Mode</label>
+                <select id="compatSelect">
+                    <option value="auto">Auto</option>
+                    <option value="mobile">Force Mobile</option>
+                    <option value="desktop">Force Desktop</option>
+                </select>
+            </div>
+
+            <div class="settingBlock">
+                <label>Device Mode</label>
+                <select id="deviceModeSelect">
+                    <option value="auto">Auto</option>
+                    <option value="mobile">Mobile</option>
+                    <option value="desktop">Desktop</option>
+                </select>
+            </div>
+
+            <h2>Engine</h2>
+            <div id="engineInfo"></div>
+
+            <h2>Debug</h2>
+            <div id="debugInfo"></div>
+
+            <h2>About</h2>
+            <p>NexariOS • HR Engine v6.6</p>
+        </section>
+    </main>
+
+    <!-- FLOATING NAV -->
+    <nav id="navBar">
+        <div class="navItem active" data-page="signalsPage">
+            <span class="navIcon">⚾</span>
+        </div>
+        <div class="navItem" data-page="gamesPage">
+            <span class="navIcon">📅</span>
+        </div>
+        <div class="navItem" data-page="accuracyPage">
+            <span class="navIcon">📊</span>
+        </div>
+        <div class="navItem" data-page="systemPage">
+            <span class="navIcon">⚙️</span>
         </div>
 
-        <div class="accuracy-section">
-          <div class="accuracy-label">System Streaks</div>
-          <div id="systemHrStreak">HR Prediction Streak: –</div>
-          <div id="systemRbiStreak">RBI Prediction Streak: –</div>
-        </div>
+        <div id="navSlider"></div>
+    </nav>
 
-        <div class="accuracy-section">
-          <div class="accuracy-label">Player Streaks</div>
-          <div id="playerHitStreak">Hit Streak: –</div>
-          <div id="playerRbiStreak">RBI Streak: –</div>
-        </div>
-
-        <div class="accuracy-section">
-          <div class="accuracy-label">HR Outcomes</div>
-          <div id="hrOutcomeStatus">No correct HR predictions logged yet.</div>
-        </div>
-
-        <div class="accuracy-section">
-          <div class="accuracy-label">Missed HRs</div>
-          <div id="missedHrStatus">Missed HR tracking is enabled in the Worker.</div>
-        </div>
-
-        <div class="accuracy-section">
-          <div class="accuracy-label">Unlisted HRs</div>
-          <div id="unlistedHrStatus">Unlisted HR tracking is enabled in the Worker.</div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- PAGE 4 — System -->
-    <section id="systemPage" class="page">
-      <h2>System</h2>
-
-      <div class="system-section">
-        <h3>Display</h3>
-        <label>
-          Theme:
-          <select id="themeMode">
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-          </select>
-        </label>
-        <br><br>
-        <label>
-          Compatibility Mode:
-          <select id="compatMode">
-            <option value="v66">v6.6 Classic</option>
-            <option value="modern">Modern</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="system-section">
-        <h3>Engine</h3>
-        <button id="btnRefresh">Refresh Data</button>
-        <button id="btnRebuild">Rebuild Engine</button>
-      </div>
-
-      <div class="system-section">
-        <h3>Debug</h3>
-        <button id="btnDebug">Show Debug</button>
-        <pre id="debugOutput"></pre>
-      </div>
-
-      <div class="system-section">
-        <h3>About</h3>
-        <p>Version: <span id="aboutVersion">6.6</span></p>
-        <p>Build: <span id="aboutBuild"></span></p>
-        <p>Worker: <span id="aboutWorker"></span></p>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- Bottom Navigation -->
-  <nav id="bottomNav">
-    <div id="navButtons">
-      <button data-target="signalsPage" class="active">⚾<br>HR</button>
-      <button data-target="gamesPage">📅<br>Games</button>
-      <button data-target="accuracyPage">🎯<br>Accuracy</button>
-      <button data-target="systemPage">⚙️<br>System</button>
-    </div>
-    <div id="navSlider"></div>
-  </nav>
-
+    <script src="app.js"></script>
 </body>
 </html>
