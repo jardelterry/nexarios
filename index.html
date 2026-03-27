@@ -5,7 +5,7 @@
     <title>NexariOS v6.6</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body data-device="auto">
+<body data-device="auto" data-theme="dark">
 
     <!-- BOTTOM NAVIGATION (GLOWING) -->
     <div id="bottomNav">
@@ -24,14 +24,14 @@
             <span class="label">Accuracy</span>
         </div>
 
+        <div class="navItem" data-page="searchPage">
+            <span class="icon">🧬</span>
+            <span class="label">Search</span>
+        </div>
+
         <div class="navItem" data-page="settingsPage">
             <span class="icon">⚙️</span>
             <span class="label">Settings</span>
-        </div>
-
-        <div class="navItem" data-page="infoPage">
-            <span class="icon">❓</span>
-            <span class="label">Info</span>
         </div>
 
         <div id="navSlider"></div>
@@ -78,12 +78,14 @@
                 <h3>7‑Day Trend</h3>
                 <div id="acc7"></div>
                 <div id="trend7" class="sparkline"></div>
+                <div class="trendBar" id="trendBar7"></div>
             </div>
 
             <div class="accCard">
                 <h3>30‑Day Trend</h3>
                 <div id="acc30"></div>
                 <div id="trend30" class="sparkline"></div>
+                <div class="trendBar" id="trendBar30"></div>
             </div>
 
             <div class="accCard">
@@ -109,10 +111,27 @@
         </div>
     </div>
 
+    <!-- SEARCH PAGE -->
+    <div id="searchPage" class="page">
+        <h2 class="accHeader">Player Search</h2>
+        <div class="searchBarWrapper">
+            <input type="text" id="playerSearchInput" placeholder="Search player or team...">
+        </div>
+        <div id="searchResults"></div>
+    </div>
+
     <!-- SETTINGS PAGE -->
     <div id="settingsPage" class="page">
         <div class="settingsSection">
             <h3>Display</h3>
+
+            <label>Theme:</label>
+            <div id="themeToggle" class="segmented">
+                <button data-theme="dark" class="segBtn active">Dark</button>
+                <button data-theme="light" class="segBtn">Light</button>
+                <button data-theme="auto" class="segBtn">Auto</button>
+            </div>
+
             <label>Device Mode:</label>
             <select id="deviceModeSelect">
                 <option value="auto">Auto</option>
@@ -142,32 +161,31 @@
             <h3>System</h3>
             <div id="systemInfo"></div>
         </div>
-    </div>
 
-    <!-- INFO PAGE -->
-    <div id="infoPage" class="page">
-        <h2>How to Use NexariOS</h2>
+        <div class="settingsSection">
+            <h3>How to Use NexariOS</h3>
 
-        <div class="infoBlock">
-            <h3>HR Signals</h3>
-            <p>Shows the strongest home run candidates ranked by probability.</p>
-            <p>Red = Strong, Yellow = Playable, Gray = Watch.</p>
-            <p>The animated bar under each player visualizes HR probability.</p>
-        </div>
+            <div class="infoBlock">
+                <h3>HR Signals</h3>
+                <p>Shows the strongest home run candidates ranked by probability.</p>
+                <p>Red = Strong, Yellow = Playable, Gray = Watch.</p>
+                <p>The animated bar under each player visualizes HR probability.</p>
+            </div>
 
-        <div class="infoBlock">
-            <h3>Games</h3>
-            <p>Tap a game row to expand lineups, weather, and LIVE status.</p>
-        </div>
+            <div class="infoBlock">
+                <h3>Games</h3>
+                <p>Tap a game row to expand lineups, weather, and LIVE status.</p>
+            </div>
 
-        <div class="infoBlock">
-            <h3>Accuracy</h3>
-            <p>Tracks system performance, streaks, and outcomes over time.</p>
-        </div>
+            <div class="infoBlock">
+                <h3>Accuracy</h3>
+                <p>Tracks system performance, streaks, and outcomes over time.</p>
+            </div>
 
-        <div class="infoBlock">
-            <h3>Settings</h3>
-            <p>Adjust device mode, font size, refresh rate, and system tools.</p>
+            <div class="infoBlock">
+                <h3>Search</h3>
+                <p>Use the Search tab to look up any player and see their HR probability, even if not in the Top 10–20.</p>
+            </div>
         </div>
     </div>
 

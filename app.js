@@ -5,6 +5,7 @@ let lastGoodSignals = [];
 let lastGoodGames = [];
 let currentDate = new Date();
 let hrLimit = 10;
+let autoRefreshTimer = null;
 
 /* ------------------------------
    FORMAT DATE
@@ -38,6 +39,7 @@ async function loadData() {
         loadSignals();
         loadGames();
         loadAccuracy();
+        runSearch(); // keep search in sync with latest data
     } catch (err) {
         console.error("Data load failed:", err);
     }
@@ -50,17 +52,65 @@ const navItems = document.querySelectorAll("#bottomNav .navItem");
 const pages = document.querySelectorAll(".page");
 const slider = document.getElementById("navSlider");
 
+function setActivePage(index) {
+    navItems.forEach(i => i.classList.remove("active"));
+    pages.forEach(p => p.classList.remove("active"));
+
+    const item = navItems[index];
+    if (!item) return;
+
+    item.classList.add("active");
+    const pageId = item.dataset.page;
+    const page = document.getElementById(pageId);
+    if (page) page.classList.add("active");
+
+    slider.style.left = `${index * 20}%`;
+}
+
 navItems.forEach((item, index) => {
-    item.addEventListener("click", () => {
-        navItems.forEach(i => i.classList.remove("active"));
-        item.classList.add("active");
-
-        pages.forEach(p => p.classList.remove("active"));
-        document.getElementById(item.dataset.page).classList.add("active");
-
-        slider.style.left = `${index * 20}%`;
-    });
+    item.addEventListener("click", () => setActivePage(index));
 });
+
+/* ------------------------------
+   EDGE SWIPE NAVIGATION
+--------------------------------*/
+let touchStartX = null;
+let touchStartY = null;
+
+document.addEventListener("touchstart", (e) => {
+    if (!e.touches || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+}, { passive: true });
+
+document.addEventListener("touchend", (e) => {
+    if (touchStartX === null || touchStartY === null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    const edgeThreshold = 40;
+    const swipeThreshold = 60;
+
+    const fromLeftEdge = touchStartX < edgeThreshold;
+    const fromRightEdge = touchStartX > (window.innerWidth - edgeThreshold);
+
+    if ((fromLeftEdge || fromRightEdge) && absDx > swipeThreshold && absDx > absDy) {
+        const currentIndex = Array.from(navItems).findIndex(i => i.classList.contains("active"));
+        if (dx < 0 && currentIndex < navItems.length - 1) {
+            setActivePage(currentIndex + 1);
+        } else if (dx > 0 && currentIndex > 0) {
+            setActivePage(currentIndex - 1);
+        }
+    }
+
+    touchStartX = null;
+    touchStartY = null;
+}, { passive: true });
 
 /* ------------------------------
    PLAYER NAME PROTECTION
@@ -76,6 +126,7 @@ function safeName(name, fallback) {
 --------------------------------*/
 function loadSignals() {
     const container = document.getElementById("signalsContainer");
+    if (!container) return;
     container.innerHTML = "";
 
     let data = Array.isArray(window.signalsData) ? [...window.signalsData] : [];
@@ -93,15 +144,14 @@ function loadSignals() {
         div.innerHTML = `
             <div class="name">${safeName(s.player, s.cachedPlayer)}</div>
             <div class="meta">
-                ${s.team} vs ${s.opponent} • ${s.hr}% • ${s.tier}<br>
-                <span class="streak">Streak: ${s.streakType} (${s.streakCount})</span>
+                ${s.team} vs ${s.opponent} • ${s.hr}% • ${s.tier || "Tier"}<br>
+                <span class="streak">Streak: ${s.streakType || "N/A"} (${s.streakCount || 0})</span>
             </div>
-            <div class="hrBar" style="width:0%;" data-target="${s.hr}"></div>
+            <div class="hrBar" style="width:0%;" data-target="${s.hr || 0}"></div>
         `;
         container.appendChild(div);
     });
 
-    // Animate HR bars
     setTimeout(() => {
         document.querySelectorAll(".hrBar").forEach(bar => {
             bar.style.width = bar.dataset.target + "%";
@@ -125,6 +175,7 @@ if (hrViewSelect) {
 --------------------------------*/
 function loadGames() {
     const container = document.getElementById("gamesContainer");
+    if (!container) return;
     container.innerHTML = "";
 
     const data = Array.isArray(window.gamesData) ? window.gamesData : [];
@@ -167,15 +218,36 @@ function loadGames() {
 /* ------------------------------
    CALENDAR CLICKER
 --------------------------------*/
-document.getElementById("prevDate").onclick = () => {
-    currentDate.setDate(currentDate.getDate() - 1);
-    loadData();
-};
+const prevDateBtn = document.getElementById("prevDate");
+const nextDateBtn = document.getElementById("nextDate");
 
-document.getElementById("nextDate").onclick = () => {
-    currentDate.setDate(currentDate.getDate() + 1);
-    loadData();
-};
+if (prevDateBtn) {
+    prevDateBtn.onclick = () => {
+        currentDate.setDate(currentDate.getDate() - 1);
+        loadData();
+    };
+}
+if (nextDateBtn) {
+    nextDateBtn.onclick = () => {
+        currentDate.setDate(currentDate.getDate() + 1);
+        loadData();
+    };
+}
+
+/* ------------------------------
+   SPARKLINE GENERATOR (BLOCK STYLE)
+--------------------------------*/
+function makeSparkline(values) {
+    if (!values || !values.length) return "";
+    const blocks = ["▁","▂","▃","▄","▅","▆","▇","█"];
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    if (max === min) return blocks[0].repeat(values.length);
+    return values.map(v => {
+        const idx = Math.floor(((v - min) / (max - min)) * (blocks.length - 1));
+        return blocks[idx];
+    }).join("");
+}
 
 /* ------------------------------
    ACCURACY (futuristic mode)
@@ -189,6 +261,9 @@ function loadAccuracy() {
     const deepTeams = document.getElementById("accTeams");
     const deepPlayers = document.getElementById("accPlayers");
     const deepVolume = document.getElementById("accVolume");
+    const dailyBar = document.getElementById("accDailyBar");
+    const trend7 = document.getElementById("trend7");
+    const trend30 = document.getElementById("trend30");
 
     const data = window.accuracyData || {
         percent: 0,
@@ -196,31 +271,39 @@ function loadAccuracy() {
         playerStreak: 0,
         outcomes: [],
         missed: [],
-        unlisted: []
+        unlisted: [],
+        history7: [],
+        history30: []
     };
 
     const hits = data.outcomes.length;
     const misses = data.missed.length;
     const total = hits + misses;
-    const calcAcc = total > 0 ? Math.round((hits / total) * 100) : data.percent;
+    const calcAcc = total > 0 ? Math.round((hits / total) * 100) : (data.percent || 0);
 
-    container.innerHTML = `
-        <div>Accuracy: ${calcAcc}%</div>
-        <div>System Streak: ${data.systemStreak}</div>
-        <div>Player Streak: ${data.playerStreak}</div>
-    `;
-
-    /* ------------------------------
-       MICRO BAR
-    ------------------------------*/
-    const dailyBar = document.getElementById("accDailyBar");
-    if (dailyBar) {
-        dailyBar.style.width = calcAcc + "%";
+    if (container) {
+        container.innerHTML = `
+            <div>Accuracy: ${calcAcc}%</div>
+            <div>System Streak: ${data.systemStreak || 0}</div>
+            <div>Player Streak: ${data.playerStreak || 0}</div>
+        `;
     }
+    if (deepDaily) deepDaily.textContent = `${calcAcc}% today`;
+    if (dailyBar) dailyBar.style.width = calcAcc + "%";
 
-    /* ------------------------------
-       TIER BREAKDOWN
-    ------------------------------*/
+    const hist7 = Array.isArray(data.history7) && data.history7.length
+        ? data.history7
+        : Array(7).fill(calcAcc);
+    const hist30 = Array.isArray(data.history30) && data.history30.length
+        ? data.history30
+        : Array(30).fill(calcAcc);
+
+    if (deep7) deep7.textContent = `7‑Day Avg: ${Math.round(hist7.reduce((a,b)=>a+b,0)/hist7.length)}%`;
+    if (deep30) deep30.textContent = `30‑Day Avg: ${Math.round(hist30.reduce((a,b)=>a+b,0)/hist30.length)}%`;
+
+    if (trend7) trend7.textContent = makeSparkline(hist7);
+    if (trend30) trend30.textContent = makeSparkline(hist30);
+
     const tierCounts = { Strong: {hit:0, miss:0}, Playable: {hit:0, miss:0}, Watch: {hit:0, miss:0} };
 
     data.outcomes.forEach(o => {
@@ -230,14 +313,13 @@ function loadAccuracy() {
         if (tierCounts[m.tier]) tierCounts[m.tier].miss++;
     });
 
-    deepBreakdown.textContent =
-        `Strong: ${tierCounts.Strong.hit}/${tierCounts.Strong.hit + tierCounts.Strong.miss} • ` +
-        `Playable: ${tierCounts.Playable.hit}/${tierCounts.Playable.hit + tierCounts.Playable.miss} • ` +
-        `Watch: ${tierCounts.Watch.hit}/${tierCounts.Watch.hit + tierCounts.Watch.miss}`;
+    if (deepBreakdown) {
+        deepBreakdown.textContent =
+            `Strong: ${tierCounts.Strong.hit}/${tierCounts.Strong.hit + tierCounts.Strong.miss} • ` +
+            `Playable: ${tierCounts.Playable.hit}/${tierCounts.Playable.hit + tierCounts.Playable.miss} • ` +
+            `Watch: ${tierCounts.Watch.hit}/${tierCounts.Watch.hit + tierCounts.Watch.miss}`;
+    }
 
-    /* ------------------------------
-       TEAM ACCURACY
-    ------------------------------*/
     const teamStats = {};
     data.outcomes.forEach(o => {
         if (!teamStats[o.team]) teamStats[o.team] = {hit:0, miss:0};
@@ -253,11 +335,8 @@ function loadAccuracy() {
         .sort((a,b) => b.acc - a.acc)
         .slice(0,5);
 
-    deepTeams.textContent = topTeams.map(t => `${t.team} ${t.acc}%`).join(" • ");
+    if (deepTeams) deepTeams.textContent = topTeams.map(t => `${t.team} ${t.acc}%`).join(" • ");
 
-    /* ------------------------------
-       PLAYER ACCURACY
-    ------------------------------*/
     const playerStats = {};
     data.outcomes.forEach(o => {
         if (!playerStats[o.player]) playerStats[o.player] = {hit:0, miss:0};
@@ -273,42 +352,132 @@ function loadAccuracy() {
         .sort((a,b) => b.acc - a.acc)
         .slice(0,5);
 
-    deepPlayers.textContent = topPlayers.map(p => `${p.player} ${p.acc}%`).join(" • ");
+    if (deepPlayers) deepPlayers.textContent = topPlayers.map(p => `${p.player} ${p.acc}%`).join(" • ");
 
-    /* ------------------------------
-       PREDICTION VOLUME
-    ------------------------------*/
-    deepVolume.textContent = `Today: ${total} predictions`;
+    if (deepVolume) deepVolume.textContent = `Today: ${total} predictions`;
+}
+
+/* ------------------------------
+   SEARCH TAB
+--------------------------------*/
+const searchInput = document.getElementById("playerSearchInput");
+const searchResults = document.getElementById("searchResults");
+
+function runSearch() {
+    if (!searchInput || !searchResults) return;
+    const q = searchInput.value.trim().toLowerCase();
+    searchResults.innerHTML = "";
+
+    const data = Array.isArray(window.signalsData) ? window.signalsData : [];
+    if (!q) return;
+
+    const matches = data.filter(s => {
+        const name = safeName(s.player, s.cachedPlayer).toLowerCase();
+        const team = (s.team || "").toLowerCase();
+        const opp = (s.opponent || "").toLowerCase();
+        return name.includes(q) || team.includes(q) || opp.includes(q);
+    });
+
+    matches.forEach(s => {
+        const div = document.createElement("div");
+        div.className = "searchResult";
+
+        const name = safeName(s.player, s.cachedPlayer);
+        const hr = s.hr || 0;
+        const tier = s.tier || "Tier";
+        const streakType = s.streakType || "N/A";
+        const streakCount = s.streakCount || 0;
+
+        div.innerHTML = `
+            <div class="name">${name} — ${hr}% (${tier})</div>
+            <div class="meta">
+                ${s.team} vs ${s.opponent}<br>
+                Streak: ${streakType} (${streakCount})
+            </div>
+            <div class="hrBar" style="width:0%;" data-target="${hr}"></div>
+        `;
+
+        searchResults.appendChild(div);
+    });
+
+    setTimeout(() => {
+        searchResults.querySelectorAll(".hrBar").forEach(bar => {
+            bar.style.width = bar.dataset.target + "%";
+        });
+    }, 50);
+}
+
+if (searchInput) {
+    searchInput.addEventListener("input", runSearch);
 }
 
 /* ------------------------------
    SETTINGS
 --------------------------------*/
-document.getElementById("deviceModeSelect").onchange = e => {
-    document.body.dataset.device = e.target.value;
-};
+const deviceModeSelect = document.getElementById("deviceModeSelect");
+const fontSizeSlider = document.getElementById("fontSizeSlider");
+const autoRefreshSelect = document.getElementById("autoRefreshSelect");
+const forceRebuildBtn = document.getElementById("forceRebuildBtn");
+const clearCacheBtn = document.getElementById("clearCacheBtn");
+const themeToggle = document.getElementById("themeToggle");
 
-document.getElementById("fontSizeSlider").oninput = e => {
-    document.body.style.fontSize = e.target.value + "px";
-};
+if (deviceModeSelect) {
+    deviceModeSelect.onchange = e => {
+        document.body.dataset.device = e.target.value;
+    };
+}
 
-let autoRefreshTimer = null;
-document.getElementById("autoRefreshSelect").onchange = e => {
-    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-    const val = Number(e.target.value);
-    if (val > 0) autoRefreshTimer = setInterval(loadData, val * 1000);
-};
+if (fontSizeSlider) {
+    fontSizeSlider.oninput = e => {
+        document.body.style.fontSize = e.target.value + "px";
+    };
+}
 
-document.getElementById("forceRebuildBtn").onclick = () => loadData();
+if (autoRefreshSelect) {
+    autoRefreshSelect.onchange = e => {
+        if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+        const val = Number(e.target.value);
+        if (val > 0) autoRefreshTimer = setInterval(loadData, val * 1000);
+    };
+}
 
-document.getElementById("clearCacheBtn").onclick = () => {
-    window.signalsData = [];
-    window.gamesData = [];
-    window.accuracyData = {};
-    loadSignals();
-    loadGames();
-    loadAccuracy();
-};
+if (forceRebuildBtn) {
+    forceRebuildBtn.onclick = () => loadData();
+}
+
+if (clearCacheBtn) {
+    clearCacheBtn.onclick = () => {
+        window.signalsData = [];
+        window.gamesData = [];
+        window.accuracyData = {};
+        loadSignals();
+        loadGames();
+        loadAccuracy();
+        runSearch();
+    };
+}
+
+/* THEME TOGGLE */
+function applyTheme(theme) {
+    if (theme === "auto") {
+        const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.body.dataset.theme = prefersDark ? "dark" : "light";
+    } else {
+        document.body.dataset.theme = theme;
+    }
+}
+
+if (themeToggle) {
+    const buttons = themeToggle.querySelectorAll(".segBtn");
+    buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            buttons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            const theme = btn.dataset.theme;
+            applyTheme(theme);
+        });
+    });
+}
 
 /* ------------------------------
    INITIAL LOAD

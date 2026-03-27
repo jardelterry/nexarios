@@ -1,7 +1,29 @@
+:root {
+    --bg: #05060a;
+    --bg-card: #10131f;
+    --bg-nav: rgba(3, 5, 15, 0.95);
+    --border-subtle: #1f2435;
+    --text-main: #ffffff;
+    --text-muted: #7a8195;
+    --accent: #0af;
+    --accent-soft: #5bffea;
+}
+
+body[data-theme="light"] {
+    --bg: #f5f7fb;
+    --bg-card: #ffffff;
+    --bg-nav: rgba(245, 247, 251, 0.96);
+    --border-subtle: #d0d5e5;
+    --text-main: #111827;
+    --text-muted: #6b7280;
+    --accent: #0a84ff;
+    --accent-soft: #5bd5ff;
+}
+
 body {
     margin: 0;
-    background: #05060a;
-    color: #fff;
+    background: var(--bg);
+    color: var(--text-main);
     font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 16px;
 }
@@ -23,34 +45,40 @@ body {
     left: 0;
     width: 100%;
     height: 78px;
-    background: rgba(3, 5, 15, 0.95);
+    background: var(--bg-nav);
     backdrop-filter: blur(14px);
     display: flex;
     justify-content: space-around;
     align-items: center;
-    border-top: 1px solid #151827;
+    border-top: 1px solid var(--border-subtle);
     z-index: 999;
 }
 
 #bottomNav .navItem {
     flex: 1;
     text-align: center;
-    color: #7a8195;
+    color: var(--text-muted);
     padding-top: 6px;
     cursor: pointer;
     transition: color 0.2s, transform 0.15s;
 }
 
 #bottomNav .navItem.active {
-    color: #0af;
-    text-shadow: 0 0 12px #0af;
+    color: var(--accent);
+    text-shadow: 0 0 12px var(--accent);
     transform: translateY(-2px);
 }
 
 #bottomNav .icon {
     display: block;
-    font-size: 32px;
+    font-size: 34px;
     margin-bottom: 4px;
+    transition: transform 0.18s ease, text-shadow 0.18s ease;
+}
+
+#bottomNav .navItem.active .icon {
+    transform: scale(1.4);
+    text-shadow: 0 0 16px var(--accent);
 }
 
 #bottomNav .label {
@@ -63,8 +91,8 @@ body {
     bottom: 0;
     width: 20%;
     height: 3px;
-    background: #0af;
-    box-shadow: 0 0 10px #0af;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
     transition: left 0.25s;
 }
 
@@ -81,7 +109,7 @@ body {
     margin-bottom: 10px;
     border-radius: 10px;
     background: radial-gradient(circle at top left, #151a2a, #0b0d14);
-    border: 1px solid #1f2435;
+    border: 1px solid var(--border-subtle);
 }
 
 /* HR SCROLL */
@@ -109,10 +137,10 @@ body {
 /* HR BAR (ANIMATED) */
 .hrBar {
     height: 6px;
-    background: linear-gradient(90deg, #0af, #5bffea);
+    background: linear-gradient(90deg, var(--accent), var(--accent-soft));
     border-radius: 4px;
     margin-top: 6px;
-    box-shadow: 0 0 6px #0af;
+    box-shadow: 0 0 6px var(--accent);
     width: 0%;
     transition: width 0.8s ease;
 }
@@ -121,9 +149,9 @@ body {
 .game {
     padding: 12px;
     margin-bottom: 12px;
-    background: #10131f;
+    background: var(--bg-card);
     border-radius: 10px;
-    border: 1px solid #1f2435;
+    border: 1px solid var(--border-subtle);
 }
 
 .gameHeader {
@@ -164,30 +192,30 @@ body {
 .accHeader {
     font-size: 20px;
     margin-bottom: 14px;
-    color: #0af;
-    text-shadow: 0 0 10px #0af;
+    color: var(--accent);
+    text-shadow: 0 0 10px var(--accent);
 }
 
 .accCard {
-    background: #10131f;
+    background: var(--bg-card);
     padding: 14px;
     border-radius: 12px;
     margin-bottom: 16px;
-    border: 1px solid #1f2435;
+    border: 1px solid var(--border-subtle);
     box-shadow: 0 0 18px rgba(0, 170, 255, 0.12);
 }
 
 .accCard h3 {
     margin-top: 0;
     margin-bottom: 8px;
-    color: #0af;
+    color: var(--accent);
     font-size: 15px;
 }
 
 /* MICRO BAR */
 .microBar {
     height: 6px;
-    background: linear-gradient(90deg, #0af, #5bffea);
+    background: linear-gradient(90deg, var(--accent), var(--accent-soft));
     border-radius: 4px;
     width: 0%;
     transition: width 0.8s ease;
@@ -202,21 +230,48 @@ body {
     opacity: 0.9;
 }
 
+/* NEON TREND BARS */
+.trendBar {
+    position: relative;
+    margin-top: 8px;
+    height: 6px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(148, 163, 184, 0.4);
+}
+.trendBar::before {
+    content: "";
+    position: absolute;
+    left: -40%;
+    top: 0;
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--accent-soft), transparent);
+    box-shadow: 0 0 10px var(--accent);
+    animation: trendSweep 2.4s linear infinite;
+}
+
+@keyframes trendSweep {
+    0% { left: -40%; }
+    100% { left: 100%; }
+}
+
 /* SETTINGS */
 .settingsSection {
-    background: #10131f;
+    background: var(--bg-card);
     padding: 14px;
     border-radius: 12px;
     margin-bottom: 16px;
     box-shadow: 0 0 18px rgba(0, 170, 255, 0.12);
-    border: 1px solid #1f2435;
+    border: 1px solid var(--border-subtle);
 }
 
 .settingsSection h3 {
     margin-top: 0;
     margin-bottom: 10px;
-    color: #0af;
-    text-shadow: 0 0 6px #0af;
+    color: var(--accent);
+    text-shadow: 0 0 6px var(--accent);
     font-size: 15px;
 }
 
@@ -233,16 +288,78 @@ body {
     font-size: 14px;
 }
 
-/* INFO PAGE */
+/* SEGMENTED CONTROL */
+.segmented {
+    display: flex;
+    background: #050816;
+    border-radius: 999px;
+    padding: 3px;
+    margin-bottom: 10px;
+    border: 1px solid #1f2937;
+}
+.segmented .segBtn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    padding: 6px 0;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+}
+.segmented .segBtn.active {
+    background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+    color: #000;
+    box-shadow: 0 0 12px rgba(0, 170, 255, 0.6);
+}
+
+/* INFO BLOCKS */
 .infoBlock {
-    background: #10131f;
+    background: var(--bg-card);
     padding: 12px;
     border-radius: 10px;
     margin-bottom: 12px;
-    border: 1px solid #1f2435;
+    border: 1px solid var(--border-subtle);
 }
 .infoBlock h3 {
     margin-top: 0;
-    color: #0af;
+    color: var(--accent);
     font-size: 15px;
+}
+
+/* SEARCH PAGE */
+.searchBarWrapper {
+    margin-bottom: 12px;
+}
+#playerSearchInput {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border-subtle);
+    background: #050816;
+    color: var(--text-main);
+    font-size: 14px;
+}
+.searchResult {
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+}
+.searchResult .name {
+    font-weight: 600;
+}
+.searchResult .meta {
+    font-size: 13px;
+    opacity: 0.9;
+}
+.searchResult .hrBar {
+    margin-top: 6px;
+}
+
+/* TOUCH / SWIPE */
+body {
+    touch-action: pan-y;
 }
