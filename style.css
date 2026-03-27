@@ -1,3 +1,7 @@
+/* ============================================================
+   NexariOS v6.6 — Full Style Sheet (Merged + Dynamic Icons)
+   ============================================================ */
+
 :root {
     --bg: #05060a;
     --bg-card: #10131f;
@@ -7,6 +11,11 @@
     --text-muted: #7a8195;
     --accent: #0af;
     --accent-soft: #5bffea;
+
+    /* Dynamic Icon System */
+    --icon-size: 58px;
+    --nav-height: 96px;
+    --glow-size: 14px;
 }
 
 body[data-theme="light"] {
@@ -39,13 +48,16 @@ body {
     display: block;
 }
 
-/* BOTTOM NAV (GLOWING, 5 ITEMS) */
+/* ============================================================
+   BOTTOM NAV — Dynamic Icon System (Full Rewrite)
+   ============================================================ */
+
 #bottomNav {
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 82px;
+    height: var(--nav-height);
     background: var(--bg-nav);
     backdrop-filter: blur(14px);
     display: flex;
@@ -53,6 +65,7 @@ body {
     align-items: center;
     border-top: 1px solid var(--border-subtle);
     z-index: 999;
+    transition: height 0.25s ease;
 }
 
 #bottomNav .navItem {
@@ -66,20 +79,23 @@ body {
 
 #bottomNav .navItem.active {
     color: var(--accent);
-    text-shadow: 0 0 12px var(--accent);
+    text-shadow: 0 0 var(--glow-size) var(--accent);
     transform: translateY(-3px);
 }
 
 #bottomNav .icon {
     display: block;
-    font-size: 42px;
+    font-size: var(--icon-size);
     margin-bottom: 4px;
-    transition: transform 0.18s ease, text-shadow 0.18s ease;
+    transition:
+        transform 0.25s ease,
+        text-shadow 0.25s ease,
+        font-size 0.25s ease;
 }
 
 #bottomNav .navItem.active .icon {
-    transform: scale(1.5);
-    text-shadow: 0 0 18px var(--accent);
+    transform: scale(1.75);
+    text-shadow: 0 0 var(--glow-size) var(--accent);
 }
 
 #bottomNav .label {

@@ -89,8 +89,9 @@ function renderOddsBlock(sportsbooks) {
     const fd = sportsbooks.fd ?? null;
     const mgm = sportsbooks.mgm ?? null;
     const cz = sportsbooks.cz ?? null;
+    const fanatics = sportsbooks.fanatics ?? null;
 
-    if (!dk && !fd && !mgm && !cz) {
+    if (!dk && !fd && !mgm && !cz && !fanatics) {
         return `<div class="oddsBlock">Sportsbook Odds: N/A</div>`;
     }
 
@@ -98,6 +99,7 @@ function renderOddsBlock(sportsbooks) {
     if (fd !== null) lines.push(`FD: ${fd}`);
     if (mgm !== null) lines.push(`MGM: ${mgm}`);
     if (cz !== null) lines.push(`CZ: ${cz}`);
+    if (fanatics !== null) lines.push(`Fanatics: ${fanatics}`);
 
     return `
         <div class="oddsBlock">
@@ -512,10 +514,7 @@ const sportsbookSelects = document.querySelectorAll(".sportsbookSelect");
 
 function applyBookSelection(book) {
     selectedBook = book;
-
-    // remap sportsbooks on masterPlayers to only change display? we keep full object,
-    // but selection can be used later if you want book-specific behavior.
-    // For now, we just reload HR + Search to reflect any future book-specific logic.
+    // Future: book-specific behavior can hook here.
     loadSignals();
     runSearch();
 }
@@ -537,6 +536,41 @@ const autoRefreshSelect = document.getElementById("autoRefreshSelect");
 const forceRebuildBtn = document.getElementById("forceRebuildBtn");
 const clearCacheBtn = document.getElementById("clearCacheBtn");
 const themeToggle = document.getElementById("themeToggle");
+const iconSizeSlider = document.getElementById("iconSizeSlider");
+
+/* Dynamic Icon System */
+function applyDynamicIconSize(size) {
+    const s = Number(size) || 58;
+
+    // Icon size
+    document.documentElement.style.setProperty("--icon-size", s + "px");
+
+    // Nav height scales with icon size
+    const navHeight = Math.round(s * 1.65);
+    document.documentElement.style.setProperty("--nav-height", navHeight + "px");
+
+    // Glow intensity soft-cap curve
+    let glow = Math.round((s - 40) * 0.55);
+    if (glow < 6) glow = 6;
+    if (glow > 22) glow = 22;
+    document.documentElement.style.setProperty("--glow-size", glow + "px");
+}
+
+if (iconSizeSlider) {
+    const savedIconSize = localStorage.getItem("iconSize");
+    if (savedIconSize) {
+        iconSizeSlider.value = savedIconSize;
+        applyDynamicIconSize(savedIconSize);
+    } else {
+        applyDynamicIconSize(iconSizeSlider.value);
+    }
+
+    iconSizeSlider.oninput = e => {
+        const size = e.target.value;
+        applyDynamicIconSize(size);
+        localStorage.setItem("iconSize", size);
+    };
+}
 
 if (deviceModeSelect) {
     deviceModeSelect.onchange = e => {
