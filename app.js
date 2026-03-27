@@ -5,6 +5,31 @@ let lastGoodSignals = [];
 let lastGoodGames = [];
 
 /* ------------------------------
+   DATA FETCH ENGINE (CRITICAL)
+--------------------------------*/
+async function loadData() {
+    try {
+        const signalsRes = await fetch("https://nexari.jardelterry.workers.dev/signals");
+        const gamesRes = await fetch("https://nexari.jardelterry.workers.dev/games");
+        const accuracyRes = await fetch("https://nexari.jardelterry.workers.dev/accuracy");
+
+        const signalsJson = await signalsRes.json();
+        const gamesJson = await gamesRes.json();
+        const accuracyJson = await accuracyRes.json();
+
+        window.signalsData = signalsJson.signals || [];
+        window.gamesData = gamesJson.games || [];
+        window.accuracyData = accuracyJson.accuracy || {};
+
+        loadSignals();
+        loadGames();
+        loadAccuracy();
+    } catch (err) {
+        console.error("Data load failed:", err);
+    }
+}
+
+/* ------------------------------
    PAGE NAVIGATION + SLIDER
 --------------------------------*/
 const pages = document.querySelectorAll(".page");
@@ -65,7 +90,6 @@ function loadSignals() {
 
 /* ------------------------------
    GAMES (players + LIVE + weather)
-   Weather format: LIVE • 68°F • Wind 7mph • Clear
 --------------------------------*/
 function loadGames() {
     const container = document.getElementById("gamesContainer");
@@ -157,15 +181,11 @@ if (backCompatSelect) {
 
 if (refreshBtn) {
     refreshBtn.addEventListener("click", () => {
-        loadSignals();
-        loadGames();
-        loadAccuracy();
+        loadData();
     });
 }
 
 /* ------------------------------
    INITIAL LOAD
 --------------------------------*/
-loadSignals();
-loadGames();
-loadAccuracy();
+loadData();
