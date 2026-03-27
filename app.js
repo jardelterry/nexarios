@@ -1,4 +1,5 @@
-const WORKER = "https://WORKER_URL_HERE";
+// IMPORTANT: set this to your real Worker URL
+const WORKER = "https://nexari-auto.jardelterry.workers.dev";
 
 // state
 let signals = [];
@@ -211,7 +212,7 @@ function initGamesClicker() {
 function updateGamesDateLabel() {
   const label = document.getElementById("gamesDateLabel");
   if (!label) return;
-  label.textContent = formatDateLabel(currentDate); // March 27, 2026
+  label.textContent = formatDateLabel(currentDate);
 }
 
 async function loadGames() {
