@@ -127,4 +127,190 @@ function loadGames() {
     const container = document.getElementById("gamesContainer");
     container.innerHTML = "";
 
-    const data = Array.isArray(window.gamesData
+    const data = Array.isArray(window.gamesData) ? window.gamesData : [];
+
+    data.forEach(g => {
+        const div = document.createElement("div");
+        div.className = "game";
+
+        const livePrefix = g.live ? "LIVE • " : "";
+
+        const awayLineup = Array.isArray(g.awayPlayers)
+            ? g.awayPlayers.map(p => safeName(p)).join(", ")
+            : "";
+
+        const homeLineup = Array.isArray(g.homePlayers)
+            ? g.homePlayers.map(p => safeName(p)).join(", ")
+            : "";
+
+        div.innerHTML = `
+            <div class="gameHeader">
+                <div class="title">${g.away} @ ${g.home}</div>
+                <div class="weather">${livePrefix}${g.temp}°F • Wind ${g.wind}mph • ${g.conditions}</div>
+            </div>
+
+            <div class="gameDetails" style="display:none;">
+                <div class="lineup"><strong>${g.away} Lineup:</strong> ${awayLineup}</div>
+                <div class="lineup"><strong>${g.home} Lineup:</strong> ${homeLineup}</div>
+            </div>
+        `;
+
+        div.querySelector(".gameHeader").addEventListener("click", () => {
+            const details = div.querySelector(".gameDetails");
+            details.style.display = details.style.display === "none" ? "block" : "none";
+        });
+
+        container.appendChild(div);
+    });
+}
+
+/* ------------------------------
+   CALENDAR CLICKER
+--------------------------------*/
+document.getElementById("prevDate").onclick = () => {
+    currentDate.setDate(currentDate.getDate() - 1);
+    loadData();
+};
+
+document.getElementById("nextDate").onclick = () => {
+    currentDate.setDate(currentDate.getDate() + 1);
+    loadData();
+};
+
+/* ------------------------------
+   ACCURACY (futuristic mode)
+--------------------------------*/
+function loadAccuracy() {
+    const container = document.getElementById("accuracyContainer");
+    const deepDaily = document.getElementById("accDaily");
+    const deep7 = document.getElementById("acc7");
+    const deep30 = document.getElementById("acc30");
+    const deepBreakdown = document.getElementById("accBreakdown");
+    const deepTeams = document.getElementById("accTeams");
+    const deepPlayers = document.getElementById("accPlayers");
+    const deepVolume = document.getElementById("accVolume");
+
+    const data = window.accuracyData || {
+        percent: 0,
+        systemStreak: 0,
+        playerStreak: 0,
+        outcomes: [],
+        missed: [],
+        unlisted: []
+    };
+
+    const hits = data.outcomes.length;
+    const misses = data.missed.length;
+    const total = hits + misses;
+    const calcAcc = total > 0 ? Math.round((hits / total) * 100) : data.percent;
+
+    container.innerHTML = `
+        <div>Accuracy: ${calcAcc}%</div>
+        <div>System Streak: ${data.systemStreak}</div>
+        <div>Player Streak: ${data.playerStreak}</div>
+    `;
+
+    /* ------------------------------
+       MICRO BAR
+    ------------------------------*/
+    const dailyBar = document.getElementById("accDailyBar");
+    if (dailyBar) {
+        dailyBar.style.width = calcAcc + "%";
+    }
+
+    /* ------------------------------
+       TIER BREAKDOWN
+    ------------------------------*/
+    const tierCounts = { Strong: {hit:0, miss:0}, Playable: {hit:0, miss:0}, Watch: {hit:0, miss:0} };
+
+    data.outcomes.forEach(o => {
+        if (tierCounts[o.tier]) tierCounts[o.tier].hit++;
+    });
+    data.missed.forEach(m => {
+        if (tierCounts[m.tier]) tierCounts[m.tier].miss++;
+    });
+
+    deepBreakdown.textContent =
+        `Strong: ${tierCounts.Strong.hit}/${tierCounts.Strong.hit + tierCounts.Strong.miss} • ` +
+        `Playable: ${tierCounts.Playable.hit}/${tierCounts.Playable.hit + tierCounts.Playable.miss} • ` +
+        `Watch: ${tierCounts.Watch.hit}/${tierCounts.Watch.hit + tierCounts.Watch.miss}`;
+
+    /* ------------------------------
+       TEAM ACCURACY
+    ------------------------------*/
+    const teamStats = {};
+    data.outcomes.forEach(o => {
+        if (!teamStats[o.team]) teamStats[o.team] = {hit:0, miss:0};
+        teamStats[o.team].hit++;
+    });
+    data.missed.forEach(m => {
+        if (!teamStats[m.team]) teamStats[m.team] = {hit:0, miss:0};
+        teamStats[m.team].miss++;
+    });
+
+    const topTeams = Object.entries(teamStats)
+        .map(([team, s]) => ({team, acc: Math.round((s.hit/(s.hit+s.miss))*100)}))
+        .sort((a,b) => b.acc - a.acc)
+        .slice(0,5);
+
+    deepTeams.textContent = topTeams.map(t => `${t.team} ${t.acc}%`).join(" • ");
+
+    /* ------------------------------
+       PLAYER ACCURACY
+    ------------------------------*/
+    const playerStats = {};
+    data.outcomes.forEach(o => {
+        if (!playerStats[o.player]) playerStats[o.player] = {hit:0, miss:0};
+        playerStats[o.player].hit++;
+    });
+    data.missed.forEach(m => {
+        if (!playerStats[m.player]) playerStats[m.player] = {hit:0, miss:0};
+        playerStats[m.player].miss++;
+    });
+
+    const topPlayers = Object.entries(playerStats)
+        .map(([player, s]) => ({player, acc: Math.round((s.hit/(s.hit+s.miss))*100)}))
+        .sort((a,b) => b.acc - a.acc)
+        .slice(0,5);
+
+    deepPlayers.textContent = topPlayers.map(p => `${p.player} ${p.acc}%`).join(" • ");
+
+    /* ------------------------------
+       PREDICTION VOLUME
+    ------------------------------*/
+    deepVolume.textContent = `Today: ${total} predictions`;
+}
+
+/* ------------------------------
+   SETTINGS
+--------------------------------*/
+document.getElementById("deviceModeSelect").onchange = e => {
+    document.body.dataset.device = e.target.value;
+};
+
+document.getElementById("fontSizeSlider").oninput = e => {
+    document.body.style.fontSize = e.target.value + "px";
+};
+
+let autoRefreshTimer = null;
+document.getElementById("autoRefreshSelect").onchange = e => {
+    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+    const val = Number(e.target.value);
+    if (val > 0) autoRefreshTimer = setInterval(loadData, val * 1000);
+};
+
+document.getElementById("forceRebuildBtn").onclick = () => loadData();
+
+document.getElementById("clearCacheBtn").onclick = () => {
+    window.signalsData = [];
+    window.gamesData = [];
+    window.accuracyData = {};
+    loadSignals();
+    loadGames();
+    loadAccuracy();
+};
+
+/* ------------------------------
+   INITIAL LOAD
+--------------------------------*/
+loadData();
