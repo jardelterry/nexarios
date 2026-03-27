@@ -5,21 +5,25 @@
   <title>NexariOS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="style.css?v=66-flat" />
-  <script defer src="app.js?v=66-flat"></script>
+  <link rel="stylesheet" href="style.css?v=66-classic" />
+  <script defer src="app.js?v=66-classic"></script>
 </head>
-<body>
+
+<body data-compat="v66">
   <header id="header">
     <h1>NexariOS</h1>
     <div id="hrTicker"></div>
   </header>
 
   <main id="main">
+
+    <!-- HR / Signals -->
     <section id="signalsPage" class="page active">
-      <h2>Signals</h2>
+      <h2>HR Signals</h2>
       <div id="signalsList"></div>
     </section>
 
+    <!-- Games -->
     <section id="gamesPage" class="page">
       <h2>Games</h2>
       <div id="gamesDateBar">
@@ -30,8 +34,10 @@
       <div id="gamesList"></div>
     </section>
 
+    <!-- System -->
     <section id="systemPage" class="page">
       <h2>System</h2>
+
       <div class="system-section">
         <h3>Display</h3>
         <label>
@@ -39,6 +45,14 @@
           <select id="themeMode">
             <option value="dark">Dark</option>
             <option value="light">Light</option>
+          </select>
+        </label>
+        <br><br>
+        <label>
+          Compatibility Mode:
+          <select id="compatMode">
+            <option value="v66">v6.6 Classic</option>
+            <option value="modern">Modern</option>
           </select>
         </label>
       </div>
@@ -63,33 +77,62 @@
       </div>
     </section>
 
+    <!-- Accuracy -->
     <section id="accuracyPage" class="page">
       <h2>Accuracy</h2>
+
       <div id="accuracyBlock">
+
         <div class="accuracy-section">
           <div class="accuracy-label">Overall Hit Rate</div>
           <div id="overallHitRate" class="accuracy-value">–</div>
+          <div class="accuracy-desc">
+            This is the system-wide accuracy rate for HR predictions across all players.
+          </div>
         </div>
 
         <div class="accuracy-section">
-          <div class="accuracy-label">Streaks</div>
-          <div id="streaksLines">
-            <div id="hrStreakLine">HR Streak: –</div>
-            <div id="rbiStreakLine">RBI Streak: –</div>
-          </div>
+          <div class="accuracy-label">System Streaks</div>
+          <div id="systemHrStreak">HR Prediction Streak: –</div>
+          <div id="systemRbiStreak">RBI Prediction Streak: –</div>
         </div>
+
+        <div class="accuracy-section">
+          <div class="accuracy-label">Player Streaks</div>
+          <div id="playerHitStreak">Hit Streak: –</div>
+          <div id="playerRbiStreak">RBI Streak: –</div>
+        </div>
+
+        <div class="accuracy-section">
+          <div class="accuracy-label">HR Outcomes</div>
+          <div id="hrOutcomeStatus">No correct HR predictions logged yet.</div>
+        </div>
+
+        <div class="accuracy-section">
+          <div class="accuracy-label">Missed HRs</div>
+          <div id="missedHrStatus">Missed HR tracking is enabled in the Worker.</div>
+        </div>
+
+        <div class="accuracy-section">
+          <div class="accuracy-label">Unlisted HRs</div>
+          <div id="unlistedHrStatus">Unlisted HR tracking is enabled in the Worker.</div>
+        </div>
+
       </div>
     </section>
+
   </main>
 
+  <!-- Bottom Navigation -->
   <nav id="bottomNav">
     <div id="navButtons">
-      <button data-target="signalsPage" class="active">Signals</button>
-      <button data-target="gamesPage">Games</button>
-      <button data-target="systemPage">System</button>
-      <button data-target="accuracyPage">Accuracy</button>
+      <button data-target="signalsPage" class="active">⚾<br>HR</button>
+      <button data-target="gamesPage">📅<br>Games</button>
+      <button data-target="systemPage">⚙️<br>System</button>
+      <button data-target="accuracyPage">🎯<br>Accuracy</button>
     </div>
     <div id="navSlider"></div>
   </nav>
+
 </body>
 </html>

@@ -1,11 +1,10 @@
-// IMPORTANT: set this to your real Worker URL
 const WORKER = "https://nexari-auto.jardelterry.workers.dev";
 
 // state
 let signals = [];
 let games = [];
 let accuracy = null;
-let currentDate = new Date(); // for games clicker
+let currentDate = new Date();
 
 document.addEventListener("DOMContentLoaded", () => {
   initNav();
@@ -17,6 +16,8 @@ document.addEventListener("DOMContentLoaded", () => {
   loadGames();
   loadAccuracy();
 });
+
+/* UTILITIES -------------------------------------------------- */
 
 function formatDateLabel(d) {
   return d.toLocaleDateString(undefined, {
@@ -30,7 +31,7 @@ function formatISODate(d) {
   return d.toISOString().slice(0, 10);
 }
 
-/* NAV + SLIDER */
+/* NAV -------------------------------------------------- */
 
 function initNav() {
   const buttons = document.querySelectorAll("#navButtons button");
@@ -44,256 +45,192 @@ function initNav() {
     buttons.forEach(b => b.classList.remove("active"));
     buttons[idx].classList.add("active");
 
-    if (slider) {
-      slider.style.transform = `translateX(${idx * 100}%)`;
-    }
+    slider.style.transform = `translateX(${idx * 100}%)`;
   }
 
   buttons.forEach((btn, idx) => {
     btn.addEventListener("click", () => {
-      const target = btn.dataset.target;
-      setActive(idx, target);
+      setActive(idx, btn.dataset.target);
     });
   });
 
   setActive(0, "signalsPage");
 }
 
-/* SYSTEM */
+/* SYSTEM -------------------------------------------------- */
 
 function initSystem() {
   const themeSel = document.getElementById("themeMode");
-  const btnRefresh = document.getElementById("btnRefresh");
-  const btnRebuild = document.getElementById("btnRebuild");
-  const btnDebug = document.getElementById("btnDebug");
+  const compatSel = document.getElementById("compatMode");
 
   const savedTheme = localStorage.getItem("themeMode") || "dark";
+  const savedCompat = localStorage.getItem("compatMode") || "v66";
+
   themeSel.value = savedTheme;
+  compatSel.value = savedCompat;
+
   applyTheme(savedTheme);
+  applyCompatMode(savedCompat);
 
   themeSel.onchange = e => {
     localStorage.setItem("themeMode", e.target.value);
     applyTheme(e.target.value);
   };
 
-  if (btnRefresh) {
-    btnRefresh.onclick = () => {
-      loadSignals();
-      loadGames();
-      loadAccuracy();
-    };
-  }
+  compatSel.onchange = e => {
+    localStorage.setItem("compatMode", e.target.value);
+    applyCompatMode(e.target.value);
+  };
 
-  if (btnRebuild) {
-    btnRebuild.onclick = async () => {
-      try {
-        await fetch(`${WORKER}/rebuild`);
-        alert("Engine rebuild triggered.");
-      } catch (e) {
-        console.error(e);
-      }
-    };
-  }
+  document.getElementById("btnRefresh").onclick = () => {
+    loadSignals();
+    loadGames();
+    loadAccuracy();
+  };
 
-  if (btnDebug) {
-    btnDebug.onclick = async () => {
-      const out = document.getElementById("debugOutput");
-      try {
-        const res = await fetch(`${WORKER}/debug`);
-        const data = await res.json();
-        out.textContent = JSON.stringify(data, null, 2);
-      } catch (e) {
-        out.textContent = "Debug error.";
-      }
-    };
-  }
+  document.getElementById("btnRebuild").onclick = async () => {
+    await fetch(`${WORKER}/rebuild`);
+    alert("Engine rebuild triggered.");
+  };
+
+  document.getElementById("btnDebug").onclick = async () => {
+    const out = document.getElementById("debugOutput");
+    const res = await fetch(`${WORKER}/debug`);
+    out.textContent = JSON.stringify(await res.json(), null, 2);
+  };
 }
 
 function applyTheme(mode) {
-  if (mode === "light") {
-    document.body.style.background = "#f9fafb";
-    document.body.style.color = "#111827";
-  } else {
-    document.body.style.background = "#05070b";
-    document.body.style.color = "#f3f4f6";
-  }
+  document.body.style.background = mode === "light" ? "#f9fafb" : "#05070b";
+  document.body.style.color = mode === "light" ? "#111827" : "#f3f4f6";
+}
+
+function applyCompatMode(mode) {
+  document.body.dataset.compat = mode;
 }
 
 function updateAbout() {
-  const build = document.getElementById("aboutBuild");
-  const worker = document.getElementById("aboutWorker");
-  if (build) build.textContent = new Date().toLocaleString();
-  if (worker) worker.textContent = WORKER;
+  document.getElementById("aboutBuild").textContent = new Date().toLocaleString();
+  document.getElementById("aboutWorker").textContent = WORKER;
 }
 
-/* SIGNALS */
+/* SIGNALS -------------------------------------------------- */
 
 async function loadSignals() {
-  try {
-    const res = await fetch(`${WORKER}/signals`);
-    const data = await res.json();
-    if (!data.ok || !data.signals) return;
+  const res = await fetch(`${WORKER}/signals`);
+  const data = await res.json();
+  if (!data.ok) return;
 
-    signals = data.signals;
-    renderSignals();
-    updateTickerFromTopSignal();
-  } catch (e) {
-    console.error("Signals error", e);
-  }
+  signals = data.signals;
+  renderSignals();
+  updateTicker();
 }
 
 function renderSignals() {
   const container = document.getElementById("signalsList");
   container.innerHTML = "";
 
-  if (!signals.length) {
-    container.textContent = "No signals available.";
-    return;
-  }
-
   signals.forEach(sig => {
     const div = document.createElement("div");
     div.className = "signal-entry";
 
-    const main = document.createElement("div");
-    main.className = "signal-line-main";
-    main.textContent =
-      `⚾ ${sig.playerName} • ${(sig.score * 100).toFixed(1)}% HR • ${sig.tier}`;
-
-    const sub = document.createElement("div");
-    sub.className = "signal-line-sub";
-    sub.textContent = `${sig.teamName} vs ${sig.opponentName}`;
-
-    const streak = document.createElement("div");
-    streak.className = "signal-line-streak";
-    streak.textContent = `Streak: ${sig.streak} games`;
-
-    div.appendChild(main);
-    div.appendChild(sub);
-    div.appendChild(streak);
+    div.innerHTML = `
+      <div class="signal-line-main">⚾ ${sig.playerName} • ${(sig.score * 100).toFixed(1)}% HR • ${sig.tier}</div>
+      <div class="signal-line-sub">${sig.teamName} vs ${sig.opponentName}</div>
+      <div class="signal-line-streak">Streak: ${sig.streak} games</div>
+    `;
 
     container.appendChild(div);
   });
 }
 
-function updateTickerFromTopSignal() {
-  const ticker = document.getElementById("hrTicker");
-  if (!ticker || !signals.length) return;
+function updateTicker() {
+  if (!signals.length) return;
   const top = signals[0];
-  ticker.textContent =
+  document.getElementById("hrTicker").textContent =
     `⚾ ${top.playerName} • ${(top.score * 100).toFixed(1)}% HR • ${top.tier}`;
 }
 
-/* GAMES + CLICKER */
+/* GAMES -------------------------------------------------- */
 
 function initGamesClicker() {
-  const prev = document.getElementById("gamesPrev");
-  const next = document.getElementById("gamesNext");
+  document.getElementById("gamesPrev").onclick = () => {
+    currentDate.setDate(currentDate.getDate() - 1);
+    updateGamesDateLabel();
+    loadGames();
+  };
+
+  document.getElementById("gamesNext").onclick = () => {
+    currentDate.setDate(currentDate.getDate() + 1);
+    updateGamesDateLabel();
+    loadGames();
+  };
 
   updateGamesDateLabel();
-
-  if (prev) {
-    prev.onclick = () => {
-      currentDate.setDate(currentDate.getDate() - 1);
-      updateGamesDateLabel();
-      loadGames();
-    };
-  }
-
-  if (next) {
-    next.onclick = () => {
-      currentDate.setDate(currentDate.getDate() + 1);
-      updateGamesDateLabel();
-      loadGames();
-    };
-  }
 }
 
 function updateGamesDateLabel() {
-  const label = document.getElementById("gamesDateLabel");
-  if (!label) return;
-  label.textContent = formatDateLabel(currentDate);
+  document.getElementById("gamesDateLabel").textContent = formatDateLabel(currentDate);
 }
 
 async function loadGames() {
-  try {
-    const iso = formatISODate(currentDate);
-    const res = await fetch(`${WORKER}/games?date=${iso}`);
-    const data = await res.json();
-    if (!data.ok || !data.games) return;
+  const iso = formatISODate(currentDate);
+  const res = await fetch(`${WORKER}/games?date=${iso}`);
+  const data = await res.json();
+  if (!data.ok) return;
 
-    games = data.games;
-    renderGames();
-  } catch (e) {
-    console.error("Games error", e);
-  }
+  games = data.games;
+  renderGames();
 }
 
 function renderGames() {
   const container = document.getElementById("gamesList");
   container.innerHTML = "";
 
-  if (!games.length) {
-    container.textContent = "No games for this date.";
-    return;
-  }
-
   games.forEach(g => {
-    const div = document.createElement("div");
-    div.className = "game-entry";
-
-    const main = document.createElement("div");
-    main.className = "game-line-main";
-    main.textContent = `${g.homeName} vs ${g.awayName}`;
-
-    const sub = document.createElement("div");
-    sub.className = "game-line-sub";
-
     const timeStr = new Date(g.time).toLocaleTimeString(undefined, {
       hour: "numeric",
       minute: "2-digit"
     });
 
-    if (g.isLive) {
-      sub.textContent = `LIVE • ${timeStr}`;
-    } else {
-      sub.textContent = timeStr;
-    }
+    const div = document.createElement("div");
+    div.className = "game-entry";
 
-    div.appendChild(main);
-    div.appendChild(sub);
+    div.innerHTML = `
+      <div class="game-line-main">${g.homeName} vs ${g.awayName}</div>
+      <div class="game-line-sub">${g.isLive ? "LIVE • " : ""}${timeStr}</div>
+    `;
+
     container.appendChild(div);
   });
 }
 
-/* ACCURACY */
+/* ACCURACY -------------------------------------------------- */
 
 async function loadAccuracy() {
-  try {
-    const res = await fetch(`${WORKER}/accuracy`);
-    const data = await res.json();
-    if (!data.ok || !data.accuracy) return;
+  const res = await fetch(`${WORKER}/accuracy`);
+  const data = await res.json();
+  if (!data.ok) return;
 
-    accuracy = data.accuracy;
-    renderAccuracy();
-  } catch (e) {
-    console.error("Accuracy error", e);
-  }
+  accuracy = data.accuracy;
+  renderAccuracy();
 }
 
 function renderAccuracy() {
   if (!accuracy) return;
-  const overall = document.getElementById("overallHitRate");
-  const hrLine = document.getElementById("hrStreakLine");
-  const rbiLine = document.getElementById("rbiStreakLine");
 
-  if (overall) {
-    overall.textContent = `${(accuracy.overallHitRate * 100).toFixed(1)}%`;
-  }
-  if (hrLine) {
-    hrLine.textContent = `HR Streak: ${accuracy.hrStreak} games`;
-  }
-  if (rbiLine) {
-    rbiLine.textContent = `RBI Streak: ${accuracy.rbiStreak} games`;
-  }
-}
+  document.getElementById("overallHitRate").textContent =
+    `${(accuracy.overallHitRate * 100).toFixed(1)}%`;
+
+  document.getElementById("systemHrStreak").textContent =
+    `HR Prediction Streak: ${accuracy.hrStreak} games`;
+
+  document.getElementById("systemRbiStreak").textContent =
+    `RBI Prediction Streak: ${accuracy.rbiStreak} games`;
+
+  const top = signals[0];
+  if (top) {
+    document.getElementById("playerHitStreak").textContent =
+      `Hit Streak: ${top.streak} games`;
+
+    document.getElementById("playerRbiStreak").text
