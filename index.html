@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NexariOS V3.2</title>
+  <title>NexariOS V3.3</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#000000" />
   <style>
@@ -566,6 +566,52 @@
       border-color: var(--border-light);
     }
 
+    /* LOGOS & HEADSHOTS */
+
+    .team-logo {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      object-fit: contain;
+      background: rgba(255,255,255,0.04);
+      padding: 2px;
+    }
+
+    body[data-theme="light"] .team-logo {
+      background: rgba(0,0,0,0.04);
+    }
+
+    .player-headshot {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      object-fit: cover;
+      background: rgba(255,255,255,0.06);
+      flex-shrink: 0;
+    }
+
+    body[data-theme="light"] .player-headshot {
+      background: rgba(0,0,0,0.06);
+    }
+
+    .card-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* HR PULSE ANIMATION */
+
+    @keyframes hrPulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,69,58,0.5); }
+      70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(255,69,58,0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,69,58,0); }
+    }
+
+    .hr-pulse {
+      animation: hrPulse 0.7s ease-out;
+    }
+
     /* MOBILE SLIDING TAB BAR */
 
     .bottom-nav {
@@ -822,6 +868,67 @@
       color: var(--text-muted-light);
     }
 
+    /* ACCURACY HISTORY BARS */
+
+    .history-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .history-label {
+      width: 70px;
+      opacity: 0.7;
+    }
+
+    .history-bar {
+      flex: 1;
+      height: 6px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.06);
+      position: relative;
+    }
+
+    body[data-theme="light"] .history-bar {
+      background: rgba(0,0,0,0.06);
+    }
+
+    .history-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #30d158, #0a84ff);
+      transform-origin: left center;
+      transform: scaleX(0);
+      transition: transform 0.25s ease-out;
+    }
+
+    .summary-pill {
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid transparent;
+      margin-right: 4px;
+    }
+
+    body[data-theme="dark"] .summary-pill {
+      background: rgba(255,255,255,0.03);
+      border-color: var(--border-dark);
+    }
+
+    body[data-theme="light"] .summary-pill {
+      background: rgba(0,0,0,0.03);
+      border-color: var(--border-light);
+    }
+
     @media (min-width: 768px) {
       .app-shell {
         padding-top: 16px;
@@ -875,7 +982,7 @@
           </button>
         </nav>
         <div class="sidebar-footer">
-          NexariOS V3.2 • Desktop
+          NexariOS V3.3 • Desktop
         </div>
       </div>
     </aside>
@@ -911,7 +1018,7 @@
 
           <!-- GAMES TAB -->
           <section id="tab-games" class="tab-view">
-            <div class="section-title">Games</div>
+            <div class="section-title">Games & Probabilities</div>
             <div id="gamesList"></div>
           </section>
 
@@ -927,6 +1034,8 @@
           <section id="tab-streaks" class="tab-view">
             <div class="section-title">Hit & RBI Streaks</div>
             <div id="streaksList"></div>
+            <div class="section-title" style="margin-top:10px;">Pitcher K-Streaks</div>
+            <div id="pitcherStreaksList"></div>
           </section>
 
           <!-- PLAYERS TAB -->
@@ -937,12 +1046,20 @@
 
           <!-- ACCURACY TAB -->
           <section id="tab-accuracy" class="tab-view">
-            <div class="section-title">Accuracy • HR Outcomes</div>
+            <div class="section-title">Daily Summary</div>
+            <div id="dailySummary"></div>
+
+            <div class="section-title" style="margin-top:10px;">Accuracy • HR Outcomes</div>
             <div id="accuracyCorrect"></div>
+
             <div class="section-title" style="margin-top:10px;">Missed HRs</div>
             <div id="accuracyMissed"></div>
+
             <div class="section-title" style="margin-top:10px;">Unlisted HRs</div>
             <div id="accuracyUnlisted"></div>
+
+            <div class="section-title" style="margin-top:10px;">Historical Accuracy</div>
+            <div id="accuracyHistory"></div>
           </section>
 
           <!-- SETTINGS TAB -->
@@ -1239,6 +1356,30 @@
       }
     }
 
+    function teamLogoUrl(team) {
+      const abbr = team?.abbrev || team?.abbreviation || team?.code || "";
+      if (!abbr) return "";
+      return `https://www.mlbstatic.com/team-logos/team-${(team.id || "").toString().replace(/[^0-9]/g,"")}.svg`;
+    }
+
+    function headshotUrl(player) {
+      const id = player?.mlbId || player?.id || player?.playerId;
+      if (!id) return "";
+      return `https://img.mlbstatic.com/mlb-photos/image/upload/w_180,q_80,ar_1:1,c_fill,g_face/mlb/${id}.jpg`;
+    }
+
+    function triggerHRPulseForName(name) {
+      if (!name) return;
+      const cards = document.querySelectorAll("#hrList .card");
+      cards.forEach(card => {
+        const title = card.querySelector(".card-title");
+        if (title && title.textContent.trim() === name.trim()) {
+          card.classList.add("hr-pulse");
+          setTimeout(() => card.classList.remove("hr-pulse"), 800);
+        }
+      });
+    }
+
     function renderHR(hrData) {
       const container = document.getElementById("hrList");
       container.innerHTML = "";
@@ -1263,20 +1404,29 @@
           ? `<span class="pill pill-soft">Park ${(p.parkFactor || 1).toFixed(2)}</span>`
           : "";
 
+        const headshot = headshotUrl(p);
+
         card.innerHTML = `
           <div class="card-header">
-            <div>
-              <div class="card-title">${p.name}</div>
-              <div class="card-sub">HR Score • ${p.score.toFixed(1)}</div>
+            <div class="card-header-left">
+              ${headshot ? `<img class="player-headshot" src="${headshot}" alt="${p.name}">` : ""}
+              <div>
+                <div class="card-title">${p.name}</div>
+                <div class="card-sub">${p.teamName || ""}</div>
+              </div>
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
-              <span class="pill pill-accent">HR/PA ${(p.hrPerPA || 0).toFixed(3)}</span>
+              <span class="pill pill-accent">HR Score ${p.score.toFixed(1)}</span>
               <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
                 ${streakBadge}
                 ${weatherPill}
                 ${parkPill}
               </div>
             </div>
+          </div>
+          <div class="metric-row">
+            <div class="metric-label">HR/PA</div>
+            <div class="metric-value">${(p.hrPerPA || 0).toFixed(3)}</div>
           </div>
           <div class="metric-row">
             <div class="metric-label">Confidence</div>
@@ -1292,6 +1442,10 @@
         `;
         container.appendChild(card);
       });
+
+      if (Array.isArray(hrData.recentHRs)) {
+        hrData.recentHRs.forEach(ev => triggerHRPulseForName(ev.playerName));
+      }
     }
 
     function renderGames(schedule) {
@@ -1315,16 +1469,38 @@
           ? `${Math.round(wx.temp)}° • Wind ${Math.round(wx.windSpeed || 0)} • Hum ${Math.round(wx.humidity || 0)}%`
           : "Weather pending";
 
+        const homeLogo = teamLogoUrl(g.homeTeam || g.home);
+        const awayLogo = teamLogoUrl(g.awayTeam || g.away);
+
+        const winHome = g.winProbHome != null ? Math.round(g.winProbHome * 100) : null;
+        const winAway = g.winProbAway != null ? Math.round(g.winProbAway * 100) : null;
+        const hrProb = g.hrProb != null ? Math.round(g.hrProb * 100) : null;
+
         card.innerHTML = `
           <div class="card-header">
-            <div>
-              <div class="card-title">${g.awayName} @ ${g.homeName}</div>
-              <div class="card-sub">${start}</div>
+            <div class="card-header-left">
+              ${awayLogo ? `<img class="team-logo" src="${awayLogo}" alt="${g.awayName}">` : ""}
+              ${homeLogo ? `<img class="team-logo" src="${homeLogo}" alt="${g.homeName}">` : ""}
+              <div>
+                <div class="card-title">${g.awayName} @ ${g.homeName}</div>
+                <div class="card-sub">${start}</div>
+              </div>
             </div>
             <div style="text-align:right;">
               <div class="pill pill-soft">GamePk ${g.gamePk}</div>
               <div class="card-sub" style="margin-top:2px;">${wxLabel}</div>
             </div>
+          </div>
+          <div class="metric-row">
+            <div class="metric-label">Win Prob</div>
+            <div class="metric-value">
+              ${winAway != null ? `${g.awayAbbrev || "AWY"} ${winAway}%` : "N/A"} •
+              ${winHome != null ? `${g.homeAbbrev || "HME"} ${winHome}%` : ""}
+            </div>
+          </div>
+          <div class="metric-row">
+            <div class="metric-label">HR Prob (Game)</div>
+            <div class="metric-value">${hrProb != null ? hrProb + "%" : "N/A"}</div>
           </div>
         `;
         container.appendChild(card);
@@ -1362,11 +1538,18 @@
         const parkHome = g.parkFactorHome || 1;
         const parkAway = g.parkFactorAway || 1;
 
+        const homeLogo = teamLogoUrl(g.homeTeam || g.home);
+        const awayLogo = teamLogoUrl(g.awayTeam || g.away);
+
         card.innerHTML = `
           <div class="card-header">
-            <div>
-              <div class="card-title">${g.awayName} @ ${g.homeName}</div>
-              <div class="card-sub">${start}</div>
+            <div class="card-header-left">
+              ${awayLogo ? `<img class="team-logo" src="${awayLogo}" alt="${g.awayName}">` : ""}
+              ${homeLogo ? `<img class="team-logo" src="${homeLogo}" alt="${g.homeName}">` : ""}
+              <div>
+                <div class="card-title">${g.awayName} @ ${g.homeName}</div>
+                <div class="card-sub">${start}</div>
+              </div>
             </div>
             <div style="text-align:right;">
               <div class="pill pill-soft">Home Park ${parkHome.toFixed(2)}</div>
@@ -1448,6 +1631,59 @@
       });
     }
 
+    function renderPitcherStreaks(schedule) {
+      const container = document.getElementById("pitcherStreaksList");
+      container.innerHTML = "";
+
+      if (!schedule || !Array.isArray(schedule.games)) {
+        container.innerHTML = `<div class="card"><div class="card-sub">No pitcher streak data available.</div></div>`;
+        return;
+      }
+
+      const pitchers = [];
+
+      schedule.games.forEach(g => {
+        const ps = g.pitchers || g.probablePitchers || {};
+        Object.values(ps).forEach(p => {
+          const ks = p.kStreak || p.lastKGames || 0;
+          if (ks > 0) {
+            pitchers.push({
+              name: p.name || p.playerName || "Unknown",
+              kStreak: ks,
+              kPer9: p.kPer9 || 0,
+              team: p.teamName || ""
+            });
+          }
+        });
+      });
+
+      if (!pitchers.length) {
+        container.innerHTML = `<div class="card"><div class="card-sub">No pitcher K-streaks logged.</div></div>`;
+        return;
+      }
+
+      pitchers.sort((a, b) => b.kStreak - a.kStreak);
+
+      pitchers.forEach(p => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="card-header">
+            <div>
+              <div class="card-title">${p.name}</div>
+              <div class="card-sub">${p.team}</div>
+            </div>
+            <span class="pill pill-soft">K-streak ${p.kStreak}</span>
+          </div>
+          <div class="metric-row">
+            <div class="metric-label">K/9</div>
+            <div class="metric-value">${p.kPer9.toFixed(1)}</div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
     function renderPlayers(hrData) {
       const container = document.getElementById("playersList");
       container.innerHTML = "";
@@ -1464,13 +1700,22 @@
           ? `<span class="streak-badge">${p.hitStreak || 0}H • ${p.rbiStreak || 0}RBI</span>`
           : "";
 
+        const headshot = headshotUrl(p);
+
         card.innerHTML = `
           <div class="card-header">
-            <div>
-              <div class="card-title">${p.name}</div>
-              <div class="card-sub">HR Score • ${p.score.toFixed(1)}</div>
+            <div class="card-header-left">
+              ${headshot ? `<img class="player-headshot" src="${headshot}" alt="${p.name}">` : ""}
+              <div>
+                <div class="card-title">${p.name}</div>
+                <div class="card-sub">${p.teamName || ""}</div>
+              </div>
             </div>
             <div>${streakBadge}</div>
+          </div>
+          <div class="metric-row">
+            <div class="metric-label">HR Score</div>
+            <div class="metric-value">${p.score.toFixed(1)}</div>
           </div>
           <div class="metric-row">
             <div class="metric-label">HR/PA</div>
@@ -1483,6 +1728,34 @@
         `;
         container.appendChild(card);
       });
+    }
+
+    function renderDailySummary(systemRight, hrLegacy) {
+      const container = document.getElementById("dailySummary");
+      container.innerHTML = "";
+
+      const hits = systemRight?.hits || [];
+      const totalPicks = hrLegacy?.top?.length || 0;
+      const correct = hits.length;
+      const accuracy = totalPicks ? Math.round((correct / totalPicks) * 100) : null;
+
+      const card = document.createElement("div");
+      card.className = "card";
+
+      card.innerHTML = `
+        <div class="card-header">
+          <div>
+            <div class="card-title">Today’s Summary</div>
+            <div class="card-sub">${state.currentDate || ""}</div>
+          </div>
+        </div>
+        <div style="margin-top:4px;">
+          <span class="summary-pill">Picks: ${totalPicks}</span>
+          <span class="summary-pill">Correct: ${correct}</span>
+          <span class="summary-pill">Accuracy: ${accuracy != null ? accuracy + "%" : "N/A"}</span>
+        </div>
+      `;
+      container.appendChild(card);
     }
 
     function renderAccuracy(systemRight) {
@@ -1529,6 +1802,47 @@
       unlistedContainer.innerHTML = `<div class="card"><div class="card-sub">Unlisted HR tracking is enabled in the Worker (KV). UI will reflect once data is present.</div></div>`;
     }
 
+    function renderAccuracyHistory(systemRight) {
+      const container = document.getElementById("accuracyHistory");
+      container.innerHTML = "";
+
+      const history = systemRight?.history || [];
+      if (!history.length) {
+        container.innerHTML = `<div class="card"><div class="card-sub">No historical accuracy data yet.</div></div>`;
+        return;
+      }
+
+      const card = document.createElement("div");
+      card.className = "card";
+
+      let rowsHtml = "";
+      history.forEach(day => {
+        const label = day.date || "";
+        const acc = day.accuracy != null ? day.accuracy : 0;
+        const frac = Math.max(0, Math.min(1, acc / 100));
+        rowsHtml += `
+          <div class="history-row">
+            <div class="history-label">${label}</div>
+            <div class="history-bar">
+              <div class="history-fill" style="transform:scaleX(${frac});"></div>
+            </div>
+            <div class="metric-value" style="width:40px;text-align:right;">${acc.toFixed(0)}%</div>
+          </div>
+        `;
+      });
+
+      card.innerHTML = `
+        <div class="card-header">
+          <div>
+            <div class="card-title">Last ${history.length} days</div>
+            <div class="card-sub">HR prediction accuracy</div>
+          </div>
+        </div>
+        ${rowsHtml}
+      `;
+      container.appendChild(card);
+    }
+
     function renderDebug(label, data) {
       const out = document.getElementById("debugOutput");
       out.textContent = `${label}:\n` + JSON.stringify(data, null, 2);
@@ -1550,8 +1864,11 @@
       renderGames(schedule || { games: [] });
       renderMatchups(schedule || { games: [] });
       renderStreaks(schedule || { games: [] });
+      renderPitcherStreaks(schedule || { games: [] });
       renderPlayers(hrLegacy || { all: [] });
+      renderDailySummary(systemRight || { hits: [] }, hrLegacy || { top: [] });
       renderAccuracy(systemRight || { hits: [] });
+      renderAccuracyHistory(systemRight || { history: [] });
     }
 
     function setupAutoRefresh() {
