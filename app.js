@@ -1,8 +1,10 @@
 /* ------------------------------
-   GLOBAL STATE
+   STATE + PROTECTION
 --------------------------------*/
-let currentDate = new Date();
-let autoRefreshTimer = null;
+let lastGoodSignals = [];
+let lastGoodGames = [];
+let currentDate = new Date();   // for calendar clicker
+let hrLimit = 10;               // default HR view
 
 /* ------------------------------
    FORMAT DATE
@@ -12,77 +14,86 @@ function formatDate(d) {
 }
 
 /* ------------------------------
-   LOAD DATA (single source: /rebuild)
+   DATA FETCH ENGINE
 --------------------------------*/
 async function loadData() {
     try {
-        const url = `https://nexari.jardelterry.workers.dev/rebuild?date=${formatDate(currentDate)}`;
-        const res = await fetch(url);
-        const json = await res.json();
+        const dateParam = `?date=${formatDate(currentDate)}`;
 
-        const games = json.games || [];
-        const rosters = json.rosters || {};
-        const signals = json.signals || [];
-        const accuracy = json.accuracy || {};
+        const signalsRes = await fetch("https://nexari.jardelterry.workers.dev/signals" + dateParam);
+        const gamesRes = await fetch("https://nexari.jardelterry.workers.dev/games" + dateParam);
+        const accuracyRes = await fetch("https://nexari.jardelterry.workers.dev/accuracy");
 
-        window.signalsData = signals;
-        window.accuracyData = accuracy;
+        const signalsJson = await signalsRes.json();
+        const gamesJson = await gamesRes.json();
+        const accuracyJson = await accuracyRes.json();
 
-        window.gamesData = games.map(g => ({
-            away: g.awayName,
-            home: g.homeName,
-            live: g.isLive,
-            temp: g.temp,
-            wind: g.wind,
-            conditions: g.conditions,
-            awayPlayers: (rosters[g.awayId] || []).map(p => p.name),
-            homePlayers: (rosters[g.homeId] || []).map(p => p.name)
-        }));
+        window.signalsData = signalsJson.signals || [];
+        window.gamesData = gamesJson.games || [];
+        window.accuracyData = accuracyJson.accuracy || {};
 
-        document.getElementById("currentDateLabel").innerText = formatDate(currentDate);
+        // Update date label
+        const dateLabel = document.getElementById("currentDateLabel");
+        if (dateLabel) dateLabel.textContent = formatDate(currentDate);
 
         loadSignals();
         loadGames();
         loadAccuracy();
     } catch (err) {
-        console.error("Load failed:", err);
+        console.error("Data load failed:", err);
     }
 }
 
 /* ------------------------------
-   HR SIGNALS
+   PAGE NAVIGATION + SLIDER
 --------------------------------*/
-let hrLimit = 10;
+const pages = document.querySelectorAll(".page");
+const navItems = document.querySelectorAll(".navItem");
+const slider = document.getElementById("navSlider");
 
-document.getElementById("top10Btn").onclick = () => {
-    hrLimit = 10;
-    document.getElementById("top10Btn").classList.add("active");
-    document.getElementById("top20Btn").classList.remove("active");
-    loadSignals();
-};
+navItems.forEach((item, index) => {
+    item.addEventListener("click", () => {
+        navItems.forEach(i => i.classList.remove("active"));
+        item.classList.add("active");
 
-document.getElementById("top20Btn").onclick = () => {
-    hrLimit = 20;
-    document.getElementById("top20Btn").classList.add("active");
-    document.getElementById("top10Btn").classList.remove("active");
-    loadSignals();
-};
+        pages.forEach(p => p.classList.remove("active"));
+        document.getElementById(item.dataset.page).classList.add("active");
 
+        slider.style.left = `${index * 25}%`;
+    });
+});
+
+/* ------------------------------
+   PLAYER NAME PROTECTION v2
+--------------------------------*/
+function safeName(name, fallback) {
+    if (name && name.trim() !== "" && name !== "Unknown") return name;
+    if (fallback && fallback.trim() !== "") return fallback;
+    return "Player";
+}
+
+/* ------------------------------
+   HR SIGNALS (color coding + top 10/20)
+--------------------------------*/
 function loadSignals() {
     const container = document.getElementById("signalsContainer");
     container.innerHTML = "";
 
-    const sorted = [...window.signalsData].sort((a, b) => b.hr - a.hr).slice(0, hrLimit);
+    let data = Array.isArray(window.signalsData) ? [...window.signalsData] : [];
+    data.sort((a, b) => b.hr - a.hr);
+    data = data.slice(0, hrLimit);
 
-    sorted.forEach(s => {
+    data.forEach(s => {
         const div = document.createElement("div");
-        div.className = "signal " + (
-            s.tier === "Strong" ? "strong" :
-            s.tier === "Playable" ? "playable" : "watch"
-        );
+        div.className = "signal";
+
+        // Color coding
+        if (s.tier === "Strong") div.style.borderLeft = "4px solid #ff4444";
+        else if (s.tier === "Playable") div.style.borderLeft = "4px solid #ffaa00";
+        else div.style.borderLeft = "4px solid #777";
 
         div.innerHTML = `
-            <div class="name">${s.player}</div>
+            <div class="name">${safeName(s.player, s.cachedPlayer)}</div>
             <div class="meta">
                 ${s.team} vs ${s.opponent} • ${s.hr}% • ${s.tier}<br>
                 <span class="streak">Streak: ${s.streakType} (${s.streakCount})</span>
@@ -93,23 +104,60 @@ function loadSignals() {
 }
 
 /* ------------------------------
-   GAMES
+   HR TOGGLE BUTTONS
+--------------------------------*/
+const top10Btn = document.getElementById("top10Btn");
+const top20Btn = document.getElementById("top20Btn");
+
+if (top10Btn) {
+    top10Btn.addEventListener("click", () => {
+        hrLimit = 10;
+        top10Btn.classList.add("active");
+        top20Btn.classList.remove("active");
+        loadSignals();
+    });
+}
+
+if (top20Btn) {
+    top20Btn.addEventListener("click", () => {
+        hrLimit = 20;
+        top20Btn.classList.add("active");
+        top10Btn.classList.remove("active");
+        loadSignals();
+    });
+}
+
+/* ------------------------------
+   GAMES (players + LIVE + weather)
 --------------------------------*/
 function loadGames() {
     const container = document.getElementById("gamesContainer");
     container.innerHTML = "";
 
-    window.gamesData.forEach(g => {
+    const data = Array.isArray(window.gamesData) ? window.gamesData : [];
+
+    data.forEach(g => {
         const div = document.createElement("div");
         div.className = "game";
+
+        const livePrefix = g.live ? "LIVE • " : "";
+
+        const awayLineup = Array.isArray(g.awayPlayers)
+            ? g.awayPlayers.map(p => safeName(p)).join(", ")
+            : "";
+
+        const homeLineup = Array.isArray(g.homePlayers)
+            ? g.homePlayers.map(p => safeName(p)).join(", ")
+            : "";
 
         div.innerHTML = `
             <div class="title">${g.away} @ ${g.home}</div>
             <div class="weather">
-                ${g.live ? "LIVE • " : ""}${g.temp}°F • Wind ${g.wind}mph • ${g.conditions}
+                ${livePrefix}${g.temp}°F • Wind ${g.wind}mph • ${g.conditions}
             </div>
-            <div class="lineup"><strong>${g.away} Lineup:</strong> ${g.awayPlayers.join(", ")}</div>
-            <div class="lineup"><strong>${g.home} Lineup:</strong> ${g.homePlayers.join(", ")}</div>
+
+            <div class="lineup"><strong>${g.away} Lineup:</strong> ${awayLineup}</div>
+            <div class="lineup"><strong>${g.home} Lineup:</strong> ${homeLineup}</div>
         `;
         container.appendChild(div);
     });
@@ -118,64 +166,101 @@ function loadGames() {
 /* ------------------------------
    CALENDAR CLICKER
 --------------------------------*/
-document.getElementById("prevDate").onclick = () => {
-    currentDate.setDate(currentDate.getDate() - 1);
-    loadData();
-};
-document.getElementById("nextDate").onclick = () => {
-    currentDate.setDate(currentDate.getDate() + 1);
-    loadData();
-};
+const prevBtn = document.getElementById("prevDate");
+const nextBtn = document.getElementById("nextDate");
 
-/* ------------------------------
-   ACCURACY (deep analytics)
---------------------------------*/
-function loadAccuracy() {
-    const acc = window.accuracyData;
-    const container = document.getElementById("accuracyContainer");
+if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+        currentDate.setDate(currentDate.getDate() - 1);
+        loadData();
+    });
+}
 
-    container.innerHTML = `
-        <div>Accuracy: ${acc.percent}%</div>
-        <div>System Streak: ${acc.systemStreak}</div>
-        <div>Player Streak: ${acc.playerStreak}</div>
-    `;
-
-    document.getElementById("accDaily").innerText = "Daily Accuracy: " + acc.percent + "%";
-    document.getElementById("acc7").innerText = "7-Day Trend: Stable";
-    document.getElementById("acc30").innerText = "30-Day Trend: Stable";
-    document.getElementById("accBreakdown").innerText = "Hits: " + acc.outcomes.length + " | Misses: " + acc.missed.length;
-    document.getElementById("accTeams").innerText = "Team Performance: Coming Soon";
-    document.getElementById("accPlayers").innerText = "Player Trends: Coming Soon";
+if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+        currentDate.setDate(currentDate.getDate() + 1);
+        loadData();
+    });
 }
 
 /* ------------------------------
-   SETTINGS
+   ACCURACY (expanded)
 --------------------------------*/
-document.getElementById("deviceModeSelect").onchange = e => {
-    document.body.dataset.device = e.target.value;
-};
+function loadAccuracy() {
+    const container = document.getElementById("accuracyContainer");
+    const deepDaily = document.getElementById("accDaily");
+    const deep7 = document.getElementById("acc7");
+    const deep30 = document.getElementById("acc30");
+    const deepBreakdown = document.getElementById("accBreakdown");
 
-document.getElementById("fontSizeSlider").oninput = e => {
-    document.body.style.fontSize = e.target.value + "px";
-};
+    const data = window.accuracyData || {
+        percent: 0,
+        systemStreak: 0,
+        playerStreak: 0,
+        outcomes: [],
+        missed: [],
+        unlisted: []
+    };
 
-document.getElementById("autoRefreshSelect").onchange = e => {
-    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-    const val = Number(e.target.value);
-    if (val > 0) {
-        autoRefreshTimer = setInterval(loadData, val * 1000);
-    }
-};
+    const hits = data.outcomes.length;
+    const misses = data.missed.length;
+    const total = hits + misses;
+    const calcAcc = total > 0 ? Math.round((hits / total) * 100) : data.percent;
 
-document.getElementById("forceRebuildBtn").onclick = () => loadData();
-document.getElementById("clearCacheBtn").onclick = () => {
-    window.signalsData = [];
-    window.gamesData = [];
-    window.accuracyData = {};
-    loadSignals();
-    loadGames();
-    loadAccuracy();
-};
+    container.innerHTML = `
+        <div>Accuracy: ${calcAcc}%</div>
+        <div>System Streak: ${data.systemStreak}</div>
+        <div>Player Streak: ${data.playerStreak}</div>
+        <br>
+        <div>HR Outcomes: ${data.outcomes.join(", ")}</div>
+        <div>Missed HRs: ${data.missed.join(", ")}</div>
+        <div>Unlisted HRs: ${data.unlisted.join(", ")}</div>
+    `;
+
+    if (deepDaily) deepDaily.textContent = `Daily Accuracy: ${calcAcc}%`;
+    if (deep7) deep7.textContent = `7-Day Trend: Stable`;
+    if (deep30) deep30.textContent = `30-Day Trend: Stable`;
+    if (deepBreakdown) deepBreakdown.textContent = `Hits: ${hits} | Misses: ${misses} | Total: ${total}`;
+}
+
+/* ------------------------------
+   SETTINGS (expanded)
+--------------------------------*/
+const deviceModeSelect = document.getElementById("deviceModeSelect");
+const autoRefreshSelect = document.getElementById("autoRefreshSelect");
+const forceRebuildBtn = document.getElementById("forceRebuildBtn");
+const clearCacheBtn = document.getElementById("clearCacheBtn");
+
+let autoRefreshTimer = null;
+
+if (deviceModeSelect) {
+    deviceModeSelect.addEventListener("change", e => {
+        document.body.dataset.device = e.target.value;
+    });
+}
+
+if (autoRefreshSelect) {
+    autoRefreshSelect.addEventListener("change", e => {
+        if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+        const val = Number(e.target.value);
+        if (val > 0) autoRefreshTimer = setInterval(loadData, val * 1000);
+    });
+}
+
+if (forceRebuildBtn) {
+    forceRebuildBtn.addEventListener("click", () => loadData());
+}
+
+if (clearCacheBtn) {
+    clearCacheBtn.addEventListener("click", () => {
+        window.signalsData = [];
+        window.gamesData = [];
+        window.accuracyData = {};
+        loadSignals();
+        loadGames();
+        loadAccuracy();
+    });
+}
 
 /* ------------------------------
    INITIAL LOAD
