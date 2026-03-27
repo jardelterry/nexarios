@@ -7,7 +7,7 @@
 </head>
 <body data-device="auto">
 
-    <!-- BOTTOM NAVIGATION (RESTORED GLOWING VERSION) -->
+    <!-- BOTTOM NAVIGATION (GLOWING) -->
     <div id="bottomNav">
         <div class="navItem active" data-page="hrPage">
             <span class="icon">🔥</span>
@@ -35,8 +35,11 @@
     <!-- HR PAGE -->
     <div id="hrPage" class="page active">
         <div id="hrControls">
-            <button id="top10Btn" class="toggleBtn active">Top 10</button>
-            <button id="top20Btn" class="toggleBtn">Top 20</button>
+            <label style="font-size:14px; opacity:0.8;">HR View:</label>
+            <select id="hrViewSelect">
+                <option value="10">Top 10</option>
+                <option value="20">Top 20</option>
+            </select>
         </div>
         <div id="signalsContainer"></div>
     </div>

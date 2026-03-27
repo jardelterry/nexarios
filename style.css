@@ -10,13 +10,13 @@ body {
 .page {
     display: none;
     padding: 16px;
-    padding-bottom: 100px; /* space above bottom nav */
+    padding-bottom: 100px;
 }
 .page.active {
     display: block;
 }
 
-/* RESTORED GLOWING BOTTOM NAV */
+/* BOTTOM NAV (GLOWING) */
 #bottomNav {
     position: fixed;
     bottom: 0;
@@ -81,22 +81,14 @@ body {
     overflow-y: auto;
 }
 
-/* HR TOGGLE BUTTONS */
-#hrControls {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-.toggleBtn {
-    flex: 1;
-    padding: 8px;
+/* HR DROPDOWN */
+#hrControls select {
+    width: 120px;
+    padding: 6px;
     background: #222;
     border: 1px solid #444;
     color: #fff;
-    cursor: pointer;
-}
-.toggleBtn.active {
-    background: #0af;
+    border-radius: 4px;
 }
 
 /* GAMES */
@@ -107,6 +99,24 @@ body {
     border-radius: 6px;
 }
 
+.gameHeader {
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 8px 0;
+}
+
+.gameHeader:hover {
+    opacity: 0.8;
+}
+
+.gameDetails {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #333;
+}
+
+/* CALENDAR */
 #calendarBar {
     display: flex;
     justify-content: center;

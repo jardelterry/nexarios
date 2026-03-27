@@ -72,7 +72,7 @@ function safeName(name, fallback) {
 }
 
 /* ------------------------------
-   HR SIGNALS (color coding + top 10/20)
+   HR SIGNALS (dropdown + color coding)
 --------------------------------*/
 function loadSignals() {
     const container = document.getElementById("signalsContainer");
@@ -102,24 +102,18 @@ function loadSignals() {
 }
 
 /* ------------------------------
-   HR TOGGLE BUTTONS
+   HR DROPDOWN
 --------------------------------*/
-document.getElementById("top10Btn").onclick = () => {
-    hrLimit = 10;
-    top10Btn.classList.add("active");
-    top20Btn.classList.remove("active");
-    loadSignals();
-};
-
-document.getElementById("top20Btn").onclick = () => {
-    hrLimit = 20;
-    top20Btn.classList.add("active");
-    top10Btn.classList.remove("active");
-    loadSignals();
-};
+const hrViewSelect = document.getElementById("hrViewSelect");
+if (hrViewSelect) {
+    hrViewSelect.addEventListener("change", () => {
+        hrLimit = Number(hrViewSelect.value);
+        loadSignals();
+    });
+}
 
 /* ------------------------------
-   GAMES
+   GAMES (collapsible)
 --------------------------------*/
 function loadGames() {
     const container = document.getElementById("gamesContainer");
@@ -142,14 +136,22 @@ function loadGames() {
             : "";
 
         div.innerHTML = `
-            <div class="title">${g.away} @ ${g.home}</div>
-            <div class="weather">
-                ${livePrefix}${g.temp}°F • Wind ${g.wind}mph • ${g.conditions}
+            <div class="gameHeader">
+                <div class="title">${g.away} @ ${g.home}</div>
+                <div class="weather">${livePrefix}${g.temp}°F • Wind ${g.wind}mph • ${g.conditions}</div>
             </div>
 
-            <div class="lineup"><strong>${g.away} Lineup:</strong> ${awayLineup}</div>
-            <div class="lineup"><strong>${g.home} Lineup:</strong> ${homeLineup}</div>
+            <div class="gameDetails" style="display:none;">
+                <div class="lineup"><strong>${g.away} Lineup:</strong> ${awayLineup}</div>
+                <div class="lineup"><strong>${g.home} Lineup:</strong> ${homeLineup}</div>
+            </div>
         `;
+
+        div.querySelector(".gameHeader").addEventListener("click", () => {
+            const details = div.querySelector(".gameDetails");
+            details.style.display = details.style.display === "none" ? "block" : "none";
+        });
+
         container.appendChild(div);
     });
 }
@@ -218,6 +220,7 @@ document.getElementById("fontSizeSlider").oninput = e => {
     document.body.style.fontSize = e.target.value + "px";
 };
 
+let autoRefreshTimer = null;
 document.getElementById("autoRefreshSelect").onchange = e => {
     if (autoRefreshTimer) clearInterval(autoRefreshTimer);
     const val = Number(e.target.value);
