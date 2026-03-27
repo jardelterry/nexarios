@@ -5,27 +5,49 @@ let lastGoodSignals = [];
 let lastGoodGames = [];
 
 /* ------------------------------
-   DATA FETCH ENGINE (CRITICAL)
+   DATA FETCH ENGINE (SINGLE SOURCE: /rebuild)
 --------------------------------*/
 async function loadData() {
     try {
-        const signalsRes = await fetch("https://nexari.jardelterry.workers.dev/signals");
-        const gamesRes = await fetch("https://nexari.jardelterry.workers.dev/games");
-        const accuracyRes = await fetch("https://nexari.jardelterry.workers.dev/accuracy");
+        const res = await fetch("https://nexari.jardelterry.workers.dev/rebuild");
+        const json = await res.json();
 
-        const signalsJson = await signalsRes.json();
-        const gamesJson = await gamesRes.json();
-        const accuracyJson = await accuracyRes.json();
+        const engineSignals = json.signals || [];
+        const engineGames = json.games || [];
+        const rosters = json.rosters || {};
+        const accuracy = json.accuracy || {};
 
-        window.signalsData = signalsJson.signals || [];
-        window.gamesData = gamesJson.games || [];
-        window.accuracyData = accuracyJson.accuracy || {};
+        // Signals are already in UI format
+        window.signalsData = engineSignals;
+
+        // Build UI games from engine games + rosters
+        window.gamesData = engineGames.map(g => {
+            const awayRoster = Array.isArray(rosters[g.awayId]) ? rosters[g.awayId] : [];
+            const homeRoster = Array.isArray(rosters[g.homeId]) ? rosters[g.homeId] : [];
+
+            return {
+                away: g.awayName,
+                home: g.homeName,
+                live: g.isLive,
+                temp: g.temp || 68,
+                wind: g.wind || 7,
+                conditions: g.conditions || "Clear",
+                awayPlayers: awayRoster.map(p => p.name),
+                homePlayers: homeRoster.map(p => p.name)
+            };
+        });
+
+        window.accuracyData = accuracy;
 
         loadSignals();
         loadGames();
         loadAccuracy();
     } catch (err) {
         console.error("Data load failed:", err);
+        // fall back to last good if any
+        loadSignals();
+        loadGames();
+        loadAccuracy();
     }
 }
 
