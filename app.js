@@ -1,12 +1,10 @@
-// app.js — NexariOS v7.1C (Full Rewrite, Normalized Workers)
+// app.js — NexariOS v7.1C (wired to current HTML)
 
-// MAIN ENGINE
-const MAIN_BASE = "https://nexari.jardel.workers.dev";
-// AUTO ENGINE (no /games, only /signals + /accuracy)
-const AUTO_BASE = "https://nexari-auto.jardel.workers.dev";
+// MAIN WORKER
+const BASE = "https://nexari.jardelterry.workers.dev";
 
-let currentEngine = "main"; // "main" | "auto"
-let currentTab = "hr";      // "hr" | "games" | "accuracy" | "search" | "settings"
+let currentTab = "hr";
+let currentDateOffset = 0; // 0 = today, -1 = yesterday, etc.
 
 let state = {
   signals: [],
@@ -24,38 +22,32 @@ async function fetchJSON(url) {
   return res.json();
 }
 
-function setText(id, value) {
-  const el = $(id);
-  if (el) el.textContent = value ?? "";
+function formatDateLabel(offset) {
+  if (offset === 0) return "Today";
+  if (offset === -1) return "Yesterday";
+  if (offset === 1) return "Tomorrow";
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().slice(0, 10);
 }
 
-function setActiveTab(tab) {
-  currentTab = tab;
-  document.querySelectorAll("[data-tab]").forEach(el => {
-    el.classList.toggle("active", el.dataset.tab === tab);
-  });
-  document.querySelectorAll("[data-panel]").forEach(el => {
-    el.classList.toggle("active", el.dataset.panel === tab);
-  });
-}
-function getBaseUrl() {
-  return currentEngine === "auto" ? AUTO_BASE : MAIN_BASE;
+function getDateParam(offset) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().slice(0, 10);
 }
 
-async function loadSignals(date = null) {
+/* ------------------------------
+   LOADERS
+--------------------------------*/
+async function loadSignals() {
   try {
-    const base = getBaseUrl();
-    const url = new URL(base + "/signals");
-    if (date) url.searchParams.set("date", date);
+    const dateStr = getDateParam(currentDateOffset);
+    const url = new URL(BASE + "/signals");
+    url.searchParams.set("date", dateStr);
 
     const data = await fetchJSON(url.toString());
-    // Expect: { ok, date, signals: [ { player, team, opponent, tier, sportsbooks, overmindCompositeMetric } ] }
-    if (!data.ok || !Array.isArray(data.signals)) {
-      console.warn("Unexpected signals payload", data);
-      state.signals = [];
-    } else {
-      state.signals = data.signals;
-    }
+    state.signals = Array.isArray(data.signals) ? data.signals : [];
     renderSignals();
   } catch (e) {
     console.error("loadSignals error", e);
@@ -64,27 +56,14 @@ async function loadSignals(date = null) {
   }
 }
 
-async function loadGames(date = null) {
-  // Only main engine has /games
-  if (currentEngine === "auto") {
-    state.games = [];
-    renderGames();
-    return;
-  }
-
+async function loadGames() {
   try {
-    const base = getBaseUrl();
-    const url = new URL(base + "/games");
-    if (date) url.searchParams.set("date", date);
+    const dateStr = getDateParam(currentDateOffset);
+    const url = new URL(BASE + "/games");
+    url.searchParams.set("date", dateStr);
 
     const data = await fetchJSON(url.toString());
-    // Expect: { ok, date, games: [ { homeTeam, awayTeam, venue, temp, wind, lineups: { home, away } } ] }
-    if (!data.ok || !Array.isArray(data.games)) {
-      console.warn("Unexpected games payload", data);
-      state.games = [];
-    } else {
-      state.games = data.games;
-    }
+    state.games = Array.isArray(data.games) ? data.games : [];
     renderGames();
   } catch (e) {
     console.error("loadGames error", e);
@@ -95,17 +74,9 @@ async function loadGames(date = null) {
 
 async function loadAccuracy() {
   try {
-    const base = getBaseUrl();
-    const url = new URL(base + "/accuracy");
-
+    const url = new URL(BASE + "/accuracy");
     const data = await fetchJSON(url.toString());
-    // Expect: { ok, accuracy: { system: {...}, outcomes: [...] } }
-    if (!data.ok || !data.accuracy) {
-      console.warn("Unexpected accuracy payload", data);
-      state.accuracy = null;
-    } else {
-      state.accuracy = data.accuracy;
-    }
+    state.accuracy = data.accuracy || null;
     renderAccuracy();
   } catch (e) {
     console.error("loadAccuracy error", e);
@@ -113,171 +84,200 @@ async function loadAccuracy() {
     renderAccuracy();
   }
 }
-/* ------------------------------
-   RENDER: HR / SIGNALS
---------------------------------*/
-function renderSignals() {
-  const container = $("signals-list");
-  if (!container) return;
 
-  container.innerHTML = "";
+/* ------------------------------
+   RENDER: HR SIGNALS
+--------------------------------*/
+function getSelectedRange() {
+  const btn = document.querySelector(".range-btn.active");
+  if (!btn) return "10";
+  return btn.dataset.range;
+}
+
+function getSelectedBook() {
+  const sel = $("sportsbook");
+  return sel ? sel.value : "dk";
+}
+
+function renderSignals() {
+  const list = $("hr-list");
+  const dateLabel = $("current-date-label");
+  if (dateLabel) dateLabel.textContent = formatDateLabel(currentDateOffset);
+  if (!list) return;
+
+  list.innerHTML = "";
 
   if (!state.signals.length) {
-    container.innerHTML = `<div class="empty-state">No signals available.</div>`;
+    list.innerHTML = `<li class="empty-state">No signals available.</li>`;
     return;
   }
 
-  state.signals.forEach(sig => {
-    const div = document.createElement("div");
-    div.className = "signal-row";
+  const range = getSelectedRange();
+  let signals = [...state.signals];
+
+  if (range !== "all") {
+    const n = parseInt(range, 10) || 10;
+    signals = signals.slice(0, n);
+  }
+
+  const book = getSelectedBook();
+
+  signals.forEach(sig => {
+    const li = document.createElement("li");
+    li.className = "list-row";
 
     const odds = sig.sportsbooks || {};
-    const bestLine = odds.dk || odds.fd || odds.mgm || "N/A";
+    const line = odds[book] || "N/A";
 
-    div.innerHTML = `
-      <div class="signal-main">
-        <div class="signal-player">${sig.player}</div>
-        <div class="signal-meta">
-          <span class="signal-team">${sig.team || ""}</span>
-          <span class="signal-vs">${sig.opponent ? `vs ${sig.opponent}` : ""}</span>
+    li.innerHTML = `
+      <div class="row-main">
+        <div class="row-title">${sig.player}</div>
+        <div class="row-sub">
+          <span>${sig.team || ""}</span>
+          ${sig.opponent ? `<span>vs ${sig.opponent}</span>` : ""}
         </div>
       </div>
-      <div class="signal-side">
-        <div class="signal-tier">${sig.tier}</div>
-        <div class="signal-ocm">${Math.round(sig.overmindCompositeMetric || 0)}</div>
-        <div class="signal-odds">${bestLine}</div>
+      <div class="row-side">
+        <div class="pill tier">${sig.tier}</div>
+        <div class="pill ocm">${Math.round(sig.overmindCompositeMetric || 0)}</div>
+        <div class="pill odds">${line}</div>
       </div>
     `;
-    container.appendChild(div);
+    list.appendChild(li);
   });
 }
 
 /* ------------------------------
-   RENDER: GAMES + LINEUPS
+   RENDER: GAMES
 --------------------------------*/
 function renderGames() {
-  const titleEl = $("game-title");
-  const venueEl = $("venue");
-  const weatherEl = $("weather");
-  const homeContainer = $("home-lineup");
-  const awayContainer = $("away-lineup");
+  const list = $("games-list");
+  if (!list) return;
 
-  if (!titleEl || !venueEl || !weatherEl || !homeContainer || !awayContainer) return;
+  list.innerHTML = "";
 
   if (!state.games.length) {
-    titleEl.textContent = currentEngine === "auto"
-      ? "Games not available in Auto mode"
-      : "No games found";
-    venueEl.textContent = "";
-    weatherEl.textContent = "";
-    homeContainer.innerHTML = "";
-    awayContainer.innerHTML = "";
+    list.innerHTML = `<li class="empty-state">No games found.</li>`;
     return;
   }
 
-  // For now, show the first game (you can add next/prev later)
-  const game = state.games[0];
+  state.games.forEach(g => {
+    const li = document.createElement("li");
+    li.className = "list-row";
 
-  titleEl.textContent = `${game.awayTeam} @ ${game.homeTeam}`;
-  venueEl.textContent = game.venue || "";
+    const weatherParts = [];
+    if (g.temp != null) weatherParts.push(`${g.temp}°`);
+    if (g.wind != null) weatherParts.push(`Wind ${g.wind} mph`);
 
-  const weatherParts = [];
-  if (game.temp != null) weatherParts.push(`${game.temp}°`);
-  if (game.wind != null) weatherParts.push(`Wind ${game.wind} mph`);
-  weatherEl.textContent = weatherParts.join(" • ");
-
-  renderLineup(game.lineups?.home || [], homeContainer);
-  renderLineup(game.lineups?.away || [], awayContainer);
-}
-
-function renderLineup(list, container) {
-  container.innerHTML = "";
-
-  list.forEach(player => {
-    // player is an object: { name, pos, ... }
-    const div = document.createElement("div");
-    div.className = "player-tile";
-
-    const name = player.name || "";
-    const pos = player.pos || "";
-
-    div.innerHTML = `
-      <span class="player-name">${name}</span>
-      ${pos ? `<span class="player-pos">${pos}</span>` : ""}
+    li.innerHTML = `
+      <div class="row-main">
+        <div class="row-title">${g.awayTeam} @ ${g.homeTeam}</div>
+        <div class="row-sub">
+          <span>${g.venue || ""}</span>
+          ${weatherParts.length ? `<span>${weatherParts.join(" • ")}</span>` : ""}
+        </div>
+      </div>
     `;
-
-    container.appendChild(div);
+    list.appendChild(li);
   });
 }
+
 /* ------------------------------
    RENDER: ACCURACY
 --------------------------------*/
 function renderAccuracy() {
-  const systemEl = $("accuracy-system");
-  const listEl = $("accuracy-list");
-  if (!systemEl || !listEl) return;
+  const sysEl = $("accuracy-system");
+  const hrRbiEl = $("accuracy-hr-rbi");
+  const outcomesEl = $("accuracy-hr-outcomes");
+  if (!sysEl || !hrRbiEl || !outcomesEl) return;
 
-  listEl.innerHTML = "";
+  sysEl.innerHTML = "";
+  hrRbiEl.innerHTML = "";
+  outcomesEl.innerHTML = "";
 
   if (!state.accuracy) {
-    systemEl.textContent = "No accuracy data.";
+    sysEl.textContent = "No accuracy data.";
     return;
   }
 
   const sys = state.accuracy.system || {};
-  systemEl.textContent =
-    `Picks: ${sys.totalPicks ?? 0} • Hits: ${sys.hits ?? 0} • Misses: ${sys.misses ?? 0} • Accuracy: ${sys.accuracy ?? 0}%`;
+  sysEl.innerHTML = `
+    <div class="metric-row">
+      <span>Total Picks</span><span>${sys.totalPicks ?? 0}</span>
+    </div>
+    <div class="metric-row">
+      <span>Hits</span><span>${sys.hits ?? 0}</span>
+    </div>
+    <div class="metric-row">
+      <span>Misses</span><span>${sys.misses ?? 0}</span>
+    </div>
+    <div class="metric-row">
+      <span>Accuracy</span><span>${sys.accuracy ?? 0}%</span>
+    </div>
+  `;
+
+  // Simple HR/RBI tracker placeholder using same system stats
+  hrRbiEl.innerHTML = `
+    <div class="metric-row">
+      <span>HR/RBI Tracker</span>
+      <span>${sys.accuracy ?? 0}% (last window)</span>
+    </div>
+  `;
 
   const outcomes = state.accuracy.outcomes || [];
   if (!outcomes.length) {
-    listEl.innerHTML = `<div class="empty-state">No outcomes yet.</div>`;
+    outcomesEl.innerHTML = `<div class="empty-state">No outcomes yet.</div>`;
     return;
   }
 
   outcomes.forEach(o => {
     const div = document.createElement("div");
-    div.className = "accuracy-row";
+    div.className = "outcome-row";
     div.innerHTML = `
-      <div class="accuracy-player">${o.player}</div>
-      <div class="accuracy-meta">
-        <span class="accuracy-team">${o.team || ""}</span>
-        <span class="accuracy-tier">${o.tier || ""}</span>
-        <span class="accuracy-hit">${o.hrHit ? "HR ✅" : "No HR"}</span>
+      <div class="outcome-main">
+        <span class="outcome-player">${o.player}</span>
+        <span class="outcome-team">${o.team || ""}</span>
+      </div>
+      <div class="outcome-side">
+        <span class="outcome-tier">${o.tier || ""}</span>
+        <span class="outcome-hit">${o.hrHit ? "HR ✅" : "No HR"}</span>
       </div>
     `;
-    listEl.appendChild(div);
+    outcomesEl.appendChild(div);
   });
 }
 
 /* ------------------------------
-   TAB + ENGINE SWITCHING
+   TABS
 --------------------------------*/
-function switchTab(tab) {
-  setActiveTab(tab);
-  if (tab === "hr") {
-    renderSignals();
-  } else if (tab === "games") {
-    renderGames();
-  } else if (tab === "accuracy") {
-    renderAccuracy();
-  }
+function setActiveTab(tab) {
+  currentTab = tab;
+
+  document.querySelectorAll(".sidebar-item").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tab === tab);
+  });
+  document.querySelectorAll(".bottom-nav .nav-item").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tab === tab);
+  });
+
+  document.querySelectorAll(".tab-view").forEach(sec => {
+    const id = sec.id.replace("tab-", "");
+    sec.classList.toggle("active", id === tab);
+  });
 }
 
-function switchEngine(engine) {
-  if (engine !== "main" && engine !== "auto") return;
-  currentEngine = engine;
-
-  // Reload everything relevant
-  loadSignals();
-  loadGames();
-  loadAccuracy();
+function switchTab(tab) {
+  setActiveTab(tab);
+  if (tab === "hr") renderSignals();
+  if (tab === "games") renderGames();
+  if (tab === "accuracy") renderAccuracy();
 }
 
 /* ------------------------------
-   INIT
+   INIT + EVENTS
 --------------------------------*/
 document.addEventListener("DOMContentLoaded", () => {
-  // Tab buttons
+  // Tab buttons (sidebar + bottom nav)
   document.querySelectorAll("[data-tab]").forEach(el => {
     el.addEventListener("click", () => {
       const tab = el.dataset.tab;
@@ -285,17 +285,42 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Engine toggle (if present)
-  const mainBtn = $("engine-main");
-  const autoBtn = $("engine-auto");
-  if (mainBtn) {
-    mainBtn.addEventListener("click", () => switchEngine("main"));
-  }
-  if (autoBtn) {
-    autoBtn.addEventListener("click", () => switchEngine("auto"));
+  // Range buttons
+  document.querySelectorAll(".range-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderSignals();
+    });
+  });
+
+  // Sportsbook selector
+  const bookSel = $("sportsbook");
+  if (bookSel) {
+    bookSel.addEventListener("change", renderSignals);
   }
 
-  // Initial state
+  // Date nav
+  const prevBtn = $("prev-day");
+  const nextBtn = $("next-day");
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      currentDateOffset -= 1;
+      loadSignals();
+      loadGames();
+    });
+  }
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      currentDateOffset += 1;
+      loadSignals();
+      loadGames();
+    });
+  }
+
+  // Initial
   setActiveTab("hr");
-  switchEngine("main"); // loads signals, games, accuracy
+  loadSignals();
+  loadGames();
+  loadAccuracy();
 });
