@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>NexariOS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="style.css?v=5" />
+  <link rel="stylesheet" href="style.css?v=7" />
   <meta name="theme-color" content="#050816" />
 </head>
 
@@ -69,15 +69,6 @@
           </div>
           <ul id="games-list" class="list compact-list"></ul>
         </div>
-
-        <div class="card glass compact">
-          <div class="card-header">
-            <span class="icon">🧾</span>
-            <span>Lineups</span>
-          </div>
-          <div id="lineups-empty" class="sub">Tap a game to view lineups.</div>
-          <ul id="lineups-list" class="list compact-list"></ul>
-        </div>
       </section>
 
       <!-- ACCURACY TAB -->
@@ -114,7 +105,8 @@
             <span class="icon">🔍</span>
             <span>Search Players</span>
           </div>
-          <input id="search-input" class="search-input" type="text" placeholder="Search players, teams, stadiums..." />
+          <input id="search-input" class="search-input" type="text"
+                 placeholder="Search players, teams, stadiums..." />
           <ul id="search-results" class="list compact-list"></ul>
         </div>
       </section>
@@ -131,23 +123,57 @@
             <span>Display</span>
           </div>
           <div class="metric-row">
-            <span>Theme</span><span id="theme-label">Deep‑Space Neon (Dark)</span>
+            <span>Theme</span><span id="theme-label">Dark‑Carbon × Neon OS</span>
           </div>
           <div class="metric-row">
-            <span>Accent</span><span>Blue / Purple</span>
+            <span>Accent</span><span>Blue / Purple Neon</span>
           </div>
         </div>
 
         <div class="card glass compact">
           <div class="card-header">
             <span class="icon">🧩</span>
-            <span>System</span>
+            <span>Engine</span>
           </div>
           <div class="metric-row">
-            <span>Engine</span><span>v6.6 Overmind OCM</span>
+            <span>Version</span><span>v6.6 Overmind OCM</span>
           </div>
           <div class="metric-row">
             <span>Worker</span><span>nexari.jardelterry.workers.dev</span>
+          </div>
+        </div>
+
+        <div class="card glass compact">
+          <div class="card-header">
+            <span class="icon">🧠</span>
+            <span>System Intelligence</span>
+          </div>
+          <div class="handbook">
+            <div class="subheader">Outcome Pills</div>
+            <p><strong>Hit (Green):</strong> Player homered today.</p>
+            <p><strong>Miss (Red):</strong> Game is final and player did not homer.</p>
+            <p><strong>Pending (Gold):</strong> Game not started or in progress and player has not homered yet.</p>
+
+            <div class="subheader">Tiers</div>
+            <p><strong>Strong:</strong> HR Base ≥ 26.</p>
+            <p><strong>Playable:</strong> HR Base ≥ 18.</p>
+            <p><strong>Watch:</strong> HR Base &gt; 0.</p>
+
+            <div class="subheader">Games & Weather</div>
+            <p><strong>Pre‑Game:</strong> Shows game time + weather (temp, wind, conditions) when available.</p>
+            <p><strong>Live:</strong> Shows LIVE + score + weather.</p>
+            <p><strong>Final:</strong> Shows Final + score + weather.</p>
+
+            <div class="subheader">Lineups</div>
+            <p>Tap a game to expand lineups under it. Tapping another game collapses the previous and opens the new one. Shows name + position only for compact view.</p>
+
+            <div class="subheader">Accuracy</div>
+            <p>Accuracy reflects today’s system picks only. Hits = players who homered. Misses = players who did not. Pending outcomes do not appear here.</p>
+
+            <div class="subheader">Signals</div>
+            <p><strong>OCM:</strong> Overmind Composite Metric (park, weather, lineup slot, etc.).</p>
+            <p><strong>HR Base:</strong> Raw HR expectation by lineup slot.</p>
+            <p><strong>DK:</strong> Synthetic odds for relative comparison only.</p>
           </div>
         </div>
 
@@ -239,12 +265,28 @@
         updateDateLabel();
         renderHRView();
         renderGames();
-        renderLineups();
         renderAccuracy();
         renderSearchResults("");
       } catch (e) {
         console.error("Data load error:", e);
       }
+    }
+
+    function allSignalsZeroHits() {
+      if (!signalsData.length) return false;
+      return signalsData.every(s => !s.hrHit);
+    }
+
+    function displayOutcomeLabel(signal) {
+      if (signal.hrHit) return "Hit";
+      if (allSignalsZeroHits()) return "Pending";
+      return "Miss";
+    }
+
+    function displayOutcomeClass(signal) {
+      if (signal.hrHit) return "hit";
+      if (allSignalsZeroHits()) return "pending";
+      return "miss";
     }
 
     function renderHRView() {
@@ -263,6 +305,8 @@
         const venue = s.context?.venueName || "";
         const dk = s.sportsbooks?.dk || "N/A";
         const tier = s.tier || "Watch";
+        const label = displayOutcomeLabel(s);
+        const cls = displayOutcomeClass(s);
 
         const li = document.createElement("li");
         li.innerHTML = `
@@ -270,7 +314,7 @@
             <span class="row-title">${s.player}</span>
             <span class="row-tag tier">${tier}</span>
             <span class="row-tag team">${s.team || ""}</span>
-            <span class="row-pill ${s.hrHit ? "hit" : "miss"}">${s.hrHit ? "Hit" : "Miss"}</span>
+            <span class="row-pill ${cls}">${label}</span>
           </div>
           <div class="row-sub">
             vs ${s.opponent || "—"} · OCM ${(s.overmindCompositeMetric || 0).toFixed(1)} · HR ${s.hr} · DK ${dk}
@@ -298,8 +342,8 @@
         const envParts = [temp, wind, cond].filter(Boolean).join(" · ");
 
         const hasScore = g.awayScore != null && g.homeScore != null;
-        const isFinal = (g.status || "").toLowerCase().includes("final") ||
-                        (g.status || "").toLowerCase().includes("completed");
+        const statusLower = (g.status || "").toLowerCase();
+        const isFinal = statusLower.includes("final") || statusLower.includes("completed");
         const isLive = g.live;
 
         let line2 = "";
@@ -312,7 +356,6 @@
           line2 = `LIVE · ${g.awayScore}–${g.homeScore}`;
           line3 = envParts ? envParts : "";
         } else {
-          // Not started yet: show game time + weather
           line2 = `${g.gameTime}`;
           line3 = envParts ? envParts : (g.status ? g.status : "");
         }
@@ -328,11 +371,11 @@
           <div class="row-sub">${line2}</div>
           ${g.venueName ? `<div class="row-sub venue">${g.venueName}</div>` : ""}
           ${line3 ? `<div class="row-sub">${line3}</div>` : ""}
+          ${isSelected ? renderInlineLineups(g) : ""}
         `;
         li.addEventListener("click", () => {
           selectedGameIndex = selectedGameIndex === idx ? null : idx;
           renderGames();
-          renderLineups();
         });
         list.appendChild(li);
       });
@@ -342,60 +385,42 @@
       }
     }
 
-    function renderLineups() {
-      const list = document.getElementById("lineups-list");
-      const empty = document.getElementById("lineups-empty");
-      list.innerHTML = "";
-
-      if (selectedGameIndex == null || !gamesData[selectedGameIndex]) {
-        empty.style.display = "block";
-        return;
-      }
-
-      empty.style.display = "none";
-      const g = gamesData[selectedGameIndex];
-
-      const awayPlayers = g.awayPlayers || [];
-      const homePlayers = g.homePlayers || [];
+    function renderInlineLineups(game) {
+      const awayPlayers = game.awayPlayers || [];
+      const homePlayers = game.homePlayers || [];
 
       if (!awayPlayers.length && !homePlayers.length) {
-        list.innerHTML = `<li class="sub">No lineup data available.</li>`;
-        return;
+        return `<div class="lineups-inline"><div class="sub">No lineup data available.</div></div>`;
       }
 
-      if (awayPlayers.length) {
-        const subHeader = document.createElement("li");
-        subHeader.innerHTML = `<div class="subheader">Away – ${g.away}</div>`;
-        list.appendChild(subHeader);
+      let html = `<div class="lineups-inline">`;
 
+      if (awayPlayers.length) {
+        html += `<div class="subheader">Away – ${game.away}</div>`;
         awayPlayers.forEach(p => {
-          const li = document.createElement("li");
-          li.innerHTML = `
-            <div class="row-main">
+          html += `
+            <div class="row-main lineup-row">
               <span class="row-title">${p.name}</span>
               <span class="row-tag">${p.pos || ""}</span>
             </div>
           `;
-          list.appendChild(li);
         });
       }
 
       if (homePlayers.length) {
-        const subHeader = document.createElement("li");
-        subHeader.innerHTML = `<div class="subheader">Home – ${g.home}</div>`;
-        list.appendChild(subHeader);
-
+        html += `<div class="subheader">Home – ${game.home}</div>`;
         homePlayers.forEach(p => {
-          const li = document.createElement("li");
-          li.innerHTML = `
-            <div class="row-main">
+          html += `
+            <div class="row-main lineup-row">
               <span class="row-title">${p.name}</span>
               <span class="row-tag">${p.pos || ""}</span>
             </div>
           `;
-          list.appendChild(li);
         });
       }
+
+      html += `</div>`;
+      return html;
     }
 
     function renderAccuracy() {
@@ -425,18 +450,24 @@
       `;
 
       const hitsList = (accuracyData.outcomes || []).map(s =>
-        `<div class="row-sub">${s.player} (${s.team || ""}) · ${s.tier}</div>`
+        `<div class="outcome-row hit-row">${s.player} (${s.team || ""}) · ${s.tier}</div>`
       ).join("");
 
       const missesList = (accuracyData.missed || []).map(s =>
-        `<div class="row-sub">${s.player} (${s.team || ""}) · ${s.tier}</div>`
+        `<div class="outcome-row miss-row">${s.player} (${s.team || ""}) · ${s.tier}</div>`
       ).join("");
 
       outcomesDiv.innerHTML = `
-        <div class="subheader">Hits</div>
-        ${hitsList || `<div class="sub">No hits recorded.</div>`}
-        <div class="subheader">Misses</div>
-        ${missesList || `<div class="sub">No misses recorded.</div>`}
+        <div class="outcomes-columns">
+          <div class="outcomes-column">
+            <div class="subheader">Hits</div>
+            ${hitsList || `<div class="sub">No hits recorded.</div>`}
+          </div>
+          <div class="outcomes-column">
+            <div class="subheader">Misses</div>
+            ${missesList || `<div class="sub">No misses recorded.</div>`}
+          </div>
+        </div>
       `;
     }
 
@@ -463,12 +494,15 @@
         const venue = s.context?.venueName || "";
         const dk = s.sportsbooks?.dk || "N/A";
         const tier = s.tier || "Watch";
+        const label = displayOutcomeLabel(s);
+        const cls = displayOutcomeClass(s);
         return `
           <li class="search-result">
             <div class="row-main">
               <span class="row-title">${s.player}</span>
               <span class="row-tag tier">${tier}</span>
               <span class="row-tag team">${s.team || ""}</span>
+              <span class="row-pill ${cls}">${label}</span>
             </div>
             <div class="row-sub">
               vs ${s.opponent || "—"} · OCM ${(s.overmindCompositeMetric || 0).toFixed(1)}
@@ -565,7 +599,7 @@
         } else {
           body.classList.add("theme-dark");
           body.classList.remove("theme-light");
-          label.textContent = "Deep‑Space Neon (Dark)";
+          label.textContent = "Dark‑Carbon × Neon OS";
         }
       }
 
