@@ -49,7 +49,7 @@ body {
 }
 
 /* ============================================================
-   BOTTOM NAV — Dynamic Icon System (Full Rewrite)
+   BOTTOM NAV — Dynamic Icon System + Layout Modes
    ============================================================ */
 
 #bottomNav {
@@ -103,6 +103,22 @@ body {
     opacity: 0.95;
 }
 
+/* Nav layout: icons on left for desktop mode */
+body[data-navlayout="side"] #bottomNav .navItem {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+body[data-navlayout="side"] #bottomNav .icon {
+    margin-bottom: 0;
+}
+body[data-navlayout="side"] #bottomNav .label {
+    font-size: 14px;
+}
+
+/* Slider */
 #navSlider {
     position: absolute;
     bottom: 0;
@@ -177,6 +193,18 @@ body {
     justify-content: space-between;
     cursor: pointer;
     padding: 4px 0;
+    gap: 8px;
+    align-items: center;
+}
+
+.gameHeader .title {
+    font-weight: 600;
+}
+
+.gameHeader .metaLine {
+    font-size: 13px;
+    opacity: 0.9;
+    text-align: right;
 }
 
 .gameHeader:hover {
@@ -187,6 +215,36 @@ body {
     margin-top: 8px;
     padding-top: 8px;
     border-top: 1px solid #252b3d;
+}
+
+/* Refined lineup tags */
+.lineup {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.playerTag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    margin: 2px 4px 2px 0;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.playerName {
+    font-weight: 500;
+}
+
+.playerPos {
+    font-size: 11px;
+    padding: 1px 5px;
+    border-radius: 999px;
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--accent-soft);
 }
 
 /* CALENDAR */

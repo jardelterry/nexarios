@@ -24,6 +24,12 @@ function safeName(name, fallback) {
     return "Player";
 }
 
+function formatGameTime(g) {
+    // Try multiple possible fields from Worker
+    const t = g.gameTime || g.time || g.startTime || "";
+    return t || "";
+}
+
 /* Build master player list from gamesData (roster patch) */
 function buildMasterPlayers() {
     const players = [];
@@ -34,22 +40,24 @@ function buildMasterPlayers() {
         const home = g.home || "";
 
         (g.awayPlayers || []).forEach(p => {
-            const key = `${away}|${p}`;
-            if (seen.has(key)) return;
+            const name = typeof p === "string" ? p : (p.name || p.player || "");
+            const key = `${away}|${name}`;
+            if (!name || seen.has(key)) return;
             seen.add(key);
             players.push({
-                player: p,
+                player: name,
                 team: away,
                 opponent: home
             });
         });
 
         (g.homePlayers || []).forEach(p => {
-            const key = `${home}|${p}`;
-            if (seen.has(key)) return;
+            const name = typeof p === "string" ? p : (p.name || p.player || "");
+            const key = `${home}|${name}`;
+            if (!name || seen.has(key)) return;
             seen.add(key);
             players.push({
-                player: p,
+                player: name,
                 team: home,
                 opponent: away
             });
@@ -79,32 +87,54 @@ function buildMasterPlayers() {
     masterPlayers = players;
 }
 
-/* Odds panel HTML */
+/* Odds panel HTML (book-aware) */
 function renderOddsBlock(sportsbooks) {
     if (!sportsbooks || typeof sportsbooks !== "object") {
         return `<div class="oddsBlock">Sportsbook Odds: N/A</div>`;
     }
-    const lines = [];
+
     const dk = sportsbooks.dk ?? null;
     const fd = sportsbooks.fd ?? null;
     const mgm = sportsbooks.mgm ?? null;
     const cz = sportsbooks.cz ?? null;
     const fanatics = sportsbooks.fanatics ?? null;
 
-    if (!dk && !fd && !mgm && !cz && !fanatics) {
+    const allLines = [];
+    if (dk !== null) allLines.push(`DK: ${dk}`);
+    if (fd !== null) allLines.push(`FD: ${fd}`);
+    if (mgm !== null) allLines.push(`MGM: ${mgm}`);
+    if (cz !== null) allLines.push(`CZ: ${cz}`);
+    if (fanatics !== null) allLines.push(`Fanatics: ${fanatics}`);
+
+    // If nothing at all
+    if (!allLines.length) {
         return `<div class="oddsBlock">Sportsbook Odds: N/A</div>`;
     }
 
-    if (dk !== null) lines.push(`DK: ${dk}`);
-    if (fd !== null) lines.push(`FD: ${fd}`);
-    if (mgm !== null) lines.push(`MGM: ${mgm}`);
-    if (cz !== null) lines.push(`CZ: ${cz}`);
-    if (fanatics !== null) lines.push(`Fanatics: ${fanatics}`);
+    // If a specific book is selected and exists, show only that
+    const bookLine = sportsbooks[selectedBook];
+    if (bookLine !== undefined && bookLine !== null) {
+        const labelMap = {
+            dk: "DK",
+            fd: "FD",
+            mgm: "MGM",
+            cz: "CZ",
+            fanatics: "Fanatics"
+        };
+        const label = labelMap[selectedBook] || selectedBook.toUpperCase();
+        return `
+            <div class="oddsBlock">
+                <div>${label} Odds:</div>
+                <div>${bookLine}</div>
+            </div>
+        `;
+    }
 
+    // Fallback: show all available
     return `
         <div class="oddsBlock">
             <div>Sportsbook Odds:</div>
-            <div>${lines.join("<br>")}</div>
+            <div>${allLines.join("<br>")}</div>
         </div>
     `;
 }
@@ -119,7 +149,7 @@ async function loadData() {
         const [signalsRes, gamesRes, accuracyRes] = await Promise.all([
             fetch("https://nexari.jardelterry.workers.dev/signals" + dateParam),
             fetch("https://nexari.jardelterry.workers.dev/games" + dateParam),
-            fetch("https://nexari.jardelterry.workers.dev/accuracy")
+            fetch("https://nexari.jardelterry.workers.dev/accuracy" + dateParam)
         ]);
 
         const signalsJson = await signalsRes.json();
@@ -218,6 +248,16 @@ function loadSignals() {
     if (!container) return;
     container.innerHTML = "";
 
+    // Build live HR hit set from accuracy data
+    const hrHitSet = new Set();
+    const acc = accuracyData || {};
+    (acc.outcomes || []).forEach(o => {
+        if (o && o.hrHit) {
+            const name = safeName(o.player, o.cachedPlayer).toLowerCase();
+            hrHitSet.add(name);
+        }
+    });
+
     let data = Array.isArray(masterPlayers) ? [...masterPlayers] : [];
     data.sort((a, b) => (b.hr || 0) - (a.hr || 0));
     data = data.slice(0, hrLimit);
@@ -236,8 +276,11 @@ function loadSignals() {
         const streakType = p.streakType || "N/A";
         const streakCount = p.streakCount || 0;
 
+        const lowerName = name.toLowerCase();
+        const hrBadge = hrHitSet.has(lowerName) ? ` • HR ✅` : "";
+
         div.innerHTML = `
-            <div class="name">${name} — ${hr}% (${hr === 0 ? "No projection" : tier})</div>
+            <div class="name">${name} — ${hr}% (${hr === 0 ? "No projection" : tier})${hrBadge}</div>
             <div class="meta">
                 ${p.team || ""} vs ${p.opponent || ""}<br>
                 Streak: ${streakType} (${streakCount})
@@ -265,6 +308,20 @@ if (hrViewSelect) {
 /* ------------------------------
    GAMES
 --------------------------------*/
+function formatLineup(list) {
+    if (!Array.isArray(list)) return "";
+    return list.map(p => {
+        if (typeof p === "string") {
+            const name = safeName(p);
+            return `<span class="playerTag"><span class="playerName">${name}</span></span>`;
+        }
+        const name = safeName(p.name || p.player, p.cachedPlayer);
+        const pos = p.pos || p.position || "";
+        const posHtml = pos ? `<span class="playerPos">${pos}</span>` : "";
+        return `<span class="playerTag"><span class="playerName">${name}</span>${posHtml}</span>`;
+    }).join(" ");
+}
+
 function loadGames() {
     const container = document.getElementById("gamesContainer");
     if (!container) return;
@@ -277,19 +334,30 @@ function loadGames() {
         div.className = "game";
 
         const livePrefix = g.live ? "LIVE • " : "";
-
-        const awayLineup = Array.isArray(g.awayPlayers)
-            ? g.awayPlayers.map(p => safeName(p)).join(", ")
+        const isFinal = g.status === "Final" || g.final === true;
+        const scoreText = (g.awayScore != null && g.homeScore != null)
+            ? `${g.awayScore}-${g.homeScore}`
             : "";
 
-        const homeLineup = Array.isArray(g.homePlayers)
-            ? g.homePlayers.map(p => safeName(p)).join(", ")
+        const timeText = formatGameTime(g);
+        const weatherText = (g.temp != null && g.wind != null && g.conditions)
+            ? `${g.temp}°F • Wind ${g.wind}mph • ${g.conditions}`
             : "";
+
+        let metaLine = "";
+        if (isFinal) {
+            metaLine = `FINAL ${scoreText || ""}`.trim();
+        } else {
+            metaLine = `${livePrefix}${timeText ? timeText + " • " : ""}${weatherText}`.trim();
+        }
+
+        const awayLineup = formatLineup(g.awayPlayers || []);
+        const homeLineup = formatLineup(g.homePlayers || []);
 
         div.innerHTML = `
             <div class="gameHeader">
                 <div class="title">${g.away} @ ${g.home}</div>
-                <div class="weather">${livePrefix}${g.temp}°F • Wind ${g.wind}mph • ${g.conditions}</div>
+                <div class="metaLine">${metaLine}</div>
             </div>
 
             <div class="gameDetails" style="display:none;">
@@ -356,6 +424,8 @@ function loadAccuracy() {
     const dailyBar = document.getElementById("accDailyBar");
     const trend7 = document.getElementById("trend7");
     const trend30 = document.getElementById("trend30");
+    const streaksDiv = document.getElementById("accStreaks");
+    const hrHittersDiv = document.getElementById("accHRHitters");
 
     const data = accuracyData || {
         percent: 0,
@@ -446,6 +516,37 @@ function loadAccuracy() {
     if (deepPlayers) deepPlayers.textContent = topPlayers.map(p => `${p.player} ${p.acc}%`).join(" • ");
 
     if (deepVolume) deepVolume.textContent = `Today: ${total} predictions`;
+
+    // Streaks + HR hitters
+    const streakLines = [];
+    (data.outcomes || []).forEach(o => {
+        if (!o) return;
+        const name = safeName(o.player, o.cachedPlayer);
+        if (o.hrStreak && o.hrStreak > 0) {
+            streakLines.push(`${name} HR streak: ${o.hrStreak}`);
+        }
+        if (o.rbiStreak && o.rbiStreak > 0) {
+            streakLines.push(`${name} RBI streak: ${o.rbiStreak}`);
+        }
+    });
+    if (streaksDiv) {
+        streaksDiv.textContent = streakLines.length
+            ? streakLines.join(" • ")
+            : "No active HR/RBI streaks recorded.";
+    }
+
+    const hrHitLines = [];
+    (data.outcomes || []).forEach(o => {
+        if (!o || !o.hrHit) return;
+        const name = safeName(o.player, o.cachedPlayer);
+        const system = o.systemPick ? "System" : "Non-system";
+        hrHitLines.push(`${name} (${system})`);
+    });
+    if (hrHittersDiv) {
+        hrHittersDiv.textContent = hrHitLines.length
+            ? hrHitLines.join(" • ")
+            : "No HR hitters recorded yet.";
+    }
 }
 
 /* ------------------------------
@@ -514,7 +615,6 @@ const sportsbookSelects = document.querySelectorAll(".sportsbookSelect");
 
 function applyBookSelection(book) {
     selectedBook = book;
-    // Future: book-specific behavior can hook here.
     loadSignals();
     runSearch();
 }
@@ -537,19 +637,18 @@ const forceRebuildBtn = document.getElementById("forceRebuildBtn");
 const clearCacheBtn = document.getElementById("clearCacheBtn");
 const themeToggle = document.getElementById("themeToggle");
 const iconSizeSlider = document.getElementById("iconSizeSlider");
+const navLayoutSelect = document.getElementById("navLayoutSelect");
+const overmindToggle = document.getElementById("overmindToggle");
 
 /* Dynamic Icon System */
 function applyDynamicIconSize(size) {
     const s = Number(size) || 58;
 
-    // Icon size
     document.documentElement.style.setProperty("--icon-size", s + "px");
 
-    // Nav height scales with icon size
     const navHeight = Math.round(s * 1.65);
     document.documentElement.style.setProperty("--nav-height", navHeight + "px");
 
-    // Glow intensity soft-cap curve
     let glow = Math.round((s - 40) * 0.55);
     if (glow < 6) glow = 6;
     if (glow > 22) glow = 22;
@@ -570,6 +669,46 @@ if (iconSizeSlider) {
         applyDynamicIconSize(size);
         localStorage.setItem("iconSize", size);
     };
+}
+
+/* Nav layout */
+function applyNavLayout(layout) {
+    document.body.dataset.navlayout = layout;
+    localStorage.setItem("navLayout", layout);
+}
+
+if (navLayoutSelect) {
+    const savedLayout = localStorage.getItem("navLayout") || "stacked";
+    navLayoutSelect.value = savedLayout;
+    applyNavLayout(savedLayout);
+
+    navLayoutSelect.onchange = e => {
+        applyNavLayout(e.target.value);
+    };
+}
+
+/* Overmind mode (C–G) */
+if (overmindToggle) {
+    const buttons = overmindToggle.querySelectorAll(".segBtn");
+    const savedMode = localStorage.getItem("overmindMode") || "c";
+
+    buttons.forEach(btn => {
+        if (btn.dataset.mode === savedMode) {
+            btn.classList.add("active");
+        } else {
+            btn.classList.remove("active");
+        }
+    });
+
+    buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            buttons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            const mode = btn.dataset.mode;
+            localStorage.setItem("overmindMode", mode);
+            // Future: hook mode into behavior (C/D/E/F/G overmind tiers)
+        });
+    });
 }
 
 if (deviceModeSelect) {

@@ -5,7 +5,7 @@
     <title>NexariOS v6.6</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body data-device="auto" data-theme="dark">
+<body data-device="auto" data-theme="dark" data-navlayout="stacked">
 
     <!-- BOTTOM NAVIGATION (GLOWING) -->
     <div id="bottomNav">
@@ -117,6 +117,16 @@
                 <div id="accVolume"></div>
             </div>
 
+            <div class="accCard">
+                <h3>Current Streaks</h3>
+                <div id="accStreaks"></div>
+            </div>
+
+            <div class="accCard">
+                <h3>HR Hitters Today</h3>
+                <div id="accHRHitters"></div>
+            </div>
+
         </div>
     </div>
 
@@ -166,6 +176,12 @@
 
             <label>Icon Size:</label>
             <input type="range" id="iconSizeSlider" min="40" max="80" value="58">
+
+            <label>Nav Layout:</label>
+            <select id="navLayoutSelect">
+                <option value="stacked">Icons on top</option>
+                <option value="side">Icons left (desktop)</option>
+            </select>
         </div>
 
         <div class="settingsSection">
@@ -188,6 +204,17 @@
         </div>
 
         <div class="settingsSection">
+            <h3>Overmind Mode</h3>
+            <div id="overmindToggle" class="segmented">
+                <button class="segBtn active" data-mode="c">C</button>
+                <button class="segBtn" data-mode="d">D</button>
+                <button class="segBtn" data-mode="e">E</button>
+                <button class="segBtn" data-mode="f">F</button>
+                <button class="segBtn" data-mode="g">G</button>
+            </div>
+        </div>
+
+        <div class="settingsSection">
             <h3>How to Use NexariOS</h3>
 
             <div class="infoBlock">
@@ -199,12 +226,12 @@
 
             <div class="infoBlock">
                 <h3>Games</h3>
-                <p>Tap a game row to expand lineups, weather, and LIVE status.</p>
+                <p>Tap a game row to expand lineups, weather, LIVE status, and final scores.</p>
             </div>
 
             <div class="infoBlock">
                 <h3>Accuracy</h3>
-                <p>Tracks system performance, streaks, and outcomes over time.</p>
+                <p>Tracks system performance, streaks, HR hitters, and outcomes over time.</p>
             </div>
 
             <div class="infoBlock">
