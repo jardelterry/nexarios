@@ -5,174 +5,35 @@
   <title>NexariOS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Optional: keep your existing assets if you use them -->
+  <!-- External CSS (your neon NexariOS theme) -->
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- App identity -->
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.svg" type="image/svg+xml" />
   <meta name="theme-color" content="#050816" />
-  <style>
-    /* Minimal safety styling in case styles.css is empty or missing */
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-        "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #151b3c 0, #050816 45%, #02030a 100%);
-      color: #f5f5ff;
-    }
-    .app-shell {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    header {
-      padding: 12px 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(16px);
-      background: linear-gradient(to right, rgba(5, 8, 22, 0.95), rgba(10, 16, 40, 0.9));
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-    header .title {
-      font-size: 18px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    header .title span.icon {
-      font-size: 20px;
-    }
-    main {
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px 12px 72px;
-    }
-    .tab-view {
-      display: none;
-    }
-    .tab-view.active {
-      display: block;
-    }
-    .section-card {
-      background: radial-gradient(circle at top left, #1b2348 0, #0a0f24 40%, #050816 100%);
-      border-radius: 14px;
-      padding: 12px 14px;
-      margin-bottom: 10px;
-      border: 1px solid rgba(120, 180, 255, 0.18);
-      box-shadow: 0 0 18px rgba(80, 140, 255, 0.18);
-    }
-    .section-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 6px;
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: #a9c4ff;
-    }
-    .section-header span.icon {
-      font-size: 16px;
-    }
-    .section-title {
-      font-weight: 600;
-    }
-    .list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      font-size: 13px;
-    }
-    .list li {
-      padding: 6px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-    .list li:last-child {
-      border-bottom: none;
-    }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 11px;
-      background: rgba(120, 180, 255, 0.12);
-      color: #dbe7ff;
-      margin-left: 6px;
-    }
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 52px;
-      display: flex;
-      background: rgba(3, 5, 15, 0.96);
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(18px);
-      z-index: 20;
-    }
-    .nav-item {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      color: #7f8bb5;
-      cursor: pointer;
-      gap: 2px;
-    }
-    .nav-item span.icon {
-      font-size: 18px;
-    }
-    .nav-item.active {
-      color: #e0ecff;
-      text-shadow: 0 0 10px rgba(120, 180, 255, 0.9);
-    }
-    .metric-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      margin-bottom: 4px;
-    }
-    .metric-label {
-      color: #9aa7d4;
-    }
-    .metric-value {
-      font-weight: 500;
-    }
-    .search-input {
-      width: 100%;
-      padding: 8px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      background: rgba(5, 8, 22, 0.9);
-      color: #f5f5ff;
-      font-size: 13px;
-      outline: none;
-      margin-bottom: 10px;
-    }
-  </style>
 </head>
+
 <body>
   <div class="app-shell">
-    <header>
+
+    <!-- HEADER -->
+    <header class="app-header">
       <div class="title">
         <span class="icon">☄️</span>
         <span>NexariOS</span>
       </div>
     </header>
 
+    <!-- MAIN CONTENT -->
     <main id="main-content">
+
       <!-- HR TAB -->
       <section id="tab-hr" class="tab-view active">
-        <div class="section-card">
-          <div class="section-header">
+        <div class="card">
+          <div class="card-header">
             <span class="icon">☄️</span>
-            <span class="section-title">HR Signals</span>
+            <span>HR Signals</span>
           </div>
           <ul id="hr-list" class="list"></ul>
         </div>
@@ -180,186 +41,128 @@
 
       <!-- GAMES TAB -->
       <section id="tab-games" class="tab-view">
-        <div class="section-card">
-          <div class="section-header">
+        <div class="card">
+          <div class="card-header">
             <span class="icon">⚾️</span>
-            <span class="section-title">Games</span>
+            <span>Games</span>
           </div>
           <ul id="games-list" class="list"></ul>
         </div>
       </section>
 
-      <!-- ACCURACY TAB (Version C – simplified surface) -->
+      <!-- ACCURACY TAB -->
       <section id="tab-accuracy" class="tab-view">
-        <div class="section-card">
-          <div class="section-header">
+        <div class="card">
+          <div class="card-header">
             <span class="icon">📊</span>
-            <span class="section-title">System Tracker</span>
+            <span>System Tracker</span>
           </div>
-          <div id="accuracy-system" style="font-size: 13px;"></div>
+          <div id="accuracy-system"></div>
         </div>
 
-        <div class="section-card">
-          <div class="section-header">
-            <span class="icon">📊</span>
-            <span class="section-title">HR Outcomes</span>
+        <div class="card">
+          <div class="card-header">
+            <span class="icon">📈</span>
+            <span>HR Outcomes</span>
           </div>
-          <div id="accuracy-hr-outcomes" style="font-size: 13px;"></div>
+          <div id="accuracy-hr-outcomes"></div>
         </div>
       </section>
 
       <!-- SEARCH TAB -->
       <section id="tab-search" class="tab-view">
-        <div class="section-card">
-          <div class="section-header">
+        <div class="card">
+          <div class="card-header">
             <span class="icon">🔍</span>
-            <span class="section-title">Search Players</span>
+            <span>Search Players</span>
           </div>
-          <input
-            id="search-input"
-            class="search-input"
-            type="text"
-            placeholder="Search by player or team..."
-          />
+          <input id="search-input" class="search-input" type="text" placeholder="Search players or teams..." />
           <ul id="search-results" class="list"></ul>
         </div>
       </section>
 
       <!-- SETTINGS TAB -->
       <section id="tab-settings" class="tab-view">
-        <!-- ✨ DISPLAY -->
-        <div class="section-card">
-          <div class="section-header">
+
+        <!-- DISPLAY -->
+        <div class="card glass">
+          <div class="card-header">
             <span class="icon">✨</span>
-            <span class="section-title">Display</span>
+            <span>Display</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Background</span>
-            <span class="metric-value">Deep‑Space Gradient</span>
+            <span>Theme</span><span>Deep‑Space Neon</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Accent</span>
-            <span class="metric-value">Neon Blue / Purple</span>
+            <span>Accent</span><span>Blue / Purple</span>
           </div>
         </div>
 
-        <!-- 🧩 SYSTEM -->
-        <div class="section-card">
-          <div class="section-header">
+        <!-- SYSTEM -->
+        <div class="card glass">
+          <div class="card-header">
             <span class="icon">🧩</span>
-            <span class="section-title">System</span>
+            <span>System</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Device Mode</span>
-            <span class="metric-value">Auto</span>
+            <span>Device Mode</span><span>Auto</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Worker Version</span>
-            <span class="metric-value">v6.6</span>
+            <span>Worker Version</span><span>v6.6</span>
           </div>
         </div>
 
-        <!-- ⚡ PERFORMANCE -->
-        <div class="section-card">
-          <div class="section-header">
+        <!-- PERFORMANCE -->
+        <div class="card glass">
+          <div class="card-header">
             <span class="icon">⚡</span>
-            <span class="section-title">Performance</span>
+            <span>Performance</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Render Time</span>
-            <span class="metric-value" id="perf-render">–</span>
+            <span>Render Time</span><span id="perf-render">–</span>
           </div>
           <div class="metric-row">
-            <span class="metric-label">Data Load</span>
-            <span class="metric-value" id="perf-data">–</span>
+            <span>Data Load</span><span id="perf-data">–</span>
           </div>
         </div>
 
-        <!-- 🧬 SYSTEM INTELLIGENCE -->
-        <div class="section-card">
-          <div class="section-header">
+        <!-- SYSTEM INTELLIGENCE -->
+        <div class="card glass">
+          <div class="card-header">
             <span class="icon">🧬</span>
-            <span class="section-title">System Intelligence</span>
+            <span>System Intelligence</span>
           </div>
-          <div style="font-size: 12px; line-height: 1.5;">
-            <strong>OCM (Overmind Composite Metric)</strong><br />
-            Blends matchup quality, power profile, recent form, and volatility into a single score.
-            Higher OCM means stronger overall HR environment for that player.<br /><br />
-
-            <strong>HR Base</strong><br />
-            Baseline HR expectation for the matchup. OCM can be high even when HR base is modest if
-            other factors align (bullpen exposure, park, streaks).<br /><br />
-
-            <strong>Playable</strong><br />
-            A signal is “playable” when OCM, odds, volatility, and role all clear internal thresholds.
-            Some high‑OCM players are filtered out if risk or price is off‑profile.<br /><br />
-
-            <strong>Hits & Misses</strong><br />
-            A “hit” is a projected player who homers and was marked playable. Scratches, benchings,
-            and wrong‑lineup cases are tracked separately so they don’t distort accuracy.<br /><br />
-
-            <strong>Unlisted HRs</strong><br />
-            Players who homer without being in signals. These feed back into future calibration and
-            help refine edges and blind spots.<br /><br />
-
-            <strong>Streaks</strong><br />
-            Hot, cold, and team streaks describe recent HR clustering. They don’t override the model
-            but tilt edges when everything else is close.<br /><br />
-
-            <strong>System Performance</strong><br />
-            Each system is tracked by record, units, ROI, and volatility. The goal is not just raw
-            hits, but stable, repeatable edges over time.<br /><br />
-
-            <strong>Daily Accuracy Blocks</strong><br />
-            Each day is summarized by hits, misses, accuracy %, units, and best/worst pick. This is
-            your high‑level read on how NexariOS behaved in that environment.
+          <div class="handbook">
+            <p><strong>OCM</strong> blends matchup quality, power profile, volatility, and role into a single HR‑readiness score.</p>
+            <p><strong>HR Base</strong> is the baseline HR expectation for the matchup.</p>
+            <p><strong>Playable</strong> means the signal clears internal thresholds for risk, odds, and volatility.</p>
+            <p><strong>Hits & Misses</strong> track playable outcomes only.</p>
+            <p><strong>Unlisted HRs</strong> feed back into calibration.</p>
+            <p><strong>Streaks</strong> tilt edges when everything else is close.</p>
+            <p><strong>Daily Accuracy Blocks</strong> summarize hits, misses, accuracy %, and units.</p>
           </div>
         </div>
+
       </section>
     </main>
 
+    <!-- BOTTOM NAV -->
     <nav class="bottom-nav">
-      <div class="nav-item active" data-tab="hr">
-        <span class="icon">☄️</span>
-        <span>HR</span>
-      </div>
-      <div class="nav-item" data-tab="games">
-        <span class="icon">⚾️</span>
-        <span>Games</span>
-      </div>
-      <div class="nav-item" data-tab="accuracy">
-        <span class="icon">📊</span>
-        <span>Accuracy</span>
-      </div>
-      <div class="nav-item" data-tab="search">
-        <span class="icon">🔍</span>
-        <span>Search</span>
-      </div>
-      <div class="nav-item" data-tab="settings">
-        <span class="icon">⚙️</span>
-        <span>Settings</span>
-      </div>
+      <div class="nav-item active" data-tab="hr"><span class="icon">☄️</span><span>HR</span></div>
+      <div class="nav-item" data-tab="games"><span class="icon">⚾️</span><span>Games</span></div>
+      <div class="nav-item" data-tab="accuracy"><span class="icon">📊</span><span>Accuracy</span></div>
+      <div class="nav-item" data-tab="search"><span class="icon">🔍</span><span>Search</span></div>
+      <div class="nav-item" data-tab="settings"><span class="icon">⚙️</span><span>Settings</span></div>
     </nav>
+
   </div>
 
-  <!-- EMBEDDED DATA MODEL -->
+  <!-- EMBEDDED JSON (Self‑Contained Data Model) -->
   <script id="games-data" type="application/json">
   {
     "games": [
-      {
-        "id": 1,
-        "home": "Yankees",
-        "away": "Red Sox",
-        "time": "7:05 PM",
-        "status": "scheduled"
-      },
-      {
-        "id": 2,
-        "home": "Dodgers",
-        "away": "Giants",
-        "time": "9:40 PM",
-        "status": "scheduled"
-      }
+      { "id": 1, "home": "Yankees", "away": "Red Sox", "time": "7:05 PM", "status": "scheduled" },
+      { "id": 2, "home": "Dodgers", "away": "Giants", "time": "9:40 PM", "status": "scheduled" }
     ]
   }
   </script>
@@ -367,36 +170,9 @@
   <script id="signals-data" type="application/json">
   {
     "signals": [
-      {
-        "player": "Aaron Judge",
-        "team": "NYY",
-        "ocm": 92,
-        "hr_base": 0.41,
-        "matchup": "vs BOS",
-        "game_id": 1,
-        "playable": true,
-        "hit": true
-      },
-      {
-        "player": "Giancarlo Stanton",
-        "team": "NYY",
-        "ocm": 84,
-        "hr_base": 0.33,
-        "matchup": "vs BOS",
-        "game_id": 1,
-        "playable": true,
-        "hit": false
-      },
-      {
-        "player": "Mookie Betts",
-        "team": "LAD",
-        "ocm": 88,
-        "hr_base": 0.36,
-        "matchup": "vs SF",
-        "game_id": 2,
-        "playable": true,
-        "hit": false
-      }
+      { "player": "Aaron Judge", "team": "NYY", "ocm": 92, "hr_base": 0.41, "matchup": "vs BOS", "game_id": 1, "playable": true, "hit": true },
+      { "player": "Giancarlo Stanton", "team": "NYY", "ocm": 84, "hr_base": 0.33, "matchup": "vs BOS", "game_id": 1, "playable": true, "hit": false },
+      { "player": "Mookie Betts", "team": "LAD", "ocm": 88, "hr_base": 0.36, "matchup": "vs SF", "game_id": 2, "playable": true, "hit": false }
     ]
   }
   </script>
@@ -404,26 +180,14 @@
   <script id="players-data" type="application/json">
   {
     "players": [
-      {
-        "name": "Aaron Judge",
-        "team": "NYY",
-        "position": "RF"
-      },
-      {
-        "name": "Giancarlo Stanton",
-        "team": "NYY",
-        "position": "DH"
-      },
-      {
-        "name": "Mookie Betts",
-        "team": "LAD",
-        "position": "2B"
-      }
+      { "name": "Aaron Judge", "team": "NYY", "position": "RF" },
+      { "name": "Giancarlo Stanton", "team": "NYY", "position": "DH" },
+      { "name": "Mookie Betts", "team": "LAD", "position": "2B" }
     ]
   }
   </script>
 
-  <!-- INLINE JS: NO FETCH, FULLY SELF-CONTAINED -->
+  <!-- INLINE JS (Self‑Contained Logic) -->
   <script>
     let gamesData = [];
     let signalsData = [];
@@ -432,22 +196,12 @@
     function loadEmbeddedData() {
       const t0 = performance.now();
 
-      const gamesRaw = document.getElementById("games-data").textContent;
-      const signalsRaw = document.getElementById("signals-data").textContent;
-      const playersRaw = document.getElementById("players-data").textContent;
-
-      const gamesJSON = JSON.parse(gamesRaw);
-      const signalsJSON = JSON.parse(signalsRaw);
-      const playersJSON = JSON.parse(playersRaw);
-
-      gamesData = gamesJSON.games || [];
-      signalsData = signalsJSON.signals || [];
-      playersData = playersJSON.players || [];
+      gamesData = JSON.parse(document.getElementById("games-data").textContent).games;
+      signalsData = JSON.parse(document.getElementById("signals-data").textContent).signals;
+      playersData = JSON.parse(document.getElementById("players-data").textContent).players;
 
       const t1 = performance.now();
-      const dataLoadMs = Math.round(t1 - t0);
-      const perfDataEl = document.getElementById("perf-data");
-      if (perfDataEl) perfDataEl.textContent = dataLoadMs + " ms";
+      document.getElementById("perf-data").textContent = Math.round(t1 - t0) + " ms";
 
       renderHRView();
       renderGames();
@@ -457,20 +211,14 @@
 
     function renderHRView() {
       const list = document.getElementById("hr-list");
-      if (!list) return;
       list.innerHTML = "";
 
-      signalsData.forEach((s) => {
+      signalsData.forEach(s => {
         const li = document.createElement("li");
-        const status = s.hit ? "Hit" : "Miss";
-        const statusClass = s.hit ? "hit" : "miss";
         li.innerHTML = `
-          <div>
-            <strong>${s.player}</strong> <span class="pill">${s.team}</span>
-          </div>
-          <div style="font-size:11px; color:#9aa7d4;">
-            ${s.matchup} · OCM ${s.ocm} · HR Base ${s.hr_base.toFixed(2)}
-            <span class="pill" style="margin-left:4px;">${status}</span>
+          <div><strong>${s.player}</strong> <span class="pill">${s.team}</span></div>
+          <div class="sub">${s.matchup} · OCM ${s.ocm} · HR Base ${s.hr_base.toFixed(2)}
+            <span class="pill ${s.hit ? "hit" : "miss"}">${s.hit ? "Hit" : "Miss"}</span>
           </div>
         `;
         list.appendChild(li);
@@ -479,136 +227,77 @@
 
     function renderGames() {
       const list = document.getElementById("games-list");
-      if (!list) return;
       list.innerHTML = "";
 
-      gamesData.forEach((g) => {
+      gamesData.forEach(g => {
         const li = document.createElement("li");
         li.innerHTML = `
           <div><strong>${g.away}</strong> @ <strong>${g.home}</strong></div>
-          <div style="font-size:11px; color:#9aa7d4;">
-            ${g.time} · ${g.status}
-          </div>
+          <div class="sub">${g.time} · ${g.status}</div>
         `;
         list.appendChild(li);
       });
     }
 
     function renderAccuracy() {
-      const systemEl = document.getElementById("accuracy-system");
-      const hrOutcomesEl = document.getElementById("accuracy-hr-outcomes");
-      if (!systemEl || !hrOutcomesEl) return;
+      const playable = signalsData.filter(s => s.playable);
+      const hits = playable.filter(s => s.hit);
+      const misses = playable.filter(s => !s.hit);
 
-      const playable = signalsData.filter((s) => s.playable);
-      const hits = playable.filter((s) => s.hit);
-      const misses = playable.filter((s) => !s.hit);
+      const acc = playable.length ? ((hits.length / playable.length) * 100).toFixed(1) : "–";
 
-      const total = playable.length;
-      const hitCount = hits.length;
-      const missCount = misses.length;
-      const acc = total > 0 ? ((hitCount / total) * 100).toFixed(1) : "–";
-
-      systemEl.innerHTML = `
-        <div class="metric-row">
-          <span class="metric-label">Playable</span>
-          <span class="metric-value">${total}</span>
-        </div>
-        <div class="metric-row">
-          <span class="metric-label">Hits</span>
-          <span class="metric-value">${hitCount}</span>
-        </div>
-        <div class="metric-row">
-          <span class="metric-label">Misses</span>
-          <span class="metric-value">${missCount}</span>
-        </div>
-        <div class="metric-row">
-          <span class="metric-label">Accuracy</span>
-          <span class="metric-value">${acc === "–" ? "–" : acc + "%"}</span>
-        </div>
+      document.getElementById("accuracy-system").innerHTML = `
+        <div class="metric-row"><span>Playable</span><span>${playable.length}</span></div>
+        <div class="metric-row"><span>Hits</span><span>${hits.length}</span></div>
+        <div class="metric-row"><span>Misses</span><span>${misses.length}</span></div>
+        <div class="metric-row"><span>Accuracy</span><span>${acc === "–" ? "–" : acc + "%"}</span></div>
       `;
 
-      hrOutcomesEl.innerHTML = `
-        <div style="margin-bottom:6px;"><strong>Hits</strong></div>
-        ${
-          hits.length === 0
-            ? '<div style="font-size:12px; color:#9aa7d4;">No hits recorded.</div>'
-            : hits
-                .map(
-                  (s) =>
-                    `<div style="font-size:12px; margin-bottom:4px;">${s.player} (${s.team}) · ${s.matchup}</div>`
-                )
-                .join("")
-        }
-        <div style="margin:8px 0 6px;"><strong>Misses</strong></div>
-        ${
-          misses.length === 0
-            ? '<div style="font-size:12px; color:#9aa7d4;">No misses recorded.</div>'
-            : misses
-                .map(
-                  (s) =>
-                    `<div style="font-size:12px; margin-bottom:4px;">${s.player} (${s.team}) · ${s.matchup}</div>`
-                )
-                .join("")
-        }
+      document.getElementById("accuracy-hr-outcomes").innerHTML = `
+        <div class="subheader">Hits</div>
+        ${hits.length ? hits.map(s => `<div class="sub">${s.player} (${s.team})</div>`).join("") : `<div class="sub">No hits recorded.</div>`}
+        <div class="subheader">Misses</div>
+        ${misses.length ? misses.map(s => `<div class="sub">${s.player} (${s.team})</div>`).join("") : `<div class="sub">No misses recorded.</div>`}
       `;
     }
 
     function renderSearchResults(query) {
       const list = document.getElementById("search-results");
-      if (!list) return;
-      list.innerHTML = "";
+      const q = query.toLowerCase();
 
-      const q = (query || "").trim().toLowerCase();
-      let pool = [];
+      const results = signalsData.filter(s =>
+        s.player.toLowerCase().includes(q) ||
+        s.team.toLowerCase().includes(q) ||
+        s.matchup.toLowerCase().includes(q)
+      );
 
-      if (!q) {
-        pool = signalsData;
-      } else {
-        pool = signalsData.filter((s) => {
-          return (
-            s.player.toLowerCase().includes(q) ||
-            s.team.toLowerCase().includes(q) ||
-            (s.matchup || "").toLowerCase().includes(q)
-          );
-        });
-      }
-
-      pool.forEach((s) => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-          <div>
-            <strong>${s.player}</strong> <span class="pill">${s.team}</span>
-          </div>
-          <div style="font-size:11px; color:#9aa7d4;">
-            ${s.matchup} · OCM ${s.ocm} · HR Base ${s.hr_base.toFixed(2)}
-          </div>
-        `;
-        list.appendChild(li);
-      });
+      list.innerHTML = results.map(s => `
+        <li>
+          <div><strong>${s.player}</strong> <span class="pill">${s.team}</span></div>
+          <div class="sub">${s.matchup} · OCM ${s.ocm} · HR Base ${s.hr_base.toFixed(2)}</div>
+        </li>
+      `).join("");
     }
 
     function setupNav() {
       const navItems = document.querySelectorAll(".nav-item");
       const tabs = document.querySelectorAll(".tab-view");
 
-      navItems.forEach((item) => {
+      navItems.forEach(item => {
         item.addEventListener("click", () => {
-          const tab = item.getAttribute("data-tab");
+          const tab = item.dataset.tab;
 
-          navItems.forEach((n) => n.classList.remove("active"));
+          navItems.forEach(n => n.classList.remove("active"));
           item.classList.add("active");
 
-          tabs.forEach((t) => t.classList.remove("active"));
-          const activeTab = document.getElementById("tab-" + tab);
-          if (activeTab) activeTab.classList.add("active");
+          tabs.forEach(t => t.classList.remove("active"));
+          document.getElementById("tab-" + tab).classList.add("active");
         });
       });
     }
 
     function setupSearch() {
-      const input = document.getElementById("search-input");
-      if (!input) return;
-      input.addEventListener("input", (e) => {
+      document.getElementById("search-input").addEventListener("input", e => {
         renderSearchResults(e.target.value);
       });
     }
@@ -619,10 +308,9 @@
       setupSearch();
       loadEmbeddedData();
       const t1 = performance.now();
-      const renderMs = Math.round(t1 - t0);
-      const perfRenderEl = document.getElementById("perf-render");
-      if (perfRenderEl) perfRenderEl.textContent = renderMs + " ms";
+      document.getElementById("perf-render").textContent = Math.round(t1 - t0) + " ms";
     });
   </script>
+
 </body>
 </html>
