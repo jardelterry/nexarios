@@ -1,12 +1,12 @@
-// app.js — NexariOS v7.1C (logic-only patch)
-// UI is untouched. This only fixes data flow and behavior.
+// app.js — NexariOS v7.1C
+// Logic-only rewrite. UI stays EXACTLY the same.
 
 const BASE = "https://nexari.jardelterry.workers.dev";
 
 let currentTab = "hr";
-let currentDateOffset = 0; // 0 = today
+let currentDateOffset = 0;
 
-let state = {
+const state = {
   signals: [],
   games: [],
   accuracy: null,
@@ -18,39 +18,42 @@ function $(id) {
 }
 
 async function fetchJSON(url) {
-  const res = await fetch(url);
+  const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(`Fetch failed: ${url} ${res.status}`);
   return res.json();
 }
 
-function formatDateLabel(offset) {
+function getDateISO(offset) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().slice(0, 10);
+}
+
+function getDateLabel(offset) {
   if (offset === 0) return "Today";
   if (offset === -1) return "Yesterday";
   if (offset === 1) return "Tomorrow";
   const d = new Date();
   d.setDate(d.getDate() + offset);
-  return d.toISOString().slice(0, 10);
-}
-
-function getDateParam(offset) {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  return d.toISOString().slice(0, 10);
+  return d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric"
+  });
 }
 
 /* ---------------- LOADERS ---------------- */
 
 async function loadSignals() {
   try {
-    const dateStr = getDateParam(currentDateOffset);
+    const date = getDateISO(currentDateOffset);
     const url = new URL(BASE + "/signals");
-    url.searchParams.set("date", dateStr);
+    url.searchParams.set("date", date);
 
     const data = await fetchJSON(url.toString());
-    const rawSignals = Array.isArray(data.signals) ? data.signals : [];
-    state.signals = rawSignals.slice();
+    const raw = Array.isArray(data.signals) ? data.signals : [];
+    state.signals = raw.slice();
 
-    // sort strongest first if OCM exists
+    // Sort strongest first
     state.signals.sort((a, b) => {
       const ao = a.overmindCompositeMetric ?? a.ocm ?? 0;
       const bo = b.overmindCompositeMetric ?? b.ocm ?? 0;
@@ -58,8 +61,8 @@ async function loadSignals() {
     });
 
     renderSignals();
-  } catch (e) {
-    console.error("loadSignals error", e);
+  } catch (err) {
+    console.error("loadSignals error", err);
     state.signals = [];
     renderSignals();
   }
@@ -67,15 +70,15 @@ async function loadSignals() {
 
 async function loadGames() {
   try {
-    const dateStr = getDateParam(currentDateOffset);
+    const date = getDateISO(currentDateOffset);
     const url = new URL(BASE + "/games");
-    url.searchParams.set("date", dateStr);
+    url.searchParams.set("date", date);
 
     const data = await fetchJSON(url.toString());
     state.games = Array.isArray(data.games) ? data.games : [];
     renderGames();
-  } catch (e) {
-    console.error("loadGames error", e);
+  } catch (err) {
+    console.error("loadGames error", err);
     state.games = [];
     renderGames();
   }
@@ -87,8 +90,8 @@ async function loadAccuracy() {
     const data = await fetchJSON(url.toString());
     state.accuracy = data.accuracy || data || null;
     renderAccuracy();
-  } catch (e) {
-    console.error("loadAccuracy error", e);
+  } catch (err) {
+    console.error("loadAccuracy error", err);
     state.accuracy = null;
     renderAccuracy();
   }
@@ -108,19 +111,17 @@ async function loadSearch(query) {
     const data = await fetchJSON(url.toString());
     state.searchResults = Array.isArray(data.results) ? data.results : [];
     renderSearch();
-  } catch (e) {
-    console.error("loadSearch error", e);
+  } catch (err) {
+    console.error("loadSearch error", err);
     state.searchResults = [];
     renderSearch();
   }
 }
-
 /* ---------------- HR SIGNALS ---------------- */
 
 function getSelectedRange() {
   const btn = document.querySelector(".range-btn.active");
-  if (!btn) return "10";
-  return btn.dataset.range;
+  return btn ? btn.dataset.range : "10";
 }
 
 function getSelectedBook() {
@@ -131,7 +132,7 @@ function getSelectedBook() {
 function renderSignals() {
   const list = $("hr-list");
   const dateLabel = $("current-date-label");
-  if (dateLabel) dateLabel.textContent = formatDateLabel(currentDateOffset);
+  if (dateLabel) dateLabel.textContent = getDateLabel(currentDateOffset);
   if (!list) return;
 
   list.innerHTML = "";
@@ -143,14 +144,12 @@ function renderSignals() {
 
   const range = getSelectedRange();
   let signals = [...state.signals];
-
   if (range !== "all") {
     const n = parseInt(range, 10) || 10;
     signals = signals.slice(0, n);
   }
 
   const book = getSelectedBook();
-
   const maxOCM = Math.max(
     ...signals.map(s => (s.overmindCompositeMetric ?? s.ocm ?? 0)),
     1
@@ -216,17 +215,18 @@ function renderSignals() {
             : ""
         }
       </div>
+
       <div class="row-side">
         <div class="pill tier">${sig.tier || "Strong"}</div>
         <div class="pill ocm">${Math.round(ocm)}</div>
         <div class="pill odds">${line}</div>
       </div>
     `;
+
     list.appendChild(li);
   });
 }
-
-/* ---------------- GAMES + LINEUPS ---------------- */
+//* ---------------- GAMES + LINEUPS ---------------- */
 
 function renderGames() {
   const list = $("games-list");
@@ -249,7 +249,9 @@ function renderGames() {
     if (g.wind != null) weatherParts.push(`Wind ${g.wind} mph`);
 
     const isLive = !!g.isLive;
-    const statusText = g.status || (isLive ? "LIVE" : g.gameTime || g.time || "");
+    const statusText =
+      g.status ||
+      (isLive ? "LIVE" : g.gameTime || g.time || "");
 
     li.innerHTML = `
       <div class="row-main">
@@ -257,14 +259,21 @@ function renderGames() {
           ${g.awayTeam || g.away || ""} @ ${g.homeTeam || g.home || ""}
           ${isLive ? `<span class="live-dot"></span>` : ""}
         </div>
+
         <div class="row-sub">
           <span>${g.venue || ""}</span>
-          ${weatherParts.length ? `<span>${weatherParts.join(" • ")}</span>` : ""}
+          ${
+            weatherParts.length
+              ? `<span>${weatherParts.join(" • ")}</span>`
+              : ""
+          }
         </div>
       </div>
+
       <div class="row-side">
         <span class="pill game-time">${statusText}</span>
       </div>
+
       <div class="game-lineups anim-collapse">
         <div class="game-lineups-inner"></div>
       </div>
@@ -281,7 +290,9 @@ function toggleGameLineups(li, game) {
   if (!container || !inner) return;
 
   const isOpen = container.classList.contains("open");
+
   if (isOpen) {
+    // collapse
     container.style.maxHeight = container.scrollHeight + "px";
     requestAnimationFrame(() => {
       container.classList.remove("open");
@@ -290,20 +301,30 @@ function toggleGameLineups(li, game) {
     return;
   }
 
+  // expand
   const lineups = game.lineups || {};
   const homeArr = Array.isArray(lineups.home) ? lineups.home : [];
   const awayArr = Array.isArray(lineups.away) ? lineups.away : [];
 
   const homeList = homeArr
     .map(
-      p =>
-        `<div class="player-row"><span>${p.name || p.player || "Unknown"}</span><span>${p.pos || p.position || ""}</span></div>`
+      p => `
+        <div class="player-row">
+          <span>${p.name || p.player || "Unknown"}</span>
+          <span>${p.pos || p.position || ""}</span>
+        </div>
+      `
     )
     .join("");
+
   const awayList = awayArr
     .map(
-      p =>
-        `<div class="player-row"><span>${p.name || p.player || "Unknown"}</span><span>${p.pos || p.position || ""}</span></div>`
+      p => `
+        <div class="player-row">
+          <span>${p.name || p.player || "Unknown"}</span>
+          <span>${p.pos || p.position || ""}</span>
+        </div>
+      `
     )
     .join("");
 
@@ -311,11 +332,18 @@ function toggleGameLineups(li, game) {
     <div class="lineup-columns">
       <div class="lineup-col">
         <div class="lineup-title">${game.homeTeam || game.home || ""}</div>
-        ${homeList || `<div class="player-row empty-state">No lineup yet.</div>`}
+        ${
+          homeList ||
+          `<div class="player-row empty-state">No lineup yet.</div>`
+        }
       </div>
+
       <div class="lineup-col">
         <div class="lineup-title">${game.awayTeam || game.away || ""}</div>
-        ${awayList || `<div class="player-row empty-state">No lineup yet.</div>`}
+        ${
+          awayList ||
+          `<div class="player-row empty-state">No lineup yet.</div>`
+        }
       </div>
     </div>
   `;
@@ -323,7 +351,6 @@ function toggleGameLineups(li, game) {
   container.classList.add("open");
   container.style.maxHeight = container.scrollHeight + "px";
 }
-
 /* ---------------- ACCURACY ---------------- */
 
 function renderAccuracy() {
@@ -449,6 +476,7 @@ function setActiveTab(tab) {
   document.querySelectorAll(".sidebar-item").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.tab === tab);
   });
+
   const navItems = document.querySelectorAll(".bottom-nav .nav-item");
   navItems.forEach(btn => {
     btn.classList.toggle("active", btn.dataset.tab === tab);
@@ -531,7 +559,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Initial
+  // Initial load
   setActiveTab("hr");
   loadSignals();
   loadGames();
