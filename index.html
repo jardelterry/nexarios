@@ -5,13 +5,13 @@
   <title>NexariOS — Midnight OS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0a0c10" />
-  <link rel="stylesheet" href="style.css?v=7.1B" />
+  <link rel="stylesheet" href="style.css?v=7.1C" />
 </head>
 
 <body class="theme-dark device-auto">
   <div class="app-root">
 
-    <!-- SIDEBAR — Midnight OS -->
+    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-title">
         <span>☄️</span>
@@ -49,19 +49,19 @@
       </header>
 
       <!-- MAIN CONTENT -->
-      <main id="main-content">
+      <main id="main-content" style="padding: 22px 22px 90px;">
 
         <!-- HR TAB -->
-        <section id="tab-hr" class="tab-view active">
+        <section id="tab-hr" class="tab-view active" style="margin-bottom: 26px;">
           <div class="section-title">HR Signals</div>
 
-          <div class="card">
+          <div class="card" style="padding: 20px 20px;">
             <div class="card-header">
               <span>☄️</span>
               <span>HR Signals</span>
             </div>
 
-            <div class="hr-controls">
+            <div class="hr-controls" style="margin-bottom: 16px;">
               <div class="range-buttons">
                 <button class="range-btn active" data-range="10">Top 10</button>
                 <button class="range-btn" data-range="20">Top 20</button>
@@ -69,7 +69,7 @@
               </div>
 
               <div class="hr-subcontrols">
-                <div class="date-nav">
+                <div class="date-nav" style="margin-bottom: 12px;">
                   <button id="prev-day">◀</button>
                   <span id="current-date-label">Today</span>
                   <button id="next-day">▶</button>
@@ -93,10 +93,10 @@
         </section>
 
         <!-- GAMES TAB -->
-        <section id="tab-games" class="tab-view">
+        <section id="tab-games" class="tab-view" style="margin-bottom: 26px;">
           <div class="section-title">Games & Weather</div>
 
-          <div class="card">
+          <div class="card" style="padding: 20px 20px;">
             <div class="card-header">
               <span>⚾️</span>
               <span>Games</span>
@@ -106,10 +106,10 @@
         </section>
 
         <!-- ACCURACY TAB -->
-        <section id="tab-accuracy" class="tab-view">
+        <section id="tab-accuracy" class="tab-view" style="margin-bottom: 26px;">
           <div class="section-title">Accuracy</div>
 
-          <div class="card">
+          <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header">
               <span>📊</span>
               <span>System Tracker</span>
@@ -117,7 +117,7 @@
             <div id="accuracy-system" class="accuracy-grid"></div>
           </div>
 
-          <div class="card glass">
+          <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header">
               <span>📈</span>
               <span>HR & RBI Tracker</span>
@@ -125,7 +125,7 @@
             <div id="accuracy-hr-rbi" class="accuracy-grid"></div>
           </div>
 
-          <div class="card glass">
+          <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header">
               <span>🎯</span>
               <span>HR Outcomes</span>
@@ -135,10 +135,10 @@
         </section>
 
         <!-- SEARCH TAB -->
-        <section id="tab-search" class="tab-view">
+        <section id="tab-search" class="tab-view" style="margin-bottom: 26px;">
           <div class="section-title">Search</div>
 
-          <div class="card">
+          <div class="card" style="padding: 20px 20px;">
             <div class="card-header">
               <span>🔍</span>
               <span>Search Players</span>
@@ -152,10 +152,10 @@
         </section>
 
         <!-- SETTINGS TAB -->
-        <section id="tab-settings" class="tab-view">
+        <section id="tab-settings" class="tab-view" style="margin-bottom: 26px;">
           <div class="section-title">System</div>
 
-          <div class="card glass">
+          <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header">
               <span>⚙️</span>
               <span>Display</span>
@@ -175,14 +175,14 @@
             </div>
           </div>
 
-          <div class="card glass">
+          <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header">
               <span>🧩</span>
               <span>Engine</span>
             </div>
 
             <div class="metric-row">
-              <span>Version</span><span>v7.1B Midnight OS</span>
+              <span>Version</span><span>v7.1C Midnight Hybrid Radial</span>
             </div>
 
             <div class="metric-row">
@@ -193,7 +193,7 @@
       </main>
 
       <!-- MOBILE NAV -->
-      <nav class="bottom-nav">
+      <nav class="bottom-nav" style="padding-top: 6px;">
         <div class="nav-indicator" id="nav-indicator"></div>
         <div class="nav-item active" data-tab="hr"><span>☄️</span><span>HR</span></div>
         <div class="nav-item" data-tab="games"><span>⚾️</span><span>Games</span></div>
@@ -205,6 +205,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=7.1B"></script>
+  <script src="app.js?v=7.1C"></script>
 </body>
 </html>
