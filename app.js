@@ -1,819 +1,361 @@
-// NexariOS v6.6 — Deep Space + Carbon Build (Chunk 1/3)
+/* ============================================================
+   NexariOS v6.6 — Core Engine
+   Deep Space + Carbon Shimmer • Balanced Neon • Glow Pulse
+   ============================================================ */
 
-// ===============================
-// API BASE
-// ===============================
-const API_BASE = "https://nexari-auto.jardelterry.workers.dev";
+/* ------------------------------
+   GLOBAL STATE
+--------------------------------*/
+let gamesData = [];
+let signalsData = [];
+let currentSportsbook = "DK";
+let currentView = "top10";
 
-function apiUrl(path) {
-  const base = API_BASE.replace(/\/+$/, "");
-  const p = path.startsWith("/") ? path : `/${path}`;
-  return `${base}${p}`;
-}
-
-// ===============================
-// STATE
-// ===============================
-let signals = [];
-let games = [];
-let accuracy = null;
-
-let currentDate = null;
-let currentSportsbook = "dk";
-
-// ===============================
-// DOM HOOKS
-// ===============================
-const pages = {
-  hr: document.getElementById("page-hr"),
-  games: document.getElementById("page-games"),
-  accuracy: document.getElementById("page-accuracy"),
-  search: document.getElementById("page-search"),
-  settings: document.getElementById("page-settings")
-};
-
-const bottomNav = document.getElementById("bottomNav");
-const navItems = Array.from(document.querySelectorAll(".navItem"));
-const navSlider = document.getElementById("navSlider");
-
-const signalsContainer = document.getElementById("signalsContainer");
-const hrViewSelect = document.getElementById("hrViewSelect");
-const sportsbookSelect = document.getElementById("sportsbookSelect");
-const hrWidget = document.getElementById("hrWidget");
-
-const gamesContainer = document.getElementById("gamesContainer");
-
-const accDaily = document.getElementById("accDaily");
-const accDailyBar = document.getElementById("accDailyBar");
-const acc7 = document.getElementById("acc7");
-const acc30 = document.getElementById("acc30");
-const trend7 = document.getElementById("trend7");
-const trend30 = document.getElementById("trend30");
-const trendBar7 = document.getElementById("trendBar7");
-const trendBar30 = document.getElementById("trendBar30");
-const accVolume = document.getElementById("accVolume");
-const accHRHitters = document.getElementById("accHRHitters");
-
-// Accuracy extras
-const sysStrongCount = document.getElementById("sysStrongCount");
-const sysPlayableCount = document.getElementById("sysPlayableCount");
-const sysWatchCount = document.getElementById("sysWatchCount");
-const sysRecord = document.getElementById("sysRecord");
-const sysStreak = document.getElementById("sysStreak");
-const playableToday = document.getElementById("playableToday");
-const playable7 = document.getElementById("playable7");
-const playable30 = document.getElementById("playable30");
-const hitStreakList = document.getElementById("hitStreakList");
-const rbiStreakList = document.getElementById("rbiStreakList");
-const hrStreakList = document.getElementById("hrStreakList");
-
-const playerSearchInput = document.getElementById("playerSearchInput");
+/* ------------------------------
+   DOM ELEMENTS
+--------------------------------*/
+const hrList = document.getElementById("hrList");
+const gamesList = document.getElementById("gamesList");
+const dailyAccuracyList = document.getElementById("dailyAccuracyList");
+const systemPerformanceList = document.getElementById("systemPerformanceList");
+const streakList = document.getElementById("streakList");
 const searchResults = document.getElementById("searchResults");
 
-const stadiumSelect = document.getElementById("stadiumSelect");
-const stadiumDetails = document.getElementById("stadiumDetails");
+const sportsbookSelect = document.getElementById("sportsbookSelect");
+const viewSelect = document.getElementById("viewSelect");
+const systemDate = document.getElementById("systemDate");
 
-const themeToggle = document.getElementById("themeToggle");
-const deviceModeSelect = document.getElementById("deviceModeSelect");
-const fontSizeSlider = document.getElementById("fontSizeSlider");
-const iconSizeSlider = document.getElementById("iconSizeSlider");
-const navLayoutSelect = document.getElementById("navLayoutSelect");
-const autoRefreshSelect = document.getElementById("autoRefreshSelect");
-const forceRebuildBtn = document.getElementById("forceRebuildBtn");
-const clearCacheBtn = document.getElementById("clearCacheBtn");
-const systemInfo = document.getElementById("systemInfo");
-
-const currentDateLabel = document.getElementById("currentDateLabel");
-const prevDateBtn = document.getElementById("prevDateBtn");
-const nextDateBtn = document.getElementById("nextDateBtn");
-
-const liveTickerContent = document.getElementById("liveTickerContent");
-
-// Page order for swipe nav
-const pageOrder = ["hr", "games", "accuracy", "search", "settings"];
-
-// ===============================
-// UTILITIES
-// ===============================
-function formatDateLabel(iso) {
-  const dt = new Date(iso);
-  if (isNaN(dt)) return iso;
-  return dt.toLocaleDateString("en-US", {
+/* ------------------------------
+   DATE RENDERING
+--------------------------------*/
+function renderSystemDate() {
+  const now = new Date();
+  const formatted = now.toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric"
   });
+  systemDate.textContent = formatted;
 }
+renderSystemDate();
 
-function shiftDate(iso, delta) {
-  const dt = new Date(iso);
-  dt.setDate(dt.getDate() + delta);
-  return dt.toISOString().slice(0, 10);
-}
+/* ------------------------------
+   TAB NAVIGATION
+--------------------------------*/
+document.querySelectorAll(".nav-item").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".nav-item").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
 
-function getTierKey(tier) {
-  if (!tier) return "watch";
-  const t = tier.toLowerCase();
-  if (t.includes("strong")) return "strong";
-  if (t.includes("playable")) return "playable";
-  return "watch";
-}
-
-function getOcmIntensityClass(ocm) {
-  const v = Number(ocm) || 0;
-  if (v >= 90) return "ocmHex-intensity-ultra";
-  if (v >= 80) return "ocmHex-intensity-high";
-  if (v >= 65) return "ocmHex-intensity-med";
-  return "ocmHex-intensity-low";
-}
-
-// ===============================
-// API HELPERS
-// ===============================
-async function apiGet(path) {
-  const res = await fetch(apiUrl(path));
-  if (!res.ok) throw new Error(`API error: ${path}`);
-  return res.json();
-}
-
-async function fetchSignals(dateStr) {
-  const qs = dateStr ? `?date=${encodeURIComponent(dateStr)}` : "";
-  const data = await apiGet(`/signals${qs}`);
-  signals = Array.isArray(data.signals) ? data.signals : [];
-}
-
-async function fetchGames(dateStr) {
-  const qs = dateStr ? `?date=${encodeURIComponent(dateStr)}` : "";
-  const data = await apiGet(`/games${qs}`);
-  games = Array.isArray(data.games) ? data.games : [];
-}
-
-async function fetchAccuracy() {
-  const data = await apiGet(`/accuracy`);
-  accuracy = data.accuracy || null;
-}
-
-async function forceRebuild(dateStr) {
-  const qs = dateStr ? `?date=${encodeURIComponent(dateStr)}` : "";
-  return apiGet(`/rebuild${qs}`);
-}
-
-// ===============================
-// NAVIGATION + SWIPE
-// ===============================
-function setActivePage(key) {
-  Object.keys(pages).forEach(k => {
-    pages[k].classList.toggle("active", k === key);
-  });
-
-  navItems.forEach(item => {
-    item.classList.toggle("active", item.dataset.target === key);
-  });
-
-  const activeItem = navItems.find(n => n.classList.contains("active"));
-  if (activeItem) moveNavSliderTo(activeItem);
-
-  renderLiveTicker();
-}
-
-function moveNavSliderTo(item) {
-  const rectNav = bottomNav.getBoundingClientRect();
-  const rectItem = item.getBoundingClientRect();
-  navSlider.style.width = `${rectItem.width}px`;
-  navSlider.style.left = `${rectItem.left - rectNav.left}px`;
-}
-
-navItems.forEach(item => {
-  item.addEventListener("click", () => {
-    setActivePage(item.dataset.target);
-  });
-});
-
-function getActivePageKey() {
-  return pageOrder.find(k => pages[k].classList.contains("active")) || "hr";
-}
-
-function setActivePageByIndex(idx) {
-  const clamped = (idx + pageOrder.length) % pageOrder.length;
-  setActivePage(pageOrder[clamped]);
-}
-
-let touchStartX = null;
-let touchStartY = null;
-
-document.addEventListener("touchstart", e => {
-  const t = e.touches[0];
-  touchStartX = t.clientX;
-  touchStartY = t.clientY;
-});
-
-document.addEventListener("touchend", e => {
-  if (touchStartX == null || touchStartY == null) return;
-  const t = e.changedTouches[0];
-  const dx = t.clientX - touchStartX;
-  const dy = t.clientY - touchStartY;
-
-  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
-    const currentKey = getActivePageKey();
-    const idx = pageOrder.indexOf(currentKey);
-    if (dx < 0) {
-      setActivePageByIndex(idx + 1);
-    } else {
-      setActivePageByIndex(idx - 1);
-    }
-  }
-
-  touchStartX = null;
-  touchStartY = null;
-});
-
-// ===============================
-// HR TAB — RENDER
-// ===============================
-function renderSignals() {
-  signalsContainer.innerHTML = "";
-
-  if (!signals.length) {
-    signalsContainer.innerHTML = `<div class="emptyState">No signals available.</div>`;
-    return;
-  }
-
-  const limit = parseInt(hrViewSelect.value, 10) || 10;
-  const sb = currentSportsbook;
-  const subset = signals.slice(0, limit);
-
-  subset.forEach(s => {
-    const odds = s.sportsbooks?.[sb] ?? "N/A";
-    const ocm = s.overmindCompositeMetric || 0;
-    const barWidth = Math.max(8, Math.min(100, Math.round(ocm)));
-
-    const tierKey = getTierKey(s.tier);
-    const tierRingClass =
-      tierKey === "strong"
-        ? "tier-strong-ring"
-        : tierKey === "playable"
-        ? "tier-playable-ring"
-        : "tier-watch-ring";
-
-    const ocmIntensityClass = getOcmIntensityClass(ocm);
-    const ocmTierClass =
-      tierKey === "strong"
-        ? "ocmHex-strong"
-        : tierKey === "playable"
-        ? "ocmHex-playable"
-        : "ocmHex-watch";
-
-    const div = document.createElement("div");
-    div.className = "signal";
-
-    div.innerHTML = `
-      <div class="signalLine1">
-        <span class="tierRing ${tierRingClass}"></span>
-        <span class="signalPlayer">${s.player}</span>
-        <span class="signalTeam">${s.team}</span>
-      </div>
-
-      <div class="signalLine2">
-        <span class="signalOpponent">vs ${s.opponent}</span>
-        <span class="signalOdds">${sb.toUpperCase()}: ${odds}</span>
-      </div>
-
-      <div class="signalLine3">
-        <span class="signalHr">
-          HR Base: ${s.hr}
-          <span class="ocmHex ${ocmTierClass} ${ocmIntensityClass}">
-            <span>OCM ${Math.round(ocm)}</span>
-          </span>
-        </span>
-      </div>
-
-      <div class="hrBar"></div>
-    `;
-
-    div.querySelector(".hrBar").style.width = `${barWidth}%`;
-
-    signalsContainer.appendChild(div);
-  });
-}
-
-function renderHrWidget() {
-  if (!signals.length) {
-    hrWidget.innerHTML = "";
-    return;
-  }
-
-  const top = signals.slice(0, 3);
-  hrWidget.innerHTML = `
-    <div class="hrWidgetTitle">Today’s HR Picks</div>
-    <div class="hrWidgetList">
-      ${top
-        .map(
-          (s, i) =>
-            `<div>${i + 1}. ${s.player} — ${s.team} vs ${s.opponent}</div>`
-        )
-        .join("")}
-    </div>
-  `;
-}
-// ===============================
-// RENDER — GAMES (COMPACT + EXPANDABLE LINEUPS)
-// ===============================
-function renderGames() {
-  gamesContainer.innerHTML = "";
-
-  if (!games.length) {
-    gamesContainer.innerHTML = `<div class="emptyState">No games scheduled.</div>`;
-    return;
-  }
-
-  games.forEach(g => {
-    const div = document.createElement("div");
-    div.className = "game";
-
-    const score =
-      g.awayScore != null && g.homeScore != null
-        ? `${g.awayScore} - ${g.homeScore}`
-        : "";
-
-    const liveBadge = g.live ? `<span class="liveBadge">LIVE</span>` : "";
-
-    const awayPlayers = Array.isArray(g.awayPlayers) ? g.awayPlayers : [];
-    const homePlayers = Array.isArray(g.homePlayers) ? g.homePlayers : [];
-
-    div.innerHTML = `
-      <div class="gameHeader">
-        <div class="title">${g.away} @ ${g.home}</div>
-        <div class="metaLine">
-          ${g.gameTime || ""} · ${g.status || ""} ${liveBadge}
-          ${score ? `<br>${score}` : ""}
-        </div>
-      </div>
-
-      <div class="gameDetails">
-        <div class="weatherLine">
-          ${g.temp != null ? `${g.temp}°` : ""}
-          ${g.conditions ? `· ${g.conditions}` : ""}
-        </div>
-
-        <div class="lineup">
-          <strong>Away Lineup:</strong><br>
-          ${awayPlayers
-            .map(
-              p => `
-              <span class="playerTag">
-                <span class="playerName">${p.name}</span>
-                <span class="playerPos">${p.pos}</span>
-              </span>`
-            )
-            .join("")}
-        </div>
-
-        <div class="lineup">
-          <strong>Home Lineup:</strong><br>
-          ${homePlayers
-            .map(
-              p => `
-              <span class="playerTag">
-                <span class="playerName">${p.name}</span>
-                <span class="playerPos">${p.pos}</span>
-              </span>`
-            )
-            .join("")}
-        </div>
-      </div>
-    `;
-
-    div.addEventListener("click", () => {
-      div.classList.toggle("expanded");
+    const tab = btn.getAttribute("data-tab");
+    document.querySelectorAll(".tab-panel").forEach(panel => {
+      panel.classList.remove("active");
+      if (panel.id === tab) panel.classList.add("active");
     });
+  });
+});
 
-    gamesContainer.appendChild(div);
+/* ------------------------------
+   FETCH DATA (SIMPLIFIED)
+--------------------------------*/
+async function loadData() {
+  try {
+    const gamesRes = await fetch("games.json");
+    const signalsRes = await fetch("signals.json");
+
+    gamesData = await gamesRes.json();
+    signalsData = await signalsRes.json();
+
+    renderHRView();
+    renderGames();
+  } catch (err) {
+    console.error("Data load error:", err);
+  }
+}
+loadData();
+
+/* ------------------------------
+   HR VIEW RENDERING
+--------------------------------*/
+function renderHRView() {
+  hrList.innerHTML = "";
+
+  let sorted = [...signalsData].sort((a, b) => b.overmindCompositeMetric - a.overmindCompositeMetric);
+
+  if (currentView === "top10") sorted = sorted.slice(0, 10);
+  if (currentView === "top20") sorted = sorted.slice(0, 20);
+
+  sorted.forEach(sig => {
+    const card = document.createElement("div");
+    card.className = "card hr-card";
+
+    const odds = sig.sportsbooks?.[currentSportsbook] ?? "N/A";
+
+    card.innerHTML = `
+      <div class="hr-player">${sig.player}</div>
+      <div class="hr-meta">${sig.team} vs ${sig.opponent}</div>
+      <div class="hr-meta">HR Base: ${sig.hr}</div>
+      <div class="ocm-badge">OCM ${sig.overmindCompositeMetric}</div>
+      <div class="odds">${currentSportsbook}: ${odds}</div>
+    `;
+
+    hrList.appendChild(card);
   });
 }
 
-// ===============================
-// LIVE TICKER — GAMES PAGE ONLY
-// ===============================
-function renderLiveTicker() {
-  const gamesPage = pages.games;
+/* ------------------------------
+   SELECT HANDLERS
+--------------------------------*/
+sportsbookSelect.addEventListener("change", () => {
+  currentSportsbook = sportsbookSelect.value;
+  renderHRView();
+});
 
-  if (!gamesPage.classList.contains("active")) {
-    liveTickerContent.textContent = "";
-    liveTickerContent.classList.remove("scrolling");
-    return;
-  }
+viewSelect.addEventListener("change", () => {
+  currentView = viewSelect.value;
+  renderHRView();
+});
+/* ============================================================
+   FULL PLAYER POOL + SEARCH ENGINE
+   ============================================================ */
 
-  const liveGames = games.filter(
-    g =>
-      g.live &&
-      g.awayScore != null &&
-      g.homeScore != null
-  );
+/* ------------------------------
+   BUILD FULL PLAYER POOL
+--------------------------------*/
+function buildFullPlayerPool() {
+  const allPlayers = [];
 
-  if (!liveGames.length) {
-    liveTickerContent.textContent = "";
-    liveTickerContent.classList.remove("scrolling");
-    return;
-  }
+  gamesData.forEach(game => {
+    // Away players
+    if (game.awayPlayers) {
+      game.awayPlayers.forEach(p => {
+        allPlayers.push({
+          name: p.name,
+          team: game.away,
+          opponent: game.home,
+          ...p
+        });
+      });
+    }
 
-  const items = liveGames.map(
-    g => `${g.away} ${g.awayScore}–${g.homeScore} ${g.home}`
-  );
+    // Home players
+    if (game.homePlayers) {
+      game.homePlayers.forEach(p => {
+        allPlayers.push({
+          name: p.name,
+          team: game.home,
+          opponent: game.away,
+          ...p
+        });
+      });
+    }
+  });
 
-  liveTickerContent.innerHTML =
-    `<span>LIVE • ${items.join(" • ")}</span><span>LIVE • ${items.join(" • ")}</span>`;
+  // Merge HR data into players
+  allPlayers.forEach(player => {
+    const sig = signalsData.find(s => s.player === player.name);
 
-  liveTickerContent.classList.add("scrolling");
+    if (sig) {
+      player.ocm = sig.overmindCompositeMetric;
+      player.hr = sig.hr;
+      player.odds = sig.sportsbooks?.[currentSportsbook] ?? "N/A";
+      player.hasProjection = true;
+    } else {
+      player.ocm = 0;
+      player.hr = 0;
+      player.odds = "N/A";
+      player.hasProjection = false;
+    }
+  });
+
+  return allPlayers;
 }
 
-// ===============================
-// RENDER — ACCURACY (FULL SYSTEM VIEW)
-// ===============================
-function renderAccuracy() {
-  if (!accuracy) {
-    accDaily.textContent = "0%";
-    accDailyBar.style.width = "0%";
-    acc7.textContent = "0%";
-    acc30.textContent = "0%";
-    trend7.textContent = "";
-    trend30.textContent = "";
-    trendBar7.style.width = "0%";
-    trendBar30.style.width = "0%";
-    accVolume.textContent = "0 picks";
-    accHRHitters.innerHTML = `<div class="muted">No HR hitters recorded yet.</div>`;
+/* ------------------------------
+   SEARCH ENGINE
+--------------------------------*/
+const playerSearchInput = document.getElementById("playerSearchInput");
+const showAllPlayersToggle = document.getElementById("showAllPlayersToggle");
+const searchResultCount = document.getElementById("searchResultCount");
 
-    sysStrongCount.textContent = "0";
-    sysPlayableCount.textContent = "0";
-    sysWatchCount.textContent = "0";
-    sysRecord.textContent = "0‑0";
-    sysStreak.textContent = "–";
-    playableToday.textContent = "0 / 0";
-    playable7.textContent = "0 / 0";
-    playable30.textContent = "0 / 0";
-    hitStreakList.innerHTML = "";
-    rbiStreakList.innerHTML = "";
-    hrStreakList.innerHTML = "";
-    return;
+playerSearchInput.addEventListener("input", runSearch);
+showAllPlayersToggle.addEventListener("change", runSearch);
+
+function runSearch() {
+  const query = playerSearchInput.value.trim().toLowerCase();
+  const showAll = showAllPlayersToggle.checked;
+
+  const pool = buildFullPlayerPool();
+
+  // Filter by name
+  let results = pool.filter(p => p.name.toLowerCase().includes(query));
+
+  // Default: only projected players
+  if (!showAll) {
+    results = results.filter(p => p.hasProjection);
   }
 
-  // Core accuracy
-  const pct = accuracy.percent ?? 0;
-  accDaily.textContent = `${pct}%`;
-  accDailyBar.style.width = `${pct}%`;
-
-  const h7 = accuracy.history7 || [];
-  const h30 = accuracy.history30 || [];
-
-  const avg7 = h7.length ? Math.round(h7.reduce((a, b) => a + b, 0) / h7.length) : 0;
-  const avg30 = h30.length ? Math.round(h30.reduce((a, b) => a + b, 0) / h30.length) : 0;
-
-  acc7.textContent = `${avg7}%`;
-  acc30.textContent = `${avg30}%`;
-
-  trend7.textContent = h7.map(v => `${v}%`).join(" · ");
-  trend30.textContent = h30.map(v => `${v}%`).join(" · ");
-
-  trendBar7.style.width = `${avg7}%`;
-  trendBar30.style.width = `${avg30}%`;
-
-  accVolume.textContent = `${accuracy.predictionVolume || 0} picks`;
-
-  const hrHitters = accuracy.hrHittersToday || [];
-  accHRHitters.innerHTML = hrHitters.length
-    ? hrHitters.map(p => `<div class="pill">${p}</div>`).join("")
-    : `<div class="muted">No HR hitters recorded yet.</div>`;
-
-  // System tracker
-  sysStrongCount.textContent = accuracy.strongCount ?? 0;
-  sysPlayableCount.textContent = accuracy.playableCount ?? 0;
-  sysWatchCount.textContent = accuracy.watchCount ?? 0;
-
-  const wins = accuracy.systemWins ?? 0;
-  const losses = accuracy.systemLosses ?? 0;
-  sysRecord.textContent = `${wins}‑${losses}`;
-
-  sysStreak.textContent = accuracy.systemStreak ?? "–";
-
-  // Playable tracker
-  const pt = accuracy.playableToday || { hits: 0, total: 0 };
-  const p7 = accuracy.playable7 || { hits: 0, total: 0 };
-  const p30 = accuracy.playable30 || { hits: 0, total: 0 };
-
-  playableToday.textContent = `${pt.hits || 0} / ${pt.total || 0}`;
-  playable7.textContent = `${p7.hits || 0} / ${p7.total || 0}`;
-  playable30.textContent = `${p30.hits || 0} / ${p30.total || 0}`;
-
-  // Player streaks
-  renderStreakPills(hitStreakList, accuracy.hitStreaks || []);
-  renderStreakPills(rbiStreakList, accuracy.rbiStreaks || []);
-  renderStreakPills(hrStreakList, accuracy.hrStreaks || []);
+  renderSearchResults(results);
 }
 
-function renderStreakPills(container, list) {
-  if (!list.length) {
-    container.innerHTML = `<div class="muted">None</div>`;
-    return;
-  }
-
-  container.innerHTML = list
-    .map(
-      p =>
-        `<div class="pill">${p.name || p.player} — ${p.streak || p.value || ""} games</div>`
-    )
-    .join("");
-}
-
-// ===============================
-// RENDER — SEARCH RESULTS (PLAYERS + HR PROBABILITY)
-// ===============================
-function renderSearchResults(query) {
+/* ------------------------------
+   RENDER SEARCH RESULTS
+--------------------------------*/
+function renderSearchResults(results) {
   searchResults.innerHTML = "";
 
-  if (!query) {
-    searchResults.innerHTML = `<div class="muted">Type a player or team name.</div>`;
+  if (results.length === 0) {
+    searchResultCount.textContent = "No players found";
     return;
   }
 
-  const q = query.toLowerCase();
-  const sb = currentSportsbook;
+  searchResultCount.textContent = `${results.length} players`;
 
-  const matches = signals.filter(s =>
-    (s.player || "").toLowerCase().includes(q) ||
-    (s.team || "").toLowerCase().includes(q) ||
-    (s.opponent || "").toLowerCase().includes(q)
-  );
+  results.forEach(p => {
+    const card = document.createElement("div");
+    card.className = "card hr-card";
 
-  if (!matches.length) {
-    searchResults.innerHTML = `<div class="emptyState">No matches found.</div>`;
-    return;
-  }
+    const hrDisplay = p.hasProjection
+      ? `${p.hr}`
+      : `0% (No projection)`;
 
-  matches.forEach(s => {
-    const odds = s.sportsbooks?.[sb] ?? "N/A";
-    const ocm = s.overmindCompositeMetric || 0;
-    const barWidth = Math.max(8, Math.min(100, Math.round(ocm)));
+    const ocmDisplay = p.hasProjection
+      ? `OCM ${p.ocm}`
+      : `OCM 0`;
 
-    const tierKey = getTierKey(s.tier);
-    const ocmIntensityClass = getOcmIntensityClass(ocm);
-    const ocmTierClass =
-      tierKey === "strong"
-        ? "ocmHex-strong"
-        : tierKey === "playable"
-        ? "ocmHex-playable"
-        : "ocmHex-watch";
-
-    const div = document.createElement("div");
-    div.className = "searchResult";
-
-    div.innerHTML = `
-      <div class="name">${s.player}</div>
-      <div class="meta">${s.team} vs ${s.opponent}</div>
-      <div class="oddsBlock">${sb.toUpperCase()}: ${odds}</div>
-      <div class="hrBar"></div>
-      <div class="ocmHex ${ocmTierClass} ${ocmIntensityClass}">
-        <span>OCM ${Math.round(ocm)}</span>
-      </div>
+    card.innerHTML = `
+      <div class="hr-player">${p.name}</div>
+      <div class="hr-meta">${p.team} vs ${p.opponent}</div>
+      <div class="hr-meta">HR Base: ${hrDisplay}</div>
+      <div class="ocm-badge">${ocmDisplay}</div>
+      <div class="odds">${currentSportsbook}: ${p.odds}</div>
     `;
 
-    div.querySelector(".hrBar").style.width = `${barWidth}%`;
+    searchResults.appendChild(card);
+  });
+}
+/* ============================================================
+   GAMES VIEW + ACCURACY VIEW + STREAKS + SYSTEM PERFORMANCE
+   ============================================================ */
 
-    searchResults.appendChild(div);
+/* ------------------------------
+   RENDER GAMES VIEW
+--------------------------------*/
+function renderGames() {
+  gamesList.innerHTML = "";
+
+  gamesData.forEach(game => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const time = game.time ?? "TBD";
+
+    card.innerHTML = `
+      <div class="hr-player">${game.away} @ ${game.home}</div>
+      <div class="hr-meta">Start: ${time}</div>
+      <div class="hr-meta">Venue: ${game.venue ?? "—"}</div>
+    `;
+
+    gamesList.appendChild(card);
   });
 }
 
-// ===============================
-// STADIUM INFO — COLLAPSIBLE
-// ===============================
-stadiumSelect?.addEventListener("change", () => {
-  const stadium = stadiumSelect.value;
+/* ============================================================
+   ACCURACY VIEW
+   ============================================================ */
 
-  if (!stadium) {
-    stadiumDetails.innerHTML = "";
+/* ------------------------------
+   DAILY ACCURACY
+--------------------------------*/
+function renderDailyAccuracy(data = []) {
+  dailyAccuracyList.innerHTML = "";
+
+  if (!data.length) {
+    dailyAccuracyList.innerHTML = `<div class="hr-meta">No accuracy data available</div>`;
     return;
   }
 
-  stadiumDetails.innerHTML = `
-    <div><strong>${stadium}</strong></div>
-    <div>Park Factor: (example) 112</div>
-    <div>Weather: (example) 72° · Clear</div>
-    <div>Wind: (example) 8 mph Out to LF</div>
-    <div>Notes: High‑altitude, HR‑friendly environment.</div>
-  `;
-});
-// ===============================
-// COLLAPSIBLE SECTIONS (Info + Stadium)
-// ===============================
-document.querySelectorAll(".collapsibleHeader").forEach(header => {
-  header.addEventListener("click", () => {
-    const targetId = header.dataset.target;
-    const content = document.getElementById(targetId);
-    content.classList.toggle("active");
+  data.forEach(day => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <div class="hr-player">${day.date}</div>
+      <div class="hr-meta">Hits: ${day.hits}</div>
+      <div class="hr-meta">Misses: ${day.misses}</div>
+      <div class="hr-meta">Accuracy: ${day.accuracy}%</div>
+    `;
+
+    dailyAccuracyList.appendChild(card);
   });
-});
+}
 
-// ===============================
-// SETTINGS — PERSISTENCE
-// ===============================
-const SETTINGS_KEY = "nexari-settings-v66";
+/* ------------------------------
+   SYSTEM PERFORMANCE
+--------------------------------*/
+function renderSystemPerformance(data = []) {
+  systemPerformanceList.innerHTML = "";
 
-function loadSettings() {
-  try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return;
-    const s = JSON.parse(raw);
-
-    if (s.theme) {
-      document.body.dataset.theme = s.theme;
-      themeToggle.querySelectorAll(".segBtn").forEach(btn =>
-        btn.classList.toggle("active", btn.dataset.theme === s.theme)
-      );
-    }
-
-    if (s.device) {
-      document.body.dataset.device = s.device;
-      deviceModeSelect.value = s.device;
-    }
-
-    if (s.baseFontSize) {
-      fontSizeSlider.value = s.baseFontSize;
-      document.documentElement.style.setProperty("--base-font-size", s.baseFontSize + "px");
-    }
-
-    if (s.iconSize) {
-      iconSizeSlider.value = s.iconSize;
-      document.documentElement.style.setProperty("--icon-size", s.iconSize + "px");
-    }
-
-    if (s.navLayout) {
-      document.body.dataset.navlayout = s.navLayout;
-      navLayoutSelect.value = s.navLayout;
-    }
-
-    if (s.autoRefresh) {
-      autoRefreshSelect.value = s.autoRefresh;
-    }
-  } catch (err) {
-    console.error("Failed to load settings", err);
+  if (!data.length) {
+    systemPerformanceList.innerHTML = `<div class="hr-meta">No system performance data</div>`;
+    return;
   }
-}
 
-function saveSettings() {
-  const s = {
-    theme: document.body.dataset.theme,
-    device: document.body.dataset.device,
-    baseFontSize: fontSizeSlider.value,
-    iconSize: iconSizeSlider.value,
-    navLayout: navLayoutSelect.value,
-    autoRefresh: autoRefreshSelect.value
-  };
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
-}
+  data.forEach(sys => {
+    const card = document.createElement("div");
+    card.className = "card";
 
-// ===============================
-// SETTINGS — EVENT HANDLERS
-// ===============================
-themeToggle?.querySelectorAll(".segBtn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    themeToggle.querySelectorAll(".segBtn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    document.body.dataset.theme = btn.dataset.theme;
-    saveSettings();
+    card.innerHTML = `
+      <div class="hr-player">${sys.name}</div>
+      <div class="hr-meta">Record: ${sys.record}</div>
+      <div class="hr-meta">Hit Rate: ${sys.hitRate}%</div>
+      <div class="hr-meta">Units: ${sys.units}</div>
+    `;
+
+    systemPerformanceList.appendChild(card);
   });
-});
+}
 
-deviceModeSelect?.addEventListener("change", () => {
-  document.body.dataset.device = deviceModeSelect.value;
-  saveSettings();
-});
+/* ============================================================
+   STREAKS VIEW
+   ============================================================ */
 
-fontSizeSlider?.addEventListener("input", () => {
-  document.documentElement.style.setProperty("--base-font-size", fontSizeSlider.value + "px");
-  saveSettings();
-});
+/* ------------------------------
+   PLAYER STREAKS
+--------------------------------*/
+function renderStreaks(data = []) {
+  streakList.innerHTML = "";
 
-iconSizeSlider?.addEventListener("input", () => {
-  document.documentElement.style.setProperty("--icon-size", iconSizeSlider.value + "px");
-  saveSettings();
-});
-
-navLayoutSelect?.addEventListener("change", () => {
-  document.body.dataset.navlayout = navLayoutSelect.value;
-  saveSettings();
-});
-
-autoRefreshSelect?.addEventListener("change", saveSettings);
-
-forceRebuildBtn?.addEventListener("click", async () => {
-  try {
-    await forceRebuild(currentDate);
-    alert("Rebuild triggered successfully.");
-  } catch (err) {
-    alert("Rebuild failed.");
+  if (!data.length) {
+    streakList.innerHTML = `<div class="hr-meta">No streak data available</div>`;
+    return;
   }
-});
 
-clearCacheBtn?.addEventListener("click", () => {
-  localStorage.clear();
-  alert("Cache cleared.");
-});
+  data.forEach(p => {
+    const row = document.createElement("div");
+    row.className = "card";
 
-// ===============================
-// DATE NAVIGATION
-// ===============================
-prevDateBtn?.addEventListener("click", () => {
-  currentDate = shiftDate(currentDate, -1);
-  currentDateLabel.textContent = formatDateLabel(currentDate);
-  refreshAll();
-});
+    row.innerHTML = `
+      <div class="hr-player">${p.player}</div>
+      <div class="hr-meta">Team: ${p.team}</div>
+      <div class="hr-meta">Streak: ${p.streak} games</div>
+    `;
 
-nextDateBtn?.addEventListener("click", () => {
-  currentDate = shiftDate(currentDate, 1);
-  currentDateLabel.textContent = formatDateLabel(currentDate);
-  refreshAll();
-});
-
-// ===============================
-// AUTO REFRESH
-// ===============================
-let autoRefreshTimer = null;
-
-function setupAutoRefresh() {
-  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-
-  const val = autoRefreshSelect.value;
-  if (val === "off") return;
-
-  const minutes = parseInt(val, 10);
-  if (!minutes) return;
-
-  autoRefreshTimer = setInterval(refreshAll, minutes * 60 * 1000);
+    streakList.appendChild(row);
+  });
 }
 
-// ===============================
-// MASTER REFRESH
-// ===============================
-async function refreshAll() {
-  try {
-    await Promise.all([
-      fetchSignals(currentDate),
-      fetchGames(currentDate),
-      fetchAccuracy()
-    ]);
+/* ============================================================
+   OPTIONAL: HOOKS FOR FUTURE EXPANSION
+   (You can feed accuracy/streak/system data here)
+   ============================================================ */
 
-    renderSignals();
-    renderHrWidget();
-    renderGames();
-    renderAccuracy();
-    renderLiveTicker();
-
-    if (playerSearchInput && playerSearchInput.value) {
-      renderSearchResults(playerSearchInput.value);
-    }
-  } catch (err) {
-    console.error("Refresh failed", err);
-  }
+function loadAccuracyData() {
+  // Placeholder for future integration
+  // renderDailyAccuracy(accuracyData);
+  // renderSystemPerformance(systemData);
+  // renderStreaks(streakData);
 }
 
-// ===============================
-// INIT + WIRING
-// ===============================
-async function init() {
-  loadSettings();
-  setupAutoRefresh();
-
-  const today = new Date();
-  currentDate = today.toISOString().slice(0, 10);
-  currentDateLabel.textContent = formatDateLabel(currentDate);
-
-  await refreshAll();
-
-  const activeItem = navItems.find(n => n.classList.contains("active"));
-  if (activeItem) moveNavSliderTo(activeItem);
-
-  // HR controls
-  hrViewSelect?.addEventListener("change", () => {
-    renderSignals();
-    renderHrWidget();
-  });
-
-  sportsbookSelect?.addEventListener("change", () => {
-    currentSportsbook = sportsbookSelect.value;
-    renderSignals();
-    renderHrWidget();
-    if (playerSearchInput && playerSearchInput.value) {
-      renderSearchResults(playerSearchInput.value);
-    }
-  });
-
-  // Search input live
-  playerSearchInput?.addEventListener("input", () => {
-    renderSearchResults(playerSearchInput.value);
-  });
-
-  // System info
-  if (systemInfo) {
-    systemInfo.textContent = `NexariOS v6.6 — ${navigator.userAgent}`;
-  }
-}
-
-init();
+/* Auto-run accuracy loaders if needed */
+loadAccuracyData();
