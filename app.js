@@ -1,653 +1,696 @@
 /* ============================================================
-   NexariOS Midnight OS — v7.1B
-   CHUNK 1 — Core Engine + Navigation (PATCHED)
+   NexariOS — Midnight Hybrid Radial (v7.1C)
+   app.js — CHUNK 1: Core State + Utilities
 ============================================================ */
-
-const WORKER_BASE = "https://nexari.jardelterry.workers.dev";
 
 /* ------------------------------------------------------------
    GLOBAL STATE
 ------------------------------------------------------------ */
-let gamesData = [];
-let signalsData = [];
-let accuracyData = null;
-
-let currentRange = "10";
-let currentDate = new Date();
-let selectedGameIndex = null;
-
-let sportsbook = "dk";
-let deviceMode = "auto";
-
-let SEARCH_INDEX = [];
+let STATE = {
+  signals: [],
+  games: [],
+  accuracy: null,
+  searchIndex: [],
+  currentRange: "10",        // "10", "20", "all"
+  currentDate: "today",      // "today" or YYYY-MM-DD
+  currentBook: "dk",         // sportsbook key
+  activeTab: "hr"            // hr, games, accuracy, search, settings
+};
 
 /* ------------------------------------------------------------
-   DATE HELPERS
+   WORKER ENDPOINTS
 ------------------------------------------------------------ */
-function toDateString(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+const WORKER_BASE = "https://nexari.jardelterry.workers.dev";
+
+const ENDPOINTS = {
+  signals: `${WORKER_BASE}/signals`,
+  games:   `${WORKER_BASE}/games`,
+  accuracy:`${WORKER_BASE}/accuracy`
+};
+
+/* ------------------------------------------------------------
+   SAFE FETCH WRAPPER
+------------------------------------------------------------ */
+async function safeFetch(url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error("Fetch error:", err);
+    return null;
+  }
 }
 
-function formatDateLabel(date) {
-  const today = new Date();
-  const d0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const d1 = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const diff = (d1 - d0) / (1000 * 60 * 60 * 24);
-
-  if (diff === 0) return "Today";
-  if (diff === -1) return "Yesterday";
-  if (diff === 1) return "Tomorrow";
-  return toDateString(date);
+/* ------------------------------------------------------------
+   DATE UTILITIES
+------------------------------------------------------------ */
+function formatDateLabel(dateStr) {
+  if (dateStr === "today") return "Today";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function updateDateLabel() {
+function shiftDate(days) {
+  if (STATE.currentDate === "today") {
+    const now = new Date();
+    now.setDate(now.getDate() + days);
+    STATE.currentDate = now.toISOString().slice(0, 10);
+  } else {
+    const d = new Date(STATE.currentDate);
+    d.setDate(d.getDate() + days);
+    STATE.currentDate = d.toISOString().slice(0, 10);
+  }
+
   document.getElementById("current-date-label").textContent =
-    formatDateLabel(currentDate);
+    formatDateLabel(STATE.currentDate);
+
+  loadSignals();
 }
 
 /* ------------------------------------------------------------
-   FETCH WRAPPER
+   DOM HELPERS
 ------------------------------------------------------------ */
-async function fetchJSON(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Fetch failed: " + url);
-  return res.json();
+function $(id) {
+  return document.getElementById(id);
+}
+
+function clear(el) {
+  el.innerHTML = "";
+}
+
+function create(tag, className = "") {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  return el;
 }
 
 /* ------------------------------------------------------------
-   DEVICE MODE
+   APPLY ACTIVE STATE TO BUTTON GROUPS
 ------------------------------------------------------------ */
-function applyDeviceMode(mode) {
-  const root = document.body;
-  root.classList.remove("device-auto", "device-mobile", "device-desktop");
-
-  if (mode === "mobile") root.classList.add("device-mobile");
-  else if (mode === "desktop") root.classList.add("device-desktop");
-  else root.classList.add("device-auto");
-}
-
-function setupDeviceMode() {
-  const select = document.getElementById("device-mode");
-  const saved = localStorage.getItem("nexarios-device-mode");
-
-  if (saved) {
-    deviceMode = saved;
-    select.value = saved;
-    applyDeviceMode(saved);
-  }
-
-  select.addEventListener("change", () => {
-    deviceMode = select.value;
-    localStorage.setItem("nexarios-device-mode", deviceMode);
-    applyDeviceMode(deviceMode);
+function setActiveButton(buttons, activeValue, attr = "data-range") {
+  buttons.forEach(btn => {
+    if (btn.getAttribute(attr) === activeValue) {
+      btn.classList.add("active");
+    } else {
+      btn.classList.remove("active");
+    }
   });
 }
 
 /* ------------------------------------------------------------
-   THEME — Midnight OS stays dark
+   BUILD QUERY STRING FOR DATE
 ------------------------------------------------------------ */
-function setupThemeToggle() {
-  // Midnight OS is always dark — no toggle needed
-}
-
-/* ------------------------------------------------------------
-   NAVIGATION — Midnight OS (PATCHED)
------------------------------------------------------------- */
-function activateTab(tabName) {
-  // Sidebar
-  document.querySelectorAll(".sidebar-item").forEach((item) => {
-    item.classList.toggle("active", item.dataset.tab === tabName);
-  });
-
-  // Bottom nav
-  document.querySelectorAll(".nav-item").forEach((item) => {
-    item.classList.toggle("active", item.dataset.tab === tabName);
-  });
-
-  // Tabs (PATCH: ensures only one tab is visible)
-  document.querySelectorAll(".tab-view").forEach((view) => {
-    view.classList.remove("active");
-  });
-  document.getElementById("tab-" + tabName).classList.add("active");
-
-  // Mobile indicator
-  const indicator = document.getElementById("nav-indicator");
-  const active = document.querySelector(".nav-item.active");
-  if (indicator && active) {
-    const rect = active.getBoundingClientRect();
-    const parentRect = active.parentElement.getBoundingClientRect();
-    indicator.style.width = rect.width + "px";
-    indicator.style.transform = `translateX(${rect.left - parentRect.left}px)`;
-  }
-}
-
-function setupNavigation() {
-  document.querySelectorAll(".sidebar-item").forEach((item) => {
-    item.addEventListener("click", () => activateTab(item.dataset.tab));
-  });
-
-  document.querySelectorAll(".nav-item").forEach((item) => {
-    item.addEventListener("click", () => activateTab(item.dataset.tab));
-  });
-
-  activateTab("hr");
+function buildDateQuery() {
+  if (STATE.currentDate === "today") return "";
+  return `?date=${STATE.currentDate}`;
 }
 /* ============================================================
-   NexariOS Midnight OS — v7.1B
-   CHUNK 2 — HR Signals Engine
+   NexariOS — Midnight Hybrid Radial (v7.1C)
+   app.js — CHUNK 2: HR Signals Engine
 ============================================================ */
 
 /* ------------------------------------------------------------
-   SIGNAL STATUS LOGIC
+   LOAD SIGNALS
 ------------------------------------------------------------ */
-function allSignalsPending() {
-  return !gamesData.some((g) => {
-    const s = (g.status || "").toLowerCase();
-    return s.includes("final") || s.includes("completed");
-  });
-}
+async function loadSignals() {
+  const url = ENDPOINTS.signals + buildDateQuery();
+  const data = await safeFetch(url);
 
-function getOutcomeLabel(s) {
-  if (s.hrHit) return "Hit";
-  if (allSignalsPending()) return "Pending";
-  return "Miss";
-}
+  if (!data || !data.signals) {
+    STATE.signals = [];
+    renderSignals();
+    return;
+  }
 
-function getOutcomeClass(s) {
-  if (s.hrHit) return "hit";
-  if (allSignalsPending()) return "pending";
-  return "miss";
+  STATE.signals = data.signals;
+  renderSignals();
 }
 
 /* ------------------------------------------------------------
-   SPORTSBOOK ODDS
+   FILTER SIGNALS BY RANGE
 ------------------------------------------------------------ */
-function getOddsForSignal(s) {
-  if (!s.sportsbooks) return "N/A";
-  return s.sportsbooks[sportsbook] ?? "N/A";
+function applyRangeFilter(list) {
+  if (STATE.currentRange === "10") return list.slice(0, 10);
+  if (STATE.currentRange === "20") return list.slice(0, 20);
+  return list; // "all"
 }
 
 /* ------------------------------------------------------------
    RENDER HR SIGNALS
 ------------------------------------------------------------ */
-function renderHRView() {
-  const list = document.getElementById("hr-list");
-  list.innerHTML = "";
+function renderSignals() {
+  const container = $("hr-list");
+  clear(container);
 
-  // Filter to system picks only
-  let signals = signalsData.filter((s) => s.systemPick);
+  const book = STATE.currentBook;
+  let list = [...STATE.signals];
 
-  // Sort by OCM descending
-  signals.sort(
-    (a, b) =>
-      (b.overmindCompositeMetric || 0) - (a.overmindCompositeMetric || 0)
-  );
+  // Apply range filter
+  list = applyRangeFilter(list);
 
-  // Apply range
-  if (currentRange !== "all") {
-    signals = signals.slice(0, parseInt(currentRange, 10));
-  }
+  list.forEach(s => {
+    const price = s.sportsbooks?.[book];
 
-  // Render each signal
-  signals.forEach((s) => {
-    const label = getOutcomeLabel(s);
-    const cls = getOutcomeClass(s);
-    const odds = getOddsForSignal(s);
+    // Skip if selected book has no price
+    if (!price || price === "N/A") return;
 
-    const li = document.createElement("li");
+    const li = create("li");
+
     li.innerHTML = `
       <div class="row-main">
         <span class="row-title">${s.player}</span>
-        <span class="row-tag">${s.tier}</span>
         <span class="row-tag">${s.team}</span>
-        <span class="row-pill ${cls}">${label}</span>
       </div>
 
       <div class="row-sub">
-        vs ${s.opponent} · 
-        OCM ${s.overmindCompositeMetric.toFixed(1)} · 
-        HR ${s.hr} · 
-        ${sportsbook.toUpperCase()} ${odds}
+        vs ${s.opponent} • ${s.tier} • ${book.toUpperCase()} ${price}
       </div>
-
-      ${
-        s.context?.venueName
-          ? `<div class="row-sub">${s.context.venueName}</div>`
-          : ""
-      }
     `;
 
-    list.appendChild(li);
+    container.appendChild(li);
   });
-
-  if (!signals.length) {
-    list.innerHTML = `<li class="sub">No HR signals for this date.</li>`;
-  }
 }
 
 /* ------------------------------------------------------------
-   RANGE BUTTONS
+   RANGE BUTTON EVENTS
 ------------------------------------------------------------ */
-function setupRangeButtons() {
-  document.querySelectorAll(".range-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document
-        .querySelectorAll(".range-btn")
-        .forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
+function initRangeButtons() {
+  const buttons = document.querySelectorAll(".range-btn");
 
-      currentRange = btn.dataset.range;
-      renderHRView();
+  buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      STATE.currentRange = btn.getAttribute("data-range");
+      setActiveButton(buttons, STATE.currentRange, "data-range");
+      renderSignals();
     });
   });
 }
-/* ============================================================
-   NexariOS Midnight OS — v7.1B
-   CHUNK 3 — Games Engine
-============================================================ */
 
 /* ------------------------------------------------------------
-   LINEUPS — Horizontal Chips
+   SPORTSBOOK SELECTOR
 ------------------------------------------------------------ */
-function renderLineupChips(players) {
-  if (!players || !players.length) return "";
+function initSportsbookSelector() {
+  const select = $("sportsbook");
 
-  return `
-    <div class="lineups-inline">
-      ${players
-        .map((p) => `<div class="lineup-chip">${p.name} (${p.pos})</div>`)
-        .join("")}
-    </div>
-  `;
+  select.addEventListener("change", () => {
+    STATE.currentBook = select.value;
+    renderSignals();
+  });
 }
 
 /* ------------------------------------------------------------
-   GAME STATUS + WEATHER
+   DATE NAVIGATION
 ------------------------------------------------------------ */
-function formatGameStatus(g) {
-  const status = (g.status || "").toLowerCase();
-  const hasScore = g.awayScore != null && g.homeScore != null;
+function initDateNavigation() {
+  $("prev-day").addEventListener("click", () => shiftDate(-1));
+  $("next-day").addEventListener("click", () => shiftDate(1));
+}
 
-  const weather = [
-    g.temp != null ? `${g.temp}°` : "",
-    g.wind != null ? `${g.wind} mph` : "",
-    g.conditions || ""
-  ]
-    .filter(Boolean)
-    .join(" · ");
+/* ------------------------------------------------------------
+   INITIALIZE HR TAB
+------------------------------------------------------------ */
+function initHRTab() {
+  initRangeButtons();
+  initSportsbookSelector();
+  initDateNavigation();
+  loadSignals();
+}
+/* ============================================================
+   NexariOS — Midnight Hybrid Radial (v7.1C)
+   app.js — CHUNK 3: Games Engine
+============================================================ */
 
-  // FINAL
-  if (status.includes("final") || status.includes("completed")) {
-    return {
-      line2: `Final · ${g.awayScore}–${g.homeScore}`,
-      line3: weather
-    };
+/* ------------------------------------------------------------
+   LOAD GAMES
+------------------------------------------------------------ */
+async function loadGames() {
+  const url = ENDPOINTS.games + buildDateQuery();
+  const data = await safeFetch(url);
+
+  if (!data || !data.games) {
+    STATE.games = [];
+    renderGames();
+    return;
   }
 
-  // LIVE
-  if (g.live && hasScore) {
-    return {
-      line2: `LIVE · ${g.awayScore}–${g.homeScore}`,
-      line3: weather
-    };
-  }
-
-  // PRE-GAME
-  return {
-    line2: g.gameTime || "TBD",
-    line3: weather
-  };
+  STATE.games = data.games;
+  renderGames();
 }
 
 /* ------------------------------------------------------------
    RENDER GAMES LIST
 ------------------------------------------------------------ */
 function renderGames() {
-  const list = document.getElementById("games-list");
-  list.innerHTML = "";
+  const container = $("games-list");
+  clear(container);
 
-  gamesData.forEach((g, idx) => {
-    const isSelected = selectedGameIndex === idx;
-    const { line2, line3 } = formatGameStatus(g);
+  STATE.games.forEach(game => {
+    const li = create("li");
 
-    const li = document.createElement("li");
-    li.classList.toggle("game-selected", isSelected);
+    const home = game.homeTeam || "Home";
+    const away = game.awayTeam || "Away";
+    const venue = game.venue || "";
+    const temp = game.weather?.temp || null;
+    const wind = game.weather?.wind || null;
 
     li.innerHTML = `
       <div class="row-main">
-        <span class="row-title">${g.away}</span>
+        <span class="row-title">${away}</span>
         <span>@</span>
-        <span class="row-title">${g.home}</span>
+        <span class="row-title">${home}</span>
       </div>
 
-      <div class="row-sub">${line2}</div>
-      ${g.venueName ? `<div class="row-sub">${g.venueName}</div>` : ""}
-      ${line3 ? `<div class="row-sub">${line3}</div>` : ""}
-
-      ${
-        isSelected
-          ? `
-            <div class="subheader">Away – ${g.away}</div>
-            ${renderLineupChips(g.awayPlayers)}
-
-            <div class="subheader">Home – ${g.home}</div>
-            ${renderLineupChips(g.homePlayers)}
-          `
-          : ""
-      }
+      <div class="row-sub">
+        ${venue}
+        ${temp ? `• ${temp}°F` : ""}
+        ${wind ? `• Wind ${wind}` : ""}
+      </div>
     `;
 
-    li.addEventListener("click", () => {
-      selectedGameIndex = selectedGameIndex === idx ? null : idx;
-      renderGames();
-    });
+    // If lineups exist, render them
+    if (game.lineups && (game.lineups.home?.length || game.lineups.away?.length)) {
+      const lineupBox = create("div", "lineups-inline");
 
-    list.appendChild(li);
+      if (game.lineups.away?.length) {
+        game.lineups.away.forEach(p => {
+          const chip = create("div", "lineup-chip");
+          chip.textContent = p;
+          lineupBox.appendChild(chip);
+        });
+      }
+
+      if (game.lineups.home?.length) {
+        game.lineups.home.forEach(p => {
+          const chip = create("div", "lineup-chip");
+          chip.textContent = p;
+          lineupBox.appendChild(chip);
+        });
+      }
+
+      li.appendChild(lineupBox);
+    }
+
+    container.appendChild(li);
   });
+}
 
-  if (!gamesData.length) {
-    list.innerHTML = `<li class="sub">No games returned for this date.</li>`;
-  }
+/* ------------------------------------------------------------
+   INITIALIZE GAMES TAB
+------------------------------------------------------------ */
+function initGamesTab() {
+  loadGames();
 }
 /* ============================================================
-   NexariOS Midnight OS — v7.1B
-   CHUNK 4 — Accuracy Engine + Search Engine + Data Loader
+   NexariOS — Midnight Hybrid Radial (v7.1C)
+   app.js — CHUNK 4: Accuracy Engine
 ============================================================ */
 
 /* ------------------------------------------------------------
-   ACCURACY ENGINE
+   LOAD ACCURACY DATA
 ------------------------------------------------------------ */
-function anyGameFinal() {
-  return gamesData.some((g) => {
-    const s = (g.status || "").toLowerCase();
-    return s.includes("final") || s.includes("completed");
-  });
-}
+async function loadAccuracy() {
+  const url = ENDPOINTS.accuracy + buildDateQuery();
+  const data = await safeFetch(url);
 
-function buildAccuracyMetrics() {
-  const finalExists = anyGameFinal();
-
-  if (!finalExists) {
-    return {
-      accuracy: "Pending",
-      volume: signalsData.filter((s) => s.systemPick).length,
-      systemStreak: "Pending",
-      playerStreak: "Pending",
-      hrHits: 0,
-      rbiHits: 0,
-      hits: [],
-      misses: []
-    };
+  if (!data) {
+    STATE.accuracy = null;
+    renderAccuracy();
+    return;
   }
 
-  const picks = signalsData.filter((s) => s.systemPick);
-  const hits = picks.filter((s) => s.hrHit);
-  const misses = picks.filter((s) => !s.hrHit);
-
-  const hrHits = hits.length;
-  const rbiHits = hits.filter((s) => s.rbiHit).length;
-
-  const accuracy =
-    picks.length > 0 ? Math.round((hrHits / picks.length) * 100) : 0;
-
-  return {
-    accuracy,
-    volume: picks.length,
-    systemStreak: accuracyData?.systemStreak ?? 0,
-    playerStreak: accuracyData?.playerStreak ?? 0,
-    hrHits,
-    rbiHits,
-    hits,
-    misses
-  };
-}
-
-function renderAccuracySystem(m) {
-  document.getElementById("accuracy-system").innerHTML = `
-    <div class="accuracy-label">Accuracy</div>
-    <div class="accuracy-value">${m.accuracy}</div>
-
-    <div class="accuracy-label">Volume</div>
-    <div class="accuracy-value">${m.volume}</div>
-
-    <div class="accuracy-label">Sys Streak</div>
-    <div class="accuracy-value">${m.systemStreak}</div>
-
-    <div class="accuracy-label">Player Streak</div>
-    <div class="accuracy-value">${m.playerStreak}</div>
-  `;
-}
-
-function renderHRRBITracker(m) {
-  document.getElementById("accuracy-hr-rbi").innerHTML = `
-    <div class="accuracy-label">HR Hits</div>
-    <div class="accuracy-value">${m.hrHits}</div>
-
-    <div class="accuracy-label">RBI Hits</div>
-    <div class="accuracy-value">${m.rbiHits}</div>
-
-    <div class="accuracy-label">Hits</div>
-    <div class="accuracy-value">${m.hits.length}</div>
-
-    <div class="accuracy-label">Misses</div>
-    <div class="accuracy-value">${m.misses.length}</div>
-  `;
-}
-
-function renderAccuracyOutcomes(m) {
-  const container = document.getElementById("accuracy-hr-outcomes");
-
-  const hitsList = m.hits
-    .map((s) => `<div class="outcome-row hit-row">${s.player} (${s.team})</div>`)
-    .join("");
-
-  const missesList = m.misses
-    .map((s) => `<div class="outcome-row miss-row">${s.player} (${s.team})</div>`)
-    .join("");
-
-  container.innerHTML = `
-    <div class="outcomes-columns">
-      <div class="outcomes-column">
-        <div class="subheader">Hits</div>
-        ${hitsList || `<div class="sub">No hits recorded.</div>`}
-      </div>
-
-      <div class="outcomes-column">
-        <div class="subheader">Misses</div>
-        ${missesList || `<div class="sub">No misses recorded.</div>`}
-      </div>
-    </div>
-  `;
-}
-
-function renderAccuracy() {
-  const m = buildAccuracyMetrics();
-  renderAccuracySystem(m);
-  renderHRRBITracker(m);
-  renderAccuracyOutcomes(m);
+  STATE.accuracy = data;
+  renderAccuracy();
 }
 
 /* ------------------------------------------------------------
-   SEARCH ENGINE
+   RENDER ACCURACY TAB
+------------------------------------------------------------ */
+function renderAccuracy() {
+  renderAccuracySystem();
+  renderAccuracyHRRBI();
+  renderAccuracyOutcomes();
+}
+
+/* ------------------------------------------------------------
+   SYSTEM TRACKER
+------------------------------------------------------------ */
+function renderAccuracySystem() {
+  const box = $("accuracy-system");
+  clear(box);
+
+  if (!STATE.accuracy || !STATE.accuracy.system) return;
+
+  const sys = STATE.accuracy.system;
+
+  const metrics = [
+    { label: "Total Picks", value: sys.totalPicks },
+    { label: "Hits", value: sys.hits },
+    { label: "Misses", value: sys.misses },
+    { label: "Accuracy", value: sys.accuracy + "%" }
+  ];
+
+  metrics.forEach(m => {
+    const div = create("div");
+    div.innerHTML = `
+      <div class="accuracy-label">${m.label}</div>
+      <div class="accuracy-value">${m.value}</div>
+    `;
+    box.appendChild(div);
+  });
+}
+
+/* ------------------------------------------------------------
+   HR & RBI TRACKER
+------------------------------------------------------------ */
+function renderAccuracyHRRBI() {
+  const box = $("accuracy-hr-rbi");
+  clear(box);
+
+  if (!STATE.accuracy || !STATE.accuracy.hrrbi) return;
+
+  const h = STATE.accuracy.hrrbi;
+
+  const metrics = [
+    { label: "HR Picks", value: h.hrPicks },
+    { label: "HR Hits", value: h.hrHits },
+    { label: "RBI Picks", value: h.rbiPicks },
+    { label: "RBI Hits", value: h.rbiHits }
+  ];
+
+  metrics.forEach(m => {
+    const div = create("div");
+    div.innerHTML = `
+      <div class="accuracy-label">${m.label}</div>
+      <div class="accuracy-value">${m.value}</div>
+    `;
+    box.appendChild(div);
+  });
+}
+
+/* ------------------------------------------------------------
+   HR OUTCOMES LIST
+------------------------------------------------------------ */
+function renderAccuracyOutcomes() {
+  const box = $("accuracy-hr-outcomes");
+  clear(box);
+
+  if (!STATE.accuracy || !STATE.accuracy.outcomes) return;
+
+  STATE.accuracy.outcomes.forEach(o => {
+    const row = create("div", "row-main");
+
+    const pillClass =
+      o.result === "hit" ? "row-pill hit" :
+      o.result === "miss" ? "row-pill miss" :
+      "row-pill pending";
+
+    row.innerHTML = `
+      <span class="row-title">${o.player}</span>
+      <span class="${pillClass}">${o.result.toUpperCase()}</span>
+    `;
+
+    box.appendChild(row);
+  });
+}
+
+/* ------------------------------------------------------------
+   INITIALIZE ACCURACY TAB
+------------------------------------------------------------ */
+function initAccuracyTab() {
+  loadAccuracy();
+}
+/* ============================================================
+   NexariOS — Midnight Hybrid Radial (v7.1C)
+   app.js — CHUNK 5: Search Engine
+============================================================ */
+
+/* ------------------------------------------------------------
+   BUILD SEARCH INDEX
+   (Players, teams, stadiums — whatever the Worker provides)
 ------------------------------------------------------------ */
 function buildSearchIndex() {
-  const index = [];
+  STATE.searchIndex = [];
 
-  // HR signals
-  signalsData.forEach((s) => {
-    index.push({
-      player: s.player,
+  // Pull from signals (players)
+  STATE.signals.forEach(s => {
+    STATE.searchIndex.push({
+      type: "player",
+      name: s.player,
       team: s.team,
-      opponent: s.opponent,
-      venue: s.context?.venueName || "",
-      ocm: s.overmindCompositeMetric || 0,
-      hr: s.hr,
-      tier: s.tier,
-      sportsbooks: s.sportsbooks,
-      hrHit: s.hrHit
+      opponent: s.opponent
     });
   });
 
-  // Lineups
-  gamesData.forEach((g) => {
-    (g.awayPlayers || []).forEach((p) => {
-      index.push({
-        player: p.name,
-        team: g.away,
-        opponent: g.home,
-        venue: g.venueName || "",
-        ocm: null,
-        hr: null,
-        tier: "Lineup",
-        sportsbooks: {},
-        hrHit: false
+  // Pull from games (teams + stadiums)
+  STATE.games.forEach(g => {
+    if (g.homeTeam) {
+      STATE.searchIndex.push({
+        type: "team",
+        name: g.homeTeam,
+        venue: g.venue || ""
       });
-    });
-
-    (g.homePlayers || []).forEach((p) => {
-      index.push({
-        player: p.name,
-        team: g.home,
-        opponent: g.away,
-        venue: g.venueName || "",
-        ocm: null,
-        hr: null,
-        tier: "Lineup",
-        sportsbooks: {},
-        hrHit: false
+    }
+    if (g.awayTeam) {
+      STATE.searchIndex.push({
+        type: "team",
+        name: g.awayTeam,
+        venue: g.venue || ""
       });
-    });
+    }
+    if (g.venue) {
+      STATE.searchIndex.push({
+        type: "venue",
+        name: g.venue
+      });
+    }
   });
+}
 
-  // Deduplicate
-  const map = new Map();
-  index.forEach((item) => {
-    const key = `${item.player}-${item.team}`;
-    if (!map.has(key)) map.set(key, item);
-  });
+/* ------------------------------------------------------------
+   FILTER SEARCH RESULTS
+------------------------------------------------------------ */
+function searchFilter(query) {
+  if (!query || query.trim() === "") return [];
 
-  return Array.from(map.values()).sort((a, b) =>
-    a.player.localeCompare(b.player)
+  const q = query.toLowerCase();
+
+  return STATE.searchIndex.filter(item =>
+    item.name.toLowerCase().includes(q)
   );
 }
 
-function renderSearchResults(query) {
-  const list = document.getElementById("search-results");
-  const q = query.trim().toLowerCase();
+/* ------------------------------------------------------------
+   RENDER SEARCH RESULTS
+------------------------------------------------------------ */
+function renderSearchResults(results) {
+  const box = $("search-results");
+  clear(box);
 
-  if (!q) {
-    list.innerHTML = `<li class="sub">Type a player, team, or stadium.</li>`;
-    return;
-  }
+  results.forEach(r => {
+    const li = create("li");
 
-  const results = SEARCH_INDEX.filter((item) => {
-    return (
-      item.player.toLowerCase().includes(q) ||
-      (item.team || "").toLowerCase().includes(q) ||
-      (item.opponent || "").toLowerCase().includes(q) ||
-      (item.venue || "").toLowerCase().includes(q)
-    );
+    let subtitle = "";
+    if (r.type === "player") {
+      subtitle = `${r.team} vs ${r.opponent}`;
+    } else if (r.type === "team") {
+      subtitle = r.venue ? `Plays at ${r.venue}` : "";
+    } else if (r.type === "venue") {
+      subtitle = "Stadium";
+    }
+
+    li.innerHTML = `
+      <div class="row-main">
+        <span class="row-title">${r.name}</span>
+        <span class="row-tag">${r.type.toUpperCase()}</span>
+      </div>
+      <div class="row-sub">${subtitle}</div>
+    `;
+
+    box.appendChild(li);
+  });
+}
+
+/* ------------------------------------------------------------
+   INITIALIZE SEARCH TAB
+------------------------------------------------------------ */
+function initSearchTab() {
+  const input = $("search-input");
+
+  input.addEventListener("input", () => {
+    const q = input.value;
+    const results = searchFilter(q);
+    renderSearchResults(results);
+  });
+}
+/* ============================================================
+   NexariOS — Midnight Hybrid Radial (v7.1C)
+   app.js — CHUNK 6: Navigation Engine
+============================================================ */
+
+/* ------------------------------------------------------------
+   SWITCH TAB
+------------------------------------------------------------ */
+function switchTab(tab) {
+  STATE.activeTab = tab;
+
+  // Hide all tabs
+  document.querySelectorAll(".tab-view").forEach(t => {
+    t.classList.remove("active");
   });
 
-  if (!results.length) {
-    list.innerHTML = `<li class="sub">No matches found.</li>`;
-    return;
-  }
+  // Show selected tab
+  const active = document.querySelector(`#tab-${tab}`);
+  if (active) active.classList.add("active");
 
-  list.innerHTML = results
-    .map((s) => {
-      const odds = s.ocm !== null ? getOddsForSignal(s) : "N/A";
-      const label = s.ocm !== null ? getOutcomeLabel(s) : "";
-      const cls = s.ocm !== null ? getOutcomeClass(s) : "";
+  // Update sidebar active state
+  document.querySelectorAll(".sidebar-item").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-tab") === tab);
+  });
 
-      return `
-        <li class="search-result">
-          <div class="row-main">
-            <span class="row-title">${s.player}</span>
-            <span class="row-tag">${s.tier}</span>
-            <span class="row-tag">${s.team}</span>
-            ${
-              s.ocm !== null
-                ? `<span class="row-pill ${cls}">${label}</span>`
-                : ""
-            }
-          </div>
+  // Update bottom nav active state
+  document.querySelectorAll(".nav-item").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-tab") === tab);
+  });
 
-          <div class="row-sub">
-            vs ${s.opponent}
-            ${
-              s.ocm !== null
-                ? `· OCM ${s.ocm.toFixed(1)} · HR ${s.hr} · ${sportsbook.toUpperCase()} ${odds}`
-                : ""
-            }
-          </div>
-
-          ${s.venue ? `<div class="row-sub">${s.venue}</div>` : ""}
-        </li>
-      `;
-    })
-    .join("");
-}
-
-function setupSearch() {
-  document
-    .getElementById("search-input")
-    .addEventListener("input", (e) => renderSearchResults(e.target.value));
+  // Move indicator (mobile)
+  updateNavIndicator();
 }
 
 /* ------------------------------------------------------------
-   DATA LOADER
+   NAV INDICATOR (MOBILE)
 ------------------------------------------------------------ */
-async function loadDataForCurrentDate() {
-  const dateStr = toDateString(currentDate);
+function updateNavIndicator() {
+  const indicator = $("nav-indicator");
+  const active = document.querySelector(".nav-item.active");
 
-  try {
-    const [gamesRes, signalsRes, accuracyRes] = await Promise.all([
-      fetchJSON(`${WORKER_BASE}/games?date=${dateStr}`),
-      fetchJSON(`${WORKER_BASE}/signals?date=${dateStr}`),
-      fetchJSON(`${WORKER_BASE}/accuracy`)
-    ]);
+  if (!indicator || !active) return;
 
-    gamesData = gamesRes?.games || [];
-    signalsData = signalsRes?.signals || [];
-    accuracyData = accuracyRes?.accuracy || null;
+  const rect = active.getBoundingClientRect();
+  const parentRect = active.parentElement.getBoundingClientRect();
 
-    SEARCH_INDEX = buildSearchIndex();
+  const width = rect.width * 0.6;
+  const left = rect.left - parentRect.left + (rect.width - width) / 2;
 
-    renderHRView();
-    renderGames();
-    renderAccuracy();
-    renderSearchResults("");
-
-  } catch (err) {
-    console.error("Data load error:", err);
-  }
+  indicator.style.width = `${width}px`;
+  indicator.style.transform = `translateX(${left}px)`;
 }
 
 /* ------------------------------------------------------------
-   FINAL SETUP
+   SIDEBAR NAVIGATION
+------------------------------------------------------------ */
+function initSidebarNav() {
+  document.querySelectorAll(".sidebar-item").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tab = btn.getAttribute("data-tab");
+      switchTab(tab);
+    });
+  });
+}
+
+/* ------------------------------------------------------------
+   BOTTOM NAVIGATION (MOBILE)
+------------------------------------------------------------ */
+function initBottomNav() {
+  document.querySelectorAll(".nav-item").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tab = btn.getAttribute("data-tab");
+      switchTab(tab);
+    });
+  });
+}
+
+/* ------------------------------------------------------------
+   DEVICE MODE SWITCHING
+------------------------------------------------------------ */
+function initDeviceMode() {
+  const select = $("device-mode");
+
+  select.addEventListener("change", () => {
+    const mode = select.value;
+
+    document.body.classList.remove("device-auto", "device-mobile", "device-desktop");
+
+    if (mode === "auto") {
+      document.body.classList.add("device-auto");
+    } else if (mode === "mobile") {
+      document.body.classList.add("device-mobile");
+    } else if (mode === "desktop") {
+      document.body.classList.add("device-desktop");
+    }
+
+    // Recalculate nav indicator after layout shift
+    setTimeout(updateNavIndicator, 150);
+  });
+}
+
+/* ------------------------------------------------------------
+   INITIALIZE NAVIGATION
+------------------------------------------------------------ */
+function initNavigation() {
+  initSidebarNav();
+  initBottomNav();
+  initDeviceMode();
+
+  // Default tab
+  switchTab("hr");
+
+  // Ensure indicator is placed correctly on load
+  setTimeout(updateNavIndicator, 200);
+}
+/* ============================================================
+   NexariOS — Midnight Hybrid Radial (v7.1C)
+   app.js — CHUNK 7: Boot Sequence
+============================================================ */
+
+/* ------------------------------------------------------------
+   INITIALIZE ALL TABS
+------------------------------------------------------------ */
+function initTabs() {
+  initHRTab();
+  initGamesTab();
+  initAccuracyTab();
+  initSearchTab();
+}
+
+/* ------------------------------------------------------------
+   BUILD SEARCH INDEX AFTER DATA LOAD
+------------------------------------------------------------ */
+async function loadAllDataThenBuildSearch() {
+  // Load signals first (search needs players)
+  await loadSignals();
+
+  // Load games (search needs teams + venues)
+  await loadGames();
+
+  // Load accuracy (independent)
+  await loadAccuracy();
+
+  // Build search index from all loaded data
+  buildSearchIndex();
+}
+
+/* ------------------------------------------------------------
+   FULL SYSTEM BOOT
+------------------------------------------------------------ */
+async function bootNexariOS() {
+  console.log("NexariOS v7.1C — Midnight Hybrid Radial booting…");
+
+  // Initialize navigation first
+  initNavigation();
+
+  // Load all data, then build search index
+  await loadAllDataThenBuildSearch();
+
+  // Initialize tab logic (listeners, controls)
+  initTabs();
+
+  console.log("NexariOS v7.1C — System Ready.");
+}
+
+/* ------------------------------------------------------------
+   DOM READY
 ------------------------------------------------------------ */
 document.addEventListener("DOMContentLoaded", () => {
-  setupNavigation();
-  setupRangeButtons();
-  setupSportsbookSelector();
-  setupSearch();
-  setupDeviceMode();
-  updateDateLabel();
-  loadDataForCurrentDate();
-
-  document.getElementById("prev-day").addEventListener("click", () => {
-    currentDate.setDate(currentDate.getDate() - 1);
-    updateDateLabel();
-    loadDataForCurrentDate();
-  });
-
-  document.getElementById("next-day").addEventListener("click", () => {
-    currentDate.setDate(currentDate.getDate() + 1);
-    updateDateLabel();
-    loadDataForCurrentDate();
-  });
+  bootNexariOS();
 });

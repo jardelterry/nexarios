@@ -1,6 +1,6 @@
 /* ============================================================
    NexariOS — Midnight Hybrid Radial UI (v7.1C)
-   Full Combined CSS
+   Full Combined CSS (Rewritten)
 ============================================================ */
 
 /* ---------------------------------------------------------
@@ -25,7 +25,13 @@
 
 /* ---------------------------------------------------------
    GLOBAL
------------------------------------------------------------- */
+--------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   background: var(--midnight-0);
   color: var(--text-main);
@@ -41,7 +47,7 @@ body {
 
 /* ---------------------------------------------------------
    SIDEBAR
------------------------------------------------------------- */
+--------------------------------------------------------- */
 .sidebar {
   width: 240px;
   background: var(--midnight-1);
@@ -75,6 +81,11 @@ body {
   border-radius: 12px;
   color: var(--text-main);
   font-size: 14px;
+  cursor: pointer;
+}
+
+.sidebar-item span:first-child {
+  font-size: 16px;
 }
 
 .sidebar-item.active {
@@ -84,7 +95,7 @@ body {
 
 /* ---------------------------------------------------------
    MOBILE HEADER
------------------------------------------------------------- */
+--------------------------------------------------------- */
 .app-header {
   display: none;
   padding: 16px 20px;
@@ -102,7 +113,7 @@ body {
 
 /* ---------------------------------------------------------
    MAIN COLUMN
------------------------------------------------------------- */
+--------------------------------------------------------- */
 .app-column {
   flex: 1;
   display: flex;
@@ -111,7 +122,7 @@ body {
 
 /* ---------------------------------------------------------
    SECTION TITLES
------------------------------------------------------------- */
+--------------------------------------------------------- */
 .section-title {
   font-size: 14px;
   letter-spacing: 0.14em;
@@ -122,7 +133,7 @@ body {
 
 /* ---------------------------------------------------------
    CARDS — RADIAL HYBRID
------------------------------------------------------------- */
+--------------------------------------------------------- */
 .card {
   background: radial-gradient(
       circle at 50% 40%,
@@ -157,7 +168,7 @@ body {
 
 /* ---------------------------------------------------------
    CARD HEADERS
------------------------------------------------------------- */
+--------------------------------------------------------- */
 .card-header {
   display: flex;
   align-items: center;
@@ -169,6 +180,97 @@ body {
   margin-bottom: 12px;
 }
 
+.card-header span:first-child {
+  font-size: 16px;
+}
+
+/* ---------------------------------------------------------
+   HR CONTROLS
+--------------------------------------------------------- */
+.hr-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hr-subcontrols {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ---------------------------------------------------------
+   RANGE BUTTONS
+--------------------------------------------------------- */
+.range-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.range-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--steel-blue);
+  color: var(--text-main);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.range-btn.active {
+  background: rgba(159,180,209,0.18);
+  border-color: var(--ice-blue);
+}
+
+/* ---------------------------------------------------------
+   DATE NAV
+--------------------------------------------------------- */
+.date-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.date-nav button {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--steel-blue);
+  padding: 4px 10px;
+  border-radius: 8px;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+#current-date-label {
+  color: var(--text-main);
+}
+
+/* ---------------------------------------------------------
+   SPORTSBOOK SELECT
+--------------------------------------------------------- */
+.sportsbook-select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.sportsbook-select label {
+  color: var(--text-soft);
+}
+
+.sportsbook-select select {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--steel-blue);
+  color: var(--text-main);
+}
+
 /* ---------------------------------------------------------
    LISTS
 ------------------------------------------------------------ */
@@ -178,6 +280,16 @@ body {
   margin: 0;
 }
 
+.list.compact-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.list.compact-list li:last-child {
+  border-bottom: none;
+}
+
+/* Generic row layout used across lists */
 .row-main {
   display: flex;
   align-items: center;
@@ -226,49 +338,8 @@ body {
 }
 
 /* ---------------------------------------------------------
-   RANGE BUTTONS
------------------------------------------------------------- */
-.range-buttons {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.range-btn {
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--steel-blue);
-  color: var(--text-main);
-  font-size: 12px;
-}
-
-.range-btn.active {
-  background: rgba(159,180,209,0.18);
-  border-color: var(--ice-blue);
-}
-
-/* ---------------------------------------------------------
-   DATE NAV
------------------------------------------------------------- */
-.date-nav {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-}
-
-.date-nav button {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid var(--steel-blue);
-  padding: 4px 10px;
-  border-radius: 8px;
-  color: var(--text-main);
-}
-
-/* ---------------------------------------------------------
-   LINEUPS
------------------------------------------------------------- */
+   GAMES / LINEUPS
+--------------------------------------------------------- */
 .game-selected {
   background: rgba(255,255,255,0.04);
   border-radius: 12px;
@@ -305,7 +376,7 @@ body {
 
 /* ---------------------------------------------------------
    SEARCH
------------------------------------------------------------- */
+--------------------------------------------------------- */
 .search-input {
   width: 100%;
   padding: 12px 14px;
@@ -318,7 +389,7 @@ body {
 
 /* ---------------------------------------------------------
    ACCURACY GRID
------------------------------------------------------------- */
+--------------------------------------------------------- */
 .accuracy-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -333,6 +404,32 @@ body {
 .accuracy-value {
   font-size: 18px;
   font-weight: 600;
+}
+
+/* Compact outcomes container */
+.compact-outcomes {
+  font-size: 13px;
+  color: var(--text-main);
+}
+
+/* ---------------------------------------------------------
+   METRIC ROWS
+--------------------------------------------------------- */
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 14px;
+}
+
+.metric-row:last-child {
+  border-bottom: none;
+}
+
+.metric-row span:last-child {
+  color: var(--ice-blue);
 }
 
 /* ---------------------------------------------------------
@@ -368,6 +465,11 @@ body {
   gap: 4px;
   font-size: 12px;
   color: var(--text-soft);
+  cursor: pointer;
+}
+
+.nav-item span:first-child {
+  font-size: 16px;
 }
 
 .nav-item.active {
@@ -384,7 +486,7 @@ body {
 }
 
 /* ---------------------------------------------------------
-   TAB PATCH
+   TABS
 ------------------------------------------------------------ */
 .tab-view {
   display: none;
@@ -392,4 +494,39 @@ body {
 
 .tab-view.active {
   display: block;
+}
+
+/* ---------------------------------------------------------
+   RESPONSIVE
+------------------------------------------------------------ */
+@media (min-width: 900px) {
+  .sidebar {
+    display: block;
+  }
+
+  .app-header {
+    display: none;
+  }
+
+  .bottom-nav {
+    display: none;
+  }
+
+  body.device-desktop .bottom-nav {
+    display: none;
+  }
+}
+
+@media (max-width: 899px) {
+  .sidebar {
+    display: none;
+  }
+
+  .app-header {
+    display: block;
+  }
+
+  .bottom-nav {
+    display: flex;
+  }
 }

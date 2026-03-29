@@ -50,146 +50,151 @@
 
       <!-- MAIN CONTENT -->
       <main id="main-content" style="padding: 22px 22px 90px;">
+<!-- HR TAB -->
+<section id="tab-hr" class="tab-view active" style="margin-bottom: 26px;">
+  <div class="section-title">HR Signals</div>
 
-        <!-- HR TAB -->
-        <section id="tab-hr" class="tab-view active" style="margin-bottom: 26px;">
-          <div class="section-title">HR Signals</div>
+  <div class="card" style="padding: 20px 20px;">
+    <div class="card-header">
+      <span>☄️</span>
+      <span>HR Signals</span>
+    </div>
 
-          <div class="card" style="padding: 20px 20px;">
-            <div class="card-header">
-              <span>☄️</span>
-              <span>HR Signals</span>
-            </div>
+    <!-- Controls -->
+    <div class="hr-controls" style="margin-bottom: 16px;">
 
-            <div class="hr-controls" style="margin-bottom: 16px;">
-              <div class="range-buttons">
-                <button class="range-btn active" data-range="10">Top 10</button>
-                <button class="range-btn" data-range="20">Top 20</button>
-                <button class="range-btn" data-range="all">All</button>
-              </div>
+      <!-- Top 10 / Top 20 / All -->
+      <div class="range-buttons">
+        <button class="range-btn active" data-range="10">Top 10</button>
+        <button class="range-btn" data-range="20">Top 20</button>
+        <button class="range-btn" data-range="all">All</button>
+      </div>
 
-              <div class="hr-subcontrols">
-                <div class="date-nav" style="margin-bottom: 12px;">
-                  <button id="prev-day">◀</button>
-                  <span id="current-date-label">Today</span>
-                  <button id="next-day">▶</button>
-                </div>
+      <!-- Date + Sportsbook -->
+      <div class="hr-subcontrols">
 
-                <div class="sportsbook-select">
-                  <label for="sportsbook">Book</label>
-                  <select id="sportsbook">
-                    <option value="dk">DraftKings</option>
-                    <option value="fd">FanDuel</option>
-                    <option value="cz">Caesars</option>
-                    <option value="mgm">BetMGM</option>
-                    <option value="pb">PointsBet</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+        <!-- Date Navigation -->
+        <div class="date-nav" style="margin-bottom: 12px;">
+          <button id="prev-day">◀</button>
+          <span id="current-date-label">Today</span>
+          <button id="next-day">▶</button>
+        </div>
 
-            <ul id="hr-list" class="list compact-list"></ul>
-          </div>
-        </section>
+        <!-- Sportsbook Selector -->
+        <div class="sportsbook-select">
+          <label for="sportsbook">Book</label>
+          <select id="sportsbook">
+            <option value="dk">DraftKings</option>
+            <option value="fd">FanDuel</option>
+            <option value="mgm">BetMGM</option>
+            <option value="cz">Caesars</option>
+            <option value="fanatics">Fanatics</option>
+          </select>
+        </div>
 
-        <!-- GAMES TAB -->
-        <section id="tab-games" class="tab-view" style="margin-bottom: 26px;">
-          <div class="section-title">Games & Weather</div>
+      </div>
+    </div>
 
-          <div class="card" style="padding: 20px 20px;">
-            <div class="card-header">
-              <span>⚾️</span>
-              <span>Games</span>
-            </div>
-            <ul id="games-list" class="list compact-list"></ul>
-          </div>
-        </section>
+    <!-- Signals List -->
+    <ul id="hr-list" class="list compact-list"></ul>
+  </div>
+</section>
+<!-- GAMES TAB -->
+<section id="tab-games" class="tab-view" style="margin-bottom: 26px;">
+  <div class="section-title">Games & Weather</div>
 
-        <!-- ACCURACY TAB -->
-        <section id="tab-accuracy" class="tab-view" style="margin-bottom: 26px;">
-          <div class="section-title">Accuracy</div>
+  <div class="card" style="padding: 20px 20px;">
+    <div class="card-header">
+      <span>⚾️</span>
+      <span>Games</span>
+    </div>
 
-          <div class="card glass" style="padding: 20px 20px;">
-            <div class="card-header">
-              <span>📊</span>
-              <span>System Tracker</span>
-            </div>
-            <div id="accuracy-system" class="accuracy-grid"></div>
-          </div>
+    <ul id="games-list" class="list compact-list"></ul>
+  </div>
+</section>
+<!-- ACCURACY TAB -->
+<section id="tab-accuracy" class="tab-view" style="margin-bottom: 26px;">
+  <div class="section-title">Accuracy</div>
 
-          <div class="card glass" style="padding: 20px 20px;">
-            <div class="card-header">
-              <span>📈</span>
-              <span>HR & RBI Tracker</span>
-            </div>
-            <div id="accuracy-hr-rbi" class="accuracy-grid"></div>
-          </div>
+  <div class="card glass" style="padding: 20px 20px;">
+    <div class="card-header">
+      <span>📊</span>
+      <span>System Tracker</span>
+    </div>
+    <div id="accuracy-system" class="accuracy-grid"></div>
+  </div>
 
-          <div class="card glass" style="padding: 20px 20px;">
-            <div class="card-header">
-              <span>🎯</span>
-              <span>HR Outcomes</span>
-            </div>
-            <div id="accuracy-hr-outcomes" class="compact-outcomes"></div>
-          </div>
-        </section>
+  <div class="card glass" style="padding: 20px 20px;">
+    <div class="card-header">
+      <span>📈</span>
+      <span>HR & RBI Tracker</span>
+    </div>
+    <div id="accuracy-hr-rbi" class="accuracy-grid"></div>
+  </div>
 
-        <!-- SEARCH TAB -->
-        <section id="tab-search" class="tab-view" style="margin-bottom: 26px;">
-          <div class="section-title">Search</div>
+  <div class="card glass" style="padding: 20px 20px;">
+    <div class="card-header">
+      <span>🎯</span>
+      <span>HR Outcomes</span>
+    </div>
+    <div id="accuracy-hr-outcomes" class="compact-outcomes"></div>
+  </div>
+</section>
+<!-- SEARCH TAB -->
+<section id="tab-search" class="tab-view" style="margin-bottom: 26px;">
+  <div class="section-title">Search</div>
 
-          <div class="card" style="padding: 20px 20px;">
-            <div class="card-header">
-              <span>🔍</span>
-              <span>Search Players</span>
-            </div>
+  <div class="card" style="padding: 20px 20px;">
+    <div class="card-header">
+      <span>🔍</span>
+      <span>Search Players</span>
+    </div>
 
-            <input id="search-input" class="search-input"
-                   placeholder="Search players, teams, stadiums..." />
+    <input id="search-input" class="search-input"
+           placeholder="Search players, teams, stadiums..." />
 
-            <ul id="search-results" class="list compact-list"></ul>
-          </div>
-        </section>
+    <ul id="search-results" class="list compact-list"></ul>
+  </div>
+</section>
+<!-- SETTINGS TAB -->
+<section id="tab-settings" class="tab-view" style="margin-bottom: 26px;">
+  <div class="section-title">System</div>
 
-        <!-- SETTINGS TAB -->
-        <section id="tab-settings" class="tab-view" style="margin-bottom: 26px;">
-          <div class="section-title">System</div>
+  <div class="card glass" style="padding: 20px 20px;">
+    <div class="card-header">
+      <span>⚙️</span>
+      <span>Display</span>
+    </div>
 
-          <div class="card glass" style="padding: 20px 20px;">
-            <div class="card-header">
-              <span>⚙️</span>
-              <span>Display</span>
-            </div>
+    <div class="metric-row">
+      <span>Theme</span><span>Midnight OS</span>
+    </div>
 
-            <div class="metric-row">
-              <span>Theme</span><span>Midnight OS</span>
-            </div>
+    <div class="metric-row">
+      <span>Device Mode</span>
+      <select id="device-mode">
+        <option value="auto">Auto</option>
+        <option value="mobile">Mobile</option>
+        <option value="desktop">Desktop</option>
+      </select>
+    </div>
+  </div>
 
-            <div class="metric-row">
-              <span>Device Mode</span>
-              <select id="device-mode">
-                <option value="auto">Auto</option>
-                <option value="mobile">Mobile</option>
-                <option value="desktop">Desktop</option>
-              </select>
-            </div>
-          </div>
+  <div class="card glass" style="padding: 20px 20px;">
+    <div class="card-header">
+      <span>🧩</span>
+      <span>Engine</span>
+    </div>
 
-          <div class="card glass" style="padding: 20px 20px;">
-            <div class="card-header">
-              <span>🧩</span>
-              <span>Engine</span>
-            </div>
+    <div class="metric-row">
+      <span>Version</span><span>v7.1C Midnight Hybrid Radial</span>
+    </div>
 
-            <div class="metric-row">
-              <span>Version</span><span>v7.1C Midnight Hybrid Radial</span>
-            </div>
-
-            <div class="metric-row">
-              <span>Worker</span><span>nexari.jardelterry.workers.dev</span>
-            </div>
-          </div>
-        </section>
+    <div class="metric-row">
+      <span>Worker</span><span>nexari.jardelterry.workers.dev</span>
+    </div>
+  </div>
+</section>
       </main>
 
       <!-- MOBILE NAV -->
