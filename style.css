@@ -1,33 +1,33 @@
 /* ============================================
-   NexariOS v6.6 — Global Styles
+   NexariOS v6.6 — Deep Space + Midnight Carbon
    ============================================ */
 
 :root {
   --base-font-size: 16px;
   --icon-size: 58px;
 
-  --bg-dark: #0d0d0f;
-  --bg-light: #f7f7f7;
+  --bg-deep-space: radial-gradient(circle at top, #1b1f3b 0, #050712 40%, #020308 100%);
+  --bg-carbon: #101218;
 
-  --text-dark: #eaeaea;
-  --text-light: #1a1a1a;
+  --text-dark: #eaeaf5;
+  --text-light: #15151b;
 
-  --accent-strong: #ff4d4d;
+  --accent-strong: #ff4d6a;
   --accent-playable: #ffb84d;
   --accent-watch: #4da6ff;
 
-  --border-color-dark: #2a2a2d;
-  --border-color-light: #dcdcdc;
+  --border-color-dark: #26293a;
+  --border-soft: rgba(255,255,255,0.06);
 }
 
-/* Theme Handling */
+/* Theme */
 body[data-theme="dark"] {
-  background: radial-gradient(circle at top, #141827 0, #050509 45%, #000000 100%);
+  background: var(--bg-deep-space);
   color: var(--text-dark);
 }
 
 body[data-theme="light"] {
-  background: var(--bg-light);
+  background: #f5f5f7;
   color: var(--text-light);
 }
 
@@ -66,13 +66,18 @@ body {
   margin: 0 0 4px 0;
 }
 
+.subHeaderRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .subHeader {
   font-size: 0.9rem;
-  opacity: 0.85;
+  opacity: 0.9;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: 6px;
 }
 
 /* Live Ticker */
@@ -80,12 +85,16 @@ body {
   display: none;
   width: 100%;
   padding: 8px 12px;
-  background: rgba(255, 0, 0, 0.15);
-  border-bottom: 1px solid rgba(255, 0, 0, 0.25);
-  backdrop-filter: blur(10px);
+  background: linear-gradient(90deg, rgba(255,77,106,0.18), rgba(77,166,255,0.18));
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(14px);
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
-.page-games.active #liveTicker {
+#page-games.active ~ #liveTicker,
+#page-games.active #liveTicker {
   display: flex;
 }
 
@@ -110,9 +119,10 @@ body {
 .hrWidget {
   margin-bottom: 12px;
   padding: 10px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(255,77,77,0.18), rgba(77,166,255,0.18));
-  box-shadow: 0 0 16px rgba(0,0,0,0.6);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255,77,106,0.16), rgba(77,166,255,0.16));
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 0 18px rgba(0,0,0,0.6);
   font-size: 0.9rem;
 }
 
@@ -127,17 +137,21 @@ body {
 
 /* HR Signals */
 .signal {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 12px;
+  background: radial-gradient(circle at top left, rgba(77,166,255,0.16), rgba(0,0,0,0.7));
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
   padding: 14px;
   margin-bottom: 12px;
-  box-shadow: 0 0 12px rgba(0, 122, 255, 0.15);
-  transition: 0.2s ease;
+  box-shadow:
+    0 0 18px rgba(0,0,0,0.8),
+    0 0 12px rgba(77,166,255,0.25);
+  transition: 0.18s ease;
 }
 
 .signal:hover {
-  box-shadow: 0 0 18px rgba(0, 122, 255, 0.25);
+  box-shadow:
+    0 0 22px rgba(0,0,0,0.9),
+    0 0 18px rgba(77,166,255,0.35);
   transform: translateY(-1px);
 }
 
@@ -156,7 +170,7 @@ body {
 .signalTeam,
 .signalOpponent,
 .signalOdds {
-  opacity: 0.8;
+  opacity: 0.85;
   font-size: 0.9rem;
 }
 
@@ -185,7 +199,7 @@ body {
   position: relative;
   overflow: hidden;
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: 7px;
   font-size: 0.75rem;
   margin-left: 6px;
 }
@@ -201,7 +215,7 @@ body {
     rgba(255,255,255,0.0)
   );
   animation: ocmSpin 4s linear infinite;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
 .ocmHex span {
@@ -215,18 +229,18 @@ body {
 }
 
 .ocmHex-strong {
-  background: rgba(255, 77, 77, 0.2);
-  color: #ff4d4d;
+  background: rgba(255,77,106,0.18);
+  color: #ff8aa3;
 }
 
 .ocmHex-playable {
-  background: rgba(255, 184, 77, 0.2);
-  color: #ffb84d;
+  background: rgba(255,184,77,0.18);
+  color: #ffd08a;
 }
 
 .ocmHex-watch {
-  background: rgba(77, 166, 255, 0.2);
-  color: #4da6ff;
+  background: rgba(77,166,255,0.18);
+  color: #9ac7ff;
 }
 
 .ocmHex-intensity-ultra {
@@ -242,14 +256,14 @@ body {
 }
 
 .ocmHex-intensity-low {
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 /* Animated HR bar */
 .hrBar {
   height: 4px;
   border-radius: 4px;
-  background: linear-gradient(90deg, #ff4d4d, #ffb84d, #4da6ff);
+  background: linear-gradient(90deg, #ff4d6a, #ffb84d, #4da6ff);
   background-size: 200% 100%;
   animation: hrBarPulse 3s ease-in-out infinite;
   margin-top: 6px;
@@ -266,6 +280,9 @@ body {
   padding: 12px;
   border-bottom: 1px solid var(--border-color-dark);
   cursor: pointer;
+  background: rgba(0,0,0,0.35);
+  border-radius: 10px;
+  margin-bottom: 8px;
 }
 
 .gameHeader .title {
@@ -274,12 +291,12 @@ body {
 }
 
 .metaLine {
-  opacity: 0.8;
+  opacity: 0.85;
   font-size: 0.9rem;
 }
 
 .liveBadge {
-  background: #ff4d4d;
+  background: #ff4d6a;
   color: white;
   padding: 2px 6px;
   border-radius: 4px;
@@ -305,19 +322,35 @@ body {
 
 .playerTag {
   display: inline-block;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255,255,255,0.06);
   padding: 2px 6px;
   border-radius: 4px;
   margin: 2px;
 }
 
 /* Accuracy */
+.accuracyGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 480px) {
+  .accuracyGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 .accuracyBlock {
-  margin-bottom: 20px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--border-soft);
 }
 
 .accLabel {
-  opacity: 0.8;
+  opacity: 0.85;
   margin-bottom: 4px;
 }
 
@@ -328,23 +361,120 @@ body {
 
 .accBar {
   height: 6px;
-  background: #333;
+  background: #26293a;
   border-radius: 4px;
   margin-top: 6px;
 }
 
 .accBar div {
   height: 100%;
-  background: #4da6ff;
+  background: linear-gradient(90deg, #4da6ff, #ffb84d);
   border-radius: 4px;
 }
 
+.trendList {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+/* Accuracy sections */
+.accuracySectionCard {
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.45);
+  border: 1px solid var(--border-soft);
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.systemTrackerRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.systemChip {
+  flex: 1;
+  padding: 8px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.systemChip .label {
+  opacity: 0.8;
+  margin-bottom: 2px;
+}
+
+.systemChip .value {
+  font-weight: 600;
+}
+
+.systemChip.strong {
+  background: rgba(255,77,106,0.18);
+}
+
+.systemChip.playable {
+  background: rgba(255,184,77,0.18);
+}
+
+.systemChip.watch {
+  background: rgba(77,166,255,0.18);
+}
+
+.systemMetaRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.metaLabel {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.metaValue {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.playableRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.streakRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (min-width: 480px) {
+  .streakRow {
+    flex-direction: row;
+  }
+}
+
+.streakCol {
+  flex: 1;
+}
+
+/* Pills */
 .pillContainer .pill {
   display: inline-block;
   padding: 4px 8px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
   margin: 2px;
+  font-size: 0.8rem;
 }
 
 /* Search */
@@ -352,15 +482,18 @@ body {
   width: 100%;
   padding: 10px;
   margin-bottom: 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color-dark);
-  background: transparent;
+  border-radius: 8px;
+  border: 1px solid var(--border-soft);
+  background: rgba(0,0,0,0.4);
   color: inherit;
 }
 
 .searchResult {
   padding: 12px;
-  border-bottom: 1px solid var(--border-color-dark);
+  border-radius: 10px;
+  background: rgba(0,0,0,0.45);
+  border: 1px solid var(--border-soft);
+  margin-bottom: 8px;
 }
 
 .searchResult .name {
@@ -369,7 +502,7 @@ body {
 
 .searchResult .meta {
   font-size: 0.9rem;
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .searchResult .oddsBlock {
@@ -377,6 +510,7 @@ body {
   font-size: 0.9rem;
 }
 
+/* Stadium */
 .stadiumDetails {
   margin-top: 10px;
   opacity: 0.85;
@@ -399,7 +533,7 @@ body {
 .collapsibleContent {
   display: none;
   padding: 10px 0;
-  border-top: 1px solid var(--border-color-dark);
+  border-top: 1px solid var(--border-soft);
 }
 
 .collapsibleContent.active {
@@ -418,7 +552,7 @@ body {
 .settingsGroup label {
   display: block;
   margin-bottom: 6px;
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .segmented {
@@ -429,23 +563,23 @@ body {
 .segBtn {
   flex: 1;
   padding: 8px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color-dark);
-  background: transparent;
+  border-radius: 8px;
+  border: 1px solid var(--border-soft);
+  background: rgba(0,0,0,0.4);
   color: inherit;
   cursor: pointer;
 }
 
 .segBtn.active {
-  background: rgba(255,255,255,0.1);
+  background: linear-gradient(135deg, rgba(77,166,255,0.25), rgba(255,77,106,0.25));
 }
 
 .actionBtn {
   width: 100%;
   padding: 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color-dark);
-  background: transparent;
+  border-radius: 8px;
+  border: 1px solid var(--border-soft);
+  background: rgba(0,0,0,0.4);
   color: inherit;
   cursor: pointer;
 }
@@ -455,21 +589,23 @@ body {
   font-size: 0.9rem;
 }
 
-/* Bottom Nav — A1 */
+/* Bottom Nav */
 #bottomNav {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   height: 68px;
-  background: rgba(0,0,0,0.55);
+  background: linear-gradient(180deg, rgba(5,7,18,0.9), rgba(2,3,8,0.98));
   backdrop-filter: blur(18px);
   display: flex;
   justify-content: space-around;
   align-items: center;
-  border-top: 1px solid var(--border-color-dark);
+  border-top: 1px solid var(--border-soft);
   z-index: 999;
-  box-shadow: 0 -8px 24px rgba(0,0,0,0.7);
+  box-shadow:
+    0 -10px 30px rgba(0,0,0,0.9),
+    0 0 18px rgba(77,166,255,0.35);
 }
 
 .navItem {
@@ -492,7 +628,7 @@ body {
 .navItem.active {
   opacity: 1;
   font-weight: 600;
-  text-shadow: 0 0 8px rgba(77,166,255,0.8);
+  text-shadow: 0 0 10px rgba(77,166,255,0.9);
 }
 
 #navSlider {
@@ -500,8 +636,8 @@ body {
   bottom: 0;
   height: 3px;
   width: 0;
-  background: #4da6ff;
-  box-shadow: 0 0 12px #4da6ff;
+  background: linear-gradient(90deg, #4da6ff, #ff4d6a);
+  box-shadow: 0 0 14px rgba(77,166,255,0.9);
   transition: left 0.25s, width 0.25s;
 }
 
@@ -515,4 +651,10 @@ body {
 .muted {
   opacity: 0.6;
   font-size: 0.9rem;
+}
+
+.infoText {
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  opacity: 0.85;
 }

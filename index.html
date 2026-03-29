@@ -10,7 +10,7 @@
 <body data-theme="dark" data-device="auto" data-navlayout="stacked">
 
   <!-- LIVE TICKER (Games Only) -->
-  <div id="liveTicker" class="page-games-only">
+  <div id="liveTicker">
     <div id="liveTickerContent"></div>
   </div>
 
@@ -21,23 +21,25 @@
     <div class="pageHeader">
       <h1>HR View 🔥</h1>
 
-      <div class="subHeader">
-        <label>Sportsbook:</label>
-        <select id="sportsbookSelect">
-          <option value="dk">DK</option>
-          <option value="fd">FD</option>
-          <option value="mgm">MGM</option>
-          <option value="cz">CZ</option>
-        </select>
-      </div>
+      <div class="subHeaderRow">
+        <div class="subHeader">
+          <label>Sportsbook:</label>
+          <select id="sportsbookSelect">
+            <option value="dk">DK</option>
+            <option value="fd">FD</option>
+            <option value="mgm">MGM</option>
+            <option value="cz">CZ</option>
+          </select>
+        </div>
 
-      <div class="subHeader">
-        <label>View:</label>
-        <select id="hrViewSelect">
-          <option value="10">Top 10</option>
-          <option value="20">Top 20</option>
-          <option value="999">All</option>
-        </select>
+        <div class="subHeader">
+          <label>View:</label>
+          <select id="hrViewSelect">
+            <option value="10">Top 10</option>
+            <option value="20">Top 20</option>
+            <option value="999">All</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -68,33 +70,107 @@
       <h1>Accuracy</h1>
     </div>
 
-    <div class="accuracyBlock">
-      <div class="accLabel">Today</div>
-      <div id="accDaily" class="accValue">0%</div>
-      <div class="accBar"><div id="accDailyBar"></div></div>
+    <!-- Daily + Trends -->
+    <div class="accuracyGrid">
+      <div class="accuracyBlock">
+        <div class="accLabel">Today</div>
+        <div id="accDaily" class="accValue">0%</div>
+        <div class="accBar"><div id="accDailyBar"></div></div>
+      </div>
+
+      <div class="accuracyBlock">
+        <div class="accLabel">7‑Day Trend</div>
+        <div id="acc7" class="accValue">0%</div>
+        <div class="accBar"><div id="trendBar7"></div></div>
+        <div id="trend7" class="trendList"></div>
+      </div>
+
+      <div class="accuracyBlock">
+        <div class="accLabel">30‑Day Trend</div>
+        <div id="acc30" class="accValue">0%</div>
+        <div class="accBar"><div id="trendBar30"></div></div>
+        <div id="trend30" class="trendList"></div>
+      </div>
     </div>
 
-    <div class="accuracyBlock">
-      <div class="accLabel">7‑Day Trend</div>
-      <div id="acc7" class="accValue">0%</div>
-      <div class="accBar"><div id="trendBar7"></div></div>
-      <div id="trend7" class="trendList"></div>
+    <!-- System Tracker -->
+    <div class="accuracySectionCard">
+      <div class="sectionTitle">System Tracker</div>
+      <div class="systemTrackerRow">
+        <div class="systemChip strong">
+          <div class="label">Strong</div>
+          <div id="sysStrongCount" class="value">0</div>
+        </div>
+        <div class="systemChip playable">
+          <div class="label">Playable</div>
+          <div id="sysPlayableCount" class="value">0</div>
+        </div>
+        <div class="systemChip watch">
+          <div class="label">Watch</div>
+          <div id="sysWatchCount" class="value">0</div>
+        </div>
+      </div>
+
+      <div class="systemMetaRow">
+        <div>
+          <div class="metaLabel">System Record</div>
+          <div id="sysRecord" class="metaValue">0‑0</div>
+        </div>
+        <div>
+          <div class="metaLabel">System Streak</div>
+          <div id="sysStreak" class="metaValue">–</div>
+        </div>
+      </div>
     </div>
 
-    <div class="accuracyBlock">
-      <div class="accLabel">30‑Day Trend</div>
-      <div id="acc30" class="accValue">0%</div>
-      <div class="accBar"><div id="trendBar30"></div></div>
-      <div id="trend30" class="trendList"></div>
+    <!-- Playable Tracker -->
+    <div class="accuracySectionCard">
+      <div class="sectionTitle">Playable Tracker</div>
+      <div class="playableRow">
+        <div>
+          <div class="metaLabel">Today</div>
+          <div id="playableToday" class="metaValue">0 / 0</div>
+        </div>
+        <div>
+          <div class="metaLabel">Last 7 Days</div>
+          <div id="playable7" class="metaValue">0 / 0</div>
+        </div>
+        <div>
+          <div class="metaLabel">Last 30 Days</div>
+          <div id="playable30" class="metaValue">0 / 0</div>
+        </div>
+      </div>
     </div>
 
-    <div class="accuracyBlock">
-      <div class="accLabel">Prediction Volume</div>
-      <div id="accVolume" class="accValue">0 picks</div>
+    <!-- Player Streaks -->
+    <div class="accuracySectionCard">
+      <div class="sectionTitle">Player Streaks</div>
+      <div class="streakRow">
+        <div class="streakCol">
+          <div class="metaLabel">Hit Streak</div>
+          <div id="hitStreakList" class="pillContainer"></div>
+        </div>
+        <div class="streakCol">
+          <div class="metaLabel">RBI Streak</div>
+          <div id="rbiStreakList" class="pillContainer"></div>
+        </div>
+        <div class="streakCol">
+          <div class="metaLabel">HR Streak</div>
+          <div id="hrStreakList" class="pillContainer"></div>
+        </div>
+      </div>
     </div>
 
-    <div class="accuracyBlock">
-      <div class="accLabel">HR Hitters Today</div>
+    <!-- Volume + HR Hitters -->
+    <div class="accuracySectionCard">
+      <div class="sectionTitle">Volume & HR Hitters</div>
+      <div class="systemMetaRow">
+        <div>
+          <div class="metaLabel">Prediction Volume</div>
+          <div id="accVolume" class="metaValue">0 picks</div>
+        </div>
+      </div>
+      <div class="metaLabel">HR Hitters Today</div>
       <div id="accHRHitters" class="pillContainer"></div>
     </div>
   </div>
@@ -216,76 +292,35 @@
         <pre class="infoText">
 NexariOS v6.6 — System Guide
 
-HR View (Home Run Signals)
-Nexari ranks hitters using the Overmind Composite Metric (OCM), a probability‑driven score built from:
-• Lineup position
-• Park factor
-• Temperature
-• Wind direction
-• Weather conditions
-• Venue characteristics
-• System‑calibrated HR base values
+HR View
+• Ranks hitters by Overmind Composite Metric (OCM)
+• Uses park factor, weather, wind, lineup, venue, HR base
 
-The HR tab shows:
-• Player
-• Team vs Opponent
-• Sportsbook odds
-• HR Base
-• OCM score
-• Tier ring (Strong / Playable / Watch)
-• Momentum bar
+Games
+• Matchups, weather, lineups, scores, LIVE ticker
 
-The list is always sorted by highest probability first.
-Use the dropdown to view Top 10, Top 20, or All.
-
-Games View
-Shows:
-• Matchups
-• Game time
-• Weather
-• Lineups
-• Scores
-• Status
-
-A compact LIVE ticker appears at the top of this page only, showing all live games with scores.
-
-Accuracy View
-Tracks Nexari’s performance:
+Accuracy
 • Daily accuracy
-• 7‑day trend
-• 30‑day trend
-• Prediction volume
-• HR hitters that actually hit today
+• 7‑day & 30‑day trends
+• System tracker (Strong / Playable / Watch)
+• Playable tracker (Today / 7 / 30)
+• Player streaks (Hits / RBI / HR)
+• HR hitters that actually hit
 
-Search View
-Search for any player or team.
-
-A collapsible Stadium Info section includes:
-• Stadium dropdown
-• Park factor
-• Weather
-• Wind
-• Notes
-
-This keeps the HR tab clean and minimal.
+Search
+• Player / team search with HR probability + OCM
+• Stadium info (park factor, weather, wind, notes)
 
 Settings
-Customize:
-• Theme
-• Device mode
-• Font size
-• Icon size
-• Navigation layout
-• Auto‑refresh
-• Force rebuild
-• System info
+• Theme, device mode, font size, icon size
+• Navigation layout, auto refresh, rebuild, cache
         </pre>
       </div>
     </div>
   </div>
 
   <!-- ========================= -->
-  <!-- BOTTOM NAVIGATION (A1 STYLE) -->
+  <!-- BOTTOM NAVIGATION -->
   <!-- ========================= -->
   <div id="bottomNav">
     <div class="navItem active" data-target="hr">

@@ -1,5 +1,4 @@
-// NexariOS v6.6 — Final Build (Chunk 1/3)
-// Fully patched: icons, sportsbook, search, swipe, glow
+// NexariOS v6.6 — Deep Space + Carbon Build (Chunk 1/3)
 
 // ===============================
 // API BASE
@@ -54,6 +53,19 @@ const trendBar7 = document.getElementById("trendBar7");
 const trendBar30 = document.getElementById("trendBar30");
 const accVolume = document.getElementById("accVolume");
 const accHRHitters = document.getElementById("accHRHitters");
+
+// Accuracy extras
+const sysStrongCount = document.getElementById("sysStrongCount");
+const sysPlayableCount = document.getElementById("sysPlayableCount");
+const sysWatchCount = document.getElementById("sysWatchCount");
+const sysRecord = document.getElementById("sysRecord");
+const sysStreak = document.getElementById("sysStreak");
+const playableToday = document.getElementById("playableToday");
+const playable7 = document.getElementById("playable7");
+const playable30 = document.getElementById("playable30");
+const hitStreakList = document.getElementById("hitStreakList");
+const rbiStreakList = document.getElementById("rbiStreakList");
+const hrStreakList = document.getElementById("hrStreakList");
 
 const playerSearchInput = document.getElementById("playerSearchInput");
 const searchResults = document.getElementById("searchResults");
@@ -139,10 +151,6 @@ async function fetchGames(dateStr) {
 async function fetchAccuracy() {
   const data = await apiGet(`/accuracy`);
   accuracy = data.accuracy || null;
-}
-
-async function fetchDebug() {
-  return apiGet(`/debug`);
 }
 
 async function forceRebuild(dateStr) {
@@ -419,7 +427,7 @@ function renderLiveTicker() {
 }
 
 // ===============================
-// RENDER — ACCURACY
+// RENDER — ACCURACY (FULL SYSTEM VIEW)
 // ===============================
 function renderAccuracy() {
   if (!accuracy) {
@@ -433,9 +441,22 @@ function renderAccuracy() {
     trendBar30.style.width = "0%";
     accVolume.textContent = "0 picks";
     accHRHitters.innerHTML = `<div class="muted">No HR hitters recorded yet.</div>`;
+
+    sysStrongCount.textContent = "0";
+    sysPlayableCount.textContent = "0";
+    sysWatchCount.textContent = "0";
+    sysRecord.textContent = "0‑0";
+    sysStreak.textContent = "–";
+    playableToday.textContent = "0 / 0";
+    playable7.textContent = "0 / 0";
+    playable30.textContent = "0 / 0";
+    hitStreakList.innerHTML = "";
+    rbiStreakList.innerHTML = "";
+    hrStreakList.innerHTML = "";
     return;
   }
 
+  // Core accuracy
   const pct = accuracy.percent ?? 0;
   accDaily.textContent = `${pct}%`;
   accDailyBar.style.width = `${pct}%`;
@@ -461,6 +482,45 @@ function renderAccuracy() {
   accHRHitters.innerHTML = hrHitters.length
     ? hrHitters.map(p => `<div class="pill">${p}</div>`).join("")
     : `<div class="muted">No HR hitters recorded yet.</div>`;
+
+  // System tracker
+  sysStrongCount.textContent = accuracy.strongCount ?? 0;
+  sysPlayableCount.textContent = accuracy.playableCount ?? 0;
+  sysWatchCount.textContent = accuracy.watchCount ?? 0;
+
+  const wins = accuracy.systemWins ?? 0;
+  const losses = accuracy.systemLosses ?? 0;
+  sysRecord.textContent = `${wins}‑${losses}`;
+
+  sysStreak.textContent = accuracy.systemStreak ?? "–";
+
+  // Playable tracker
+  const pt = accuracy.playableToday || { hits: 0, total: 0 };
+  const p7 = accuracy.playable7 || { hits: 0, total: 0 };
+  const p30 = accuracy.playable30 || { hits: 0, total: 0 };
+
+  playableToday.textContent = `${pt.hits || 0} / ${pt.total || 0}`;
+  playable7.textContent = `${p7.hits || 0} / ${p7.total || 0}`;
+  playable30.textContent = `${p30.hits || 0} / ${p30.total || 0}`;
+
+  // Player streaks
+  renderStreakPills(hitStreakList, accuracy.hitStreaks || []);
+  renderStreakPills(rbiStreakList, accuracy.rbiStreaks || []);
+  renderStreakPills(hrStreakList, accuracy.hrStreaks || []);
+}
+
+function renderStreakPills(container, list) {
+  if (!list.length) {
+    container.innerHTML = `<div class="muted">None</div>`;
+    return;
+  }
+
+  container.innerHTML = list
+    .map(
+      p =>
+        `<div class="pill">${p.name || p.player} — ${p.streak || p.value || ""} games</div>`
+    )
+    .join("");
 }
 
 // ===============================
@@ -706,7 +766,6 @@ async function refreshAll() {
     renderAccuracy();
     renderLiveTicker();
 
-    // keep search results in sync with current query
     if (playerSearchInput && playerSearchInput.value) {
       renderSearchResults(playerSearchInput.value);
     }
@@ -751,7 +810,7 @@ async function init() {
     renderSearchResults(playerSearchInput.value);
   });
 
-  // System info (optional simple text)
+  // System info
   if (systemInfo) {
     systemInfo.textContent = `NexariOS v6.6 — ${navigator.userAgent}`;
   }
