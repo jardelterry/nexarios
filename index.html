@@ -51,174 +51,196 @@
       <!-- MAIN CONTENT -->
       <main id="main-content" style="padding: 22px 22px 90px;">
 
-<!-- HR TAB -->
-<section id="tab-hr" class="tab-view active" style="margin-bottom: 26px;">
-  <div class="section-title">HR Signals</div>
+        <!-- HR TAB -->
+        <section id="tab-hr" class="tab-view active" style="margin-bottom: 26px;">
+          <div class="section-title">HR Signals</div>
 
-  <div class="card" style="padding: 20px 20px;">
-    <div class="card-header">
-      <span>☄️</span>
-      <span>HR Signals</span>
-    </div>
+          <div class="card" style="padding: 20px 20px;">
+            <div class="card-header">
+              <span>☄️</span>
+              <span>HR Signals</span>
+            </div>
 
-    <!-- Controls -->
-    <div class="hr-controls" style="margin-bottom: 16px;">
+            <!-- Controls -->
+            <div class="hr-controls" style="margin-bottom: 16px;">
 
-      <!-- Top 10 / Top 20 / All -->
-      <div class="range-buttons">
-        <button class="range-btn active" data-range="10">Top 10</button>
-        <button class="range-btn" data-range="20">Top 20</button>
-        <button class="range-btn" data-range="all">All</button>
-      </div>
+              <!-- Top 10 / Top 20 / All -->
+              <div class="range-buttons">
+                <button class="range-btn active" data-range="10">Top 10</button>
+                <button class="range-btn" data-range="20">Top 20</button>
+                <button class="range-btn" data-range="all">All</button>
+              </div>
 
-      <!-- Date + Sportsbook -->
-      <div class="hr-subcontrols">
+              <!-- Date + Sportsbook -->
+              <div class="hr-subcontrols">
 
-        <!-- Date Navigation -->
-        <div class="date-nav" style="margin-bottom: 12px;">
-          <button id="prev-day">◀</button>
-          <span id="current-date-label">Today</span>
-          <button id="next-day">▶</button>
-        </div>
+                <!-- Date Navigation -->
+                <div class="date-nav" style="margin-bottom: 12px;">
+                  <button id="prev-day">◀</button>
+                  <span id="current-date-label">Today</span>
+                  <button id="next-day">▶</button>
+                </div>
 
-        <!-- Sportsbook Selector -->
-        <div class="sportsbook-select">
-          <label for="sportsbook">Book</label>
-          <select id="sportsbook">
-            <option value="dk">DraftKings</option>
-            <option value="fd">FanDuel</option>
-            <option value="mgm">BetMGM</option>
-            <option value="cz">Caesars</option>
-            <option value="fanatics">Fanatics</option>
-          </select>
-        </div>
+                <!-- Sportsbook Selector -->
+                <div class="sportsbook-select">
+                  <label for="sportsbook">Book</label>
+                  <select id="sportsbook">
+                    <option value="dk">DraftKings</option>
+                    <option value="fd">FanDuel</option>
+                    <option value="mgm">BetMGM</option>
+                    <option value="cz">Caesars</option>
+                    <option value="fanatics">Fanatics</option>
+                  </select>
+                </div>
 
-      </div>
-    </div>
+              </div>
+            </div>
 
-    <!-- Signals List -->
-    <ul id="hr-list" class="list compact-list"></ul>
-  </div>
-</section>
+            <!-- Signals List -->
+            <ul id="hr-list" class="list compact-list"></ul>
+          </div>
+        </section>
 
-<!-- GAMES TAB -->
-<section id="tab-games" class="tab-view" style="margin-bottom: 26px;">
-  <div class="section-title">Games & Weather</div>
+        <!-- GAMES TAB -->
+        <section id="tab-games" class="tab-view" style="margin-bottom: 26px;">
+          <div class="section-title">Games & Weather</div>
 
-  <div class="card" style="padding: 20px 20px;">
-    <div class="card-header">
-      <span>⚾️</span>
-      <span>Games</span>
-    </div>
+          <div class="card" style="padding: 20px 20px;">
+            <div class="card-header">
+              <span>⚾️</span>
+              <span>Games</span>
+            </div>
 
-    <ul id="games-list" class="list compact-list"></ul>
-  </div>
-</section>
+            <!-- Games list (click row to reveal lineups, positions, weather details) -->
+            <ul id="games-list" class="list compact-list"></ul>
+          </div>
+        </section>
 
-<!-- ACCURACY TAB -->
-<section id="tab-accuracy" class="tab-view" style="margin-bottom: 26px;">
-  <div class="section-title">Accuracy</div>
+        <!-- ACCURACY TAB -->
+        <section id="tab-accuracy" class="tab-view" style="margin-bottom: 26px;">
+          <div class="section-title">Accuracy</div>
 
-  <div class="card glass" style="padding: 20px 20px;">
-    <div class="card-header">
-      <span>📊</span>
-      <span>System Tracker</span>
-    </div>
-    <div id="accuracy-system" class="accuracy-grid"></div>
-  </div>
+          <!-- System Tracker -->
+          <div class="card glass" style="padding: 20px 20px;">
+            <div class="card-header">
+              <span>📊</span>
+              <span>System Tracker</span>
+            </div>
+            <div class="card-subtitle">
+              Overall performance of the Overmind HR Engine across all picks.
+            </div>
+            <div id="accuracy-system" class="accuracy-grid"></div>
+          </div>
 
-  <div class="card glass" style="padding: 20px 20px;">
-    <div class="card-header">
-      <span>📈</span>
-      <span>HR & RBI Tracker</span>
-    </div>
-    <div id="accuracy-hr-rbi" class="accuracy-grid"></div>
-  </div>
+          <!-- HR & RBI Tracker -->
+          <div class="card glass" style="padding: 20px 20px;">
+            <div class="card-header">
+              <span>📈</span>
+              <span>HR & RBI Tracker</span>
+            </div>
+            <div class="card-subtitle">
+              Rolling windows for HR/RBI accuracy (7‑day, 30‑day, and today’s hitters).
+            </div>
+            <div id="accuracy-hr-rbi" class="accuracy-grid"></div>
+          </div>
 
-  <div class="card glass" style="padding: 20px 20px;">
-    <div class="card-header">
-      <span>🎯</span>
-      <span>HR Outcomes</span>
-    </div>
-    <div id="accuracy-hr-outcomes" class="compact-outcomes"></div>
-  </div>
-</section>
+          <!-- HR Outcomes -->
+          <div class="card glass" style="padding: 20px 20px;">
+            <div class="card-header">
+              <span>🎯</span>
+              <span>HR Outcomes</span>
+            </div>
+            <div class="card-subtitle">
+              Individual player outcomes for recent HR calls (hit vs miss by tier).
+            </div>
+            <div id="accuracy-hr-outcomes" class="compact-outcomes"></div>
+          </div>
+        </section>
 
-<!-- SEARCH TAB -->
-<section id="tab-search" class="tab-view" style="margin-bottom: 26px;">
-  <div class="section-title">Search</div>
+        <!-- SEARCH TAB -->
+        <section id="tab-search" class="tab-view" style="margin-bottom: 26px;">
+          <div class="section-title">Search</div>
 
-  <div class="card" style="padding: 20px 20px;">
-    <div class="card-header">
-      <span>🔍</span>
-      <span>Search Players</span>
-    </div>
+          <div class="card" style="padding: 20px 20px;">
+            <div class="card-header">
+              <span>🔍</span>
+              <span>Search Players</span>
+            </div>
 
-    <input id="search-input" class="search-input"
-           placeholder="Search players, teams, stadiums..." />
+            <input
+              id="search-input"
+              class="search-input"
+              placeholder="Search players, teams, stadiums..."
+            />
 
-    <ul id="search-results" class="list compact-list"></ul>
-  </div>
-</section>
+            <ul id="search-results" class="list compact-list"></ul>
+          </div>
+        </section>
 
-<!-- SETTINGS TAB -->
-<section id="tab-settings" class="tab-view" style="margin-bottom: 26px;">
-  <div class="section-title">System</div>
+        <!-- SETTINGS TAB -->
+        <section id="tab-settings" class="tab-view" style="margin-bottom: 26px;">
+          <div class="section-title">System</div>
 
-  <div class="card glass" style="padding: 20px 20px;">
-    <div class="card-header">
-      <span>⚙️</span>
-      <span>Display</span>
-    </div>
+          <!-- Display -->
+          <div class="card glass" style="padding: 20px 20px;">
+            <div class="card-header">
+              <span>⚙️</span>
+              <span>Display</span>
+            </div>
 
-    <div class="metric-row">
-      <span>Theme</span><span>Midnight OS</span>
-    </div>
+            <div class="metric-row">
+              <span>Theme</span><span>Midnight OS</span>
+            </div>
 
-    <div class="metric-row">
-      <span>Device Mode</span>
-      <select id="device-mode">
-        <option value="auto">Auto</option>
-        <option value="mobile">Mobile</option>
-        <option value="desktop">Desktop</option>
-      </select>
-    </div>
-  </div>
+            <div class="metric-row">
+              <span>Device Mode</span>
+              <select id="device-mode">
+                <option value="auto">Auto</option>
+                <option value="mobile">Mobile</option>
+                <option value="desktop">Desktop</option>
+              </select>
+            </div>
+          </div>
 
-  <div class="card glass" style="padding: 20px 20px;">
-    <div class="card-header">
-      <span>🧩</span>
-      <span>Engine</span>
-    </div>
+          <!-- Engine -->
+          <div class="card glass" style="padding: 20px 20px;">
+            <div class="card-header">
+              <span>🧩</span>
+              <span>Engine</span>
+            </div>
 
-    <div class="metric-row">
-      <span>Version</span><span>v7.1C Midnight Hybrid Radial</span>
-    </div>
+            <div class="metric-row">
+              <span>Version</span><span>v7.1C Midnight Hybrid Radial</span>
+            </div>
 
-    <div class="metric-row">
-      <span>Worker</span><span>nexari.jardelterry.workers.dev</span>
-    </div>
-  </div>
+            <div class="metric-row">
+              <span>Worker</span><span>nexari.jardelterry.workers.dev</span>
+            </div>
+          </div>
 
-  <!-- NEW INFO SECTION -->
-  <div class="card glass" style="padding: 20px 20px;">
-    <div class="card-header">
-      <span>🧠</span>
-      <span>Info</span>
-    </div>
+          <!-- Info (beefed up) -->
+          <div class="card glass" style="padding: 20px 20px;">
+            <div class="card-header">
+              <span>ℹ️</span>
+              <span>Info</span>
+            </div>
 
-    <div class="metric-row">
-      <span>Model</span><span>Overmind HR Engine 6.6</span>
-    </div>
-    <div class="metric-row">
-      <span>Ranking Logic</span>
-      <span>OCM vs pitcher, park, weather</span>
-    </div>
-    <div class="metric-row">
-      <span>Data Source</span><span>MLB StatsAPI (live)</span>
-    </div>
-  </div>
-</section>
+            <div class="metric-row">
+              <span>Model</span>
+              <span>Overmind HR Engine 6.6</span>
+            </div>
+
+            <div class="metric-row">
+              <span>Ranking Logic</span>
+              <span>OCM vs pitcher, park, weather</span>
+            </div>
+
+            <div class="metric-row">
+              <span>Data Source</span>
+              <span>MLB StatsAPI (live)</span>
+            </div>
+          </div>
+        </section>
 
       </main>
 
