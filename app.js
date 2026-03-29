@@ -1,696 +1,301 @@
-/* ============================================================
-   NexariOS — Midnight Hybrid Radial (v7.1C)
-   app.js — CHUNK 1: Core State + Utilities
-============================================================ */
+// app.js — NexariOS v7.1C (Full Rewrite, Normalized Workers)
 
-/* ------------------------------------------------------------
-   GLOBAL STATE
------------------------------------------------------------- */
-let STATE = {
+// MAIN ENGINE
+const MAIN_BASE = "https://nexari.jardel.workers.dev";
+// AUTO ENGINE (no /games, only /signals + /accuracy)
+const AUTO_BASE = "https://nexari-auto.jardel.workers.dev";
+
+let currentEngine = "main"; // "main" | "auto"
+let currentTab = "hr";      // "hr" | "games" | "accuracy" | "search" | "settings"
+
+let state = {
   signals: [],
   games: [],
-  accuracy: null,
-  searchIndex: [],
-  currentRange: "10",        // "10", "20", "all"
-  currentDate: "today",      // "today" or YYYY-MM-DD
-  currentBook: "dk",         // sportsbook key
-  activeTab: "hr"            // hr, games, accuracy, search, settings
+  accuracy: null
 };
 
-/* ------------------------------------------------------------
-   WORKER ENDPOINTS
------------------------------------------------------------- */
-const WORKER_BASE = "https://nexari.jardelterry.workers.dev";
-
-const ENDPOINTS = {
-  signals: `${WORKER_BASE}/signals`,
-  games:   `${WORKER_BASE}/games`,
-  accuracy:`${WORKER_BASE}/accuracy`
-};
-
-/* ------------------------------------------------------------
-   SAFE FETCH WRAPPER
------------------------------------------------------------- */
-async function safeFetch(url) {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } catch (err) {
-    console.error("Fetch error:", err);
-    return null;
-  }
-}
-
-/* ------------------------------------------------------------
-   DATE UTILITIES
------------------------------------------------------------- */
-function formatDateLabel(dateStr) {
-  if (dateStr === "today") return "Today";
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-function shiftDate(days) {
-  if (STATE.currentDate === "today") {
-    const now = new Date();
-    now.setDate(now.getDate() + days);
-    STATE.currentDate = now.toISOString().slice(0, 10);
-  } else {
-    const d = new Date(STATE.currentDate);
-    d.setDate(d.getDate() + days);
-    STATE.currentDate = d.toISOString().slice(0, 10);
-  }
-
-  document.getElementById("current-date-label").textContent =
-    formatDateLabel(STATE.currentDate);
-
-  loadSignals();
-}
-
-/* ------------------------------------------------------------
-   DOM HELPERS
------------------------------------------------------------- */
 function $(id) {
   return document.getElementById(id);
 }
 
-function clear(el) {
-  el.innerHTML = "";
+async function fetchJSON(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Fetch failed: ${url} ${res.status}`);
+  return res.json();
 }
 
-function create(tag, className = "") {
-  const el = document.createElement(tag);
-  if (className) el.className = className;
-  return el;
+function setText(id, value) {
+  const el = $(id);
+  if (el) el.textContent = value ?? "";
 }
 
-/* ------------------------------------------------------------
-   APPLY ACTIVE STATE TO BUTTON GROUPS
------------------------------------------------------------- */
-function setActiveButton(buttons, activeValue, attr = "data-range") {
-  buttons.forEach(btn => {
-    if (btn.getAttribute(attr) === activeValue) {
-      btn.classList.add("active");
+function setActiveTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll("[data-tab]").forEach(el => {
+    el.classList.toggle("active", el.dataset.tab === tab);
+  });
+  document.querySelectorAll("[data-panel]").forEach(el => {
+    el.classList.toggle("active", el.dataset.panel === tab);
+  });
+}
+function getBaseUrl() {
+  return currentEngine === "auto" ? AUTO_BASE : MAIN_BASE;
+}
+
+async function loadSignals(date = null) {
+  try {
+    const base = getBaseUrl();
+    const url = new URL(base + "/signals");
+    if (date) url.searchParams.set("date", date);
+
+    const data = await fetchJSON(url.toString());
+    // Expect: { ok, date, signals: [ { player, team, opponent, tier, sportsbooks, overmindCompositeMetric } ] }
+    if (!data.ok || !Array.isArray(data.signals)) {
+      console.warn("Unexpected signals payload", data);
+      state.signals = [];
     } else {
-      btn.classList.remove("active");
+      state.signals = data.signals;
     }
-  });
-}
-
-/* ------------------------------------------------------------
-   BUILD QUERY STRING FOR DATE
------------------------------------------------------------- */
-function buildDateQuery() {
-  if (STATE.currentDate === "today") return "";
-  return `?date=${STATE.currentDate}`;
-}
-/* ============================================================
-   NexariOS — Midnight Hybrid Radial (v7.1C)
-   app.js — CHUNK 2: HR Signals Engine
-============================================================ */
-
-/* ------------------------------------------------------------
-   LOAD SIGNALS
------------------------------------------------------------- */
-async function loadSignals() {
-  const url = ENDPOINTS.signals + buildDateQuery();
-  const data = await safeFetch(url);
-
-  if (!data || !data.signals) {
-    STATE.signals = [];
     renderSignals();
-    return;
+  } catch (e) {
+    console.error("loadSignals error", e);
+    state.signals = [];
+    renderSignals();
   }
-
-  STATE.signals = data.signals;
-  renderSignals();
 }
 
-/* ------------------------------------------------------------
-   FILTER SIGNALS BY RANGE
------------------------------------------------------------- */
-function applyRangeFilter(list) {
-  if (STATE.currentRange === "10") return list.slice(0, 10);
-  if (STATE.currentRange === "20") return list.slice(0, 20);
-  return list; // "all"
-}
-
-/* ------------------------------------------------------------
-   RENDER HR SIGNALS
------------------------------------------------------------- */
-function renderSignals() {
-  const container = $("hr-list");
-  clear(container);
-
-  const book = STATE.currentBook;
-  let list = [...STATE.signals];
-
-  // Apply range filter
-  list = applyRangeFilter(list);
-
-  list.forEach(s => {
-    const price = s.sportsbooks?.[book];
-
-    // Skip if selected book has no price
-    if (!price || price === "N/A") return;
-
-    const li = create("li");
-
-    li.innerHTML = `
-      <div class="row-main">
-        <span class="row-title">${s.player}</span>
-        <span class="row-tag">${s.team}</span>
-      </div>
-
-      <div class="row-sub">
-        vs ${s.opponent} • ${s.tier} • ${book.toUpperCase()} ${price}
-      </div>
-    `;
-
-    container.appendChild(li);
-  });
-}
-
-/* ------------------------------------------------------------
-   RANGE BUTTON EVENTS
------------------------------------------------------------- */
-function initRangeButtons() {
-  const buttons = document.querySelectorAll(".range-btn");
-
-  buttons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      STATE.currentRange = btn.getAttribute("data-range");
-      setActiveButton(buttons, STATE.currentRange, "data-range");
-      renderSignals();
-    });
-  });
-}
-
-/* ------------------------------------------------------------
-   SPORTSBOOK SELECTOR
------------------------------------------------------------- */
-function initSportsbookSelector() {
-  const select = $("sportsbook");
-
-  select.addEventListener("change", () => {
-    STATE.currentBook = select.value;
-    renderSignals();
-  });
-}
-
-/* ------------------------------------------------------------
-   DATE NAVIGATION
------------------------------------------------------------- */
-function initDateNavigation() {
-  $("prev-day").addEventListener("click", () => shiftDate(-1));
-  $("next-day").addEventListener("click", () => shiftDate(1));
-}
-
-/* ------------------------------------------------------------
-   INITIALIZE HR TAB
------------------------------------------------------------- */
-function initHRTab() {
-  initRangeButtons();
-  initSportsbookSelector();
-  initDateNavigation();
-  loadSignals();
-}
-/* ============================================================
-   NexariOS — Midnight Hybrid Radial (v7.1C)
-   app.js — CHUNK 3: Games Engine
-============================================================ */
-
-/* ------------------------------------------------------------
-   LOAD GAMES
------------------------------------------------------------- */
-async function loadGames() {
-  const url = ENDPOINTS.games + buildDateQuery();
-  const data = await safeFetch(url);
-
-  if (!data || !data.games) {
-    STATE.games = [];
+async function loadGames(date = null) {
+  // Only main engine has /games
+  if (currentEngine === "auto") {
+    state.games = [];
     renderGames();
     return;
   }
 
-  STATE.games = data.games;
-  renderGames();
-}
+  try {
+    const base = getBaseUrl();
+    const url = new URL(base + "/games");
+    if (date) url.searchParams.set("date", date);
 
-/* ------------------------------------------------------------
-   RENDER GAMES LIST
------------------------------------------------------------- */
-function renderGames() {
-  const container = $("games-list");
-  clear(container);
-
-  STATE.games.forEach(game => {
-    const li = create("li");
-
-    const home = game.homeTeam || "Home";
-    const away = game.awayTeam || "Away";
-    const venue = game.venue || "";
-    const temp = game.weather?.temp || null;
-    const wind = game.weather?.wind || null;
-
-    li.innerHTML = `
-      <div class="row-main">
-        <span class="row-title">${away}</span>
-        <span>@</span>
-        <span class="row-title">${home}</span>
-      </div>
-
-      <div class="row-sub">
-        ${venue}
-        ${temp ? `• ${temp}°F` : ""}
-        ${wind ? `• Wind ${wind}` : ""}
-      </div>
-    `;
-
-    // If lineups exist, render them
-    if (game.lineups && (game.lineups.home?.length || game.lineups.away?.length)) {
-      const lineupBox = create("div", "lineups-inline");
-
-      if (game.lineups.away?.length) {
-        game.lineups.away.forEach(p => {
-          const chip = create("div", "lineup-chip");
-          chip.textContent = p;
-          lineupBox.appendChild(chip);
-        });
-      }
-
-      if (game.lineups.home?.length) {
-        game.lineups.home.forEach(p => {
-          const chip = create("div", "lineup-chip");
-          chip.textContent = p;
-          lineupBox.appendChild(chip);
-        });
-      }
-
-      li.appendChild(lineupBox);
+    const data = await fetchJSON(url.toString());
+    // Expect: { ok, date, games: [ { homeTeam, awayTeam, venue, temp, wind, lineups: { home, away } } ] }
+    if (!data.ok || !Array.isArray(data.games)) {
+      console.warn("Unexpected games payload", data);
+      state.games = [];
+    } else {
+      state.games = data.games;
     }
-
-    container.appendChild(li);
-  });
+    renderGames();
+  } catch (e) {
+    console.error("loadGames error", e);
+    state.games = [];
+    renderGames();
+  }
 }
 
-/* ------------------------------------------------------------
-   INITIALIZE GAMES TAB
------------------------------------------------------------- */
-function initGamesTab() {
-  loadGames();
-}
-/* ============================================================
-   NexariOS — Midnight Hybrid Radial (v7.1C)
-   app.js — CHUNK 4: Accuracy Engine
-============================================================ */
-
-/* ------------------------------------------------------------
-   LOAD ACCURACY DATA
------------------------------------------------------------- */
 async function loadAccuracy() {
-  const url = ENDPOINTS.accuracy + buildDateQuery();
-  const data = await safeFetch(url);
+  try {
+    const base = getBaseUrl();
+    const url = new URL(base + "/accuracy");
 
-  if (!data) {
-    STATE.accuracy = null;
+    const data = await fetchJSON(url.toString());
+    // Expect: { ok, accuracy: { system: {...}, outcomes: [...] } }
+    if (!data.ok || !data.accuracy) {
+      console.warn("Unexpected accuracy payload", data);
+      state.accuracy = null;
+    } else {
+      state.accuracy = data.accuracy;
+    }
     renderAccuracy();
+  } catch (e) {
+    console.error("loadAccuracy error", e);
+    state.accuracy = null;
+    renderAccuracy();
+  }
+}
+/* ------------------------------
+   RENDER: HR / SIGNALS
+--------------------------------*/
+function renderSignals() {
+  const container = $("signals-list");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  if (!state.signals.length) {
+    container.innerHTML = `<div class="empty-state">No signals available.</div>`;
     return;
   }
 
-  STATE.accuracy = data;
-  renderAccuracy();
+  state.signals.forEach(sig => {
+    const div = document.createElement("div");
+    div.className = "signal-row";
+
+    const odds = sig.sportsbooks || {};
+    const bestLine = odds.dk || odds.fd || odds.mgm || "N/A";
+
+    div.innerHTML = `
+      <div class="signal-main">
+        <div class="signal-player">${sig.player}</div>
+        <div class="signal-meta">
+          <span class="signal-team">${sig.team || ""}</span>
+          <span class="signal-vs">${sig.opponent ? `vs ${sig.opponent}` : ""}</span>
+        </div>
+      </div>
+      <div class="signal-side">
+        <div class="signal-tier">${sig.tier}</div>
+        <div class="signal-ocm">${Math.round(sig.overmindCompositeMetric || 0)}</div>
+        <div class="signal-odds">${bestLine}</div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
 }
 
-/* ------------------------------------------------------------
-   RENDER ACCURACY TAB
------------------------------------------------------------- */
+/* ------------------------------
+   RENDER: GAMES + LINEUPS
+--------------------------------*/
+function renderGames() {
+  const titleEl = $("game-title");
+  const venueEl = $("venue");
+  const weatherEl = $("weather");
+  const homeContainer = $("home-lineup");
+  const awayContainer = $("away-lineup");
+
+  if (!titleEl || !venueEl || !weatherEl || !homeContainer || !awayContainer) return;
+
+  if (!state.games.length) {
+    titleEl.textContent = currentEngine === "auto"
+      ? "Games not available in Auto mode"
+      : "No games found";
+    venueEl.textContent = "";
+    weatherEl.textContent = "";
+    homeContainer.innerHTML = "";
+    awayContainer.innerHTML = "";
+    return;
+  }
+
+  // For now, show the first game (you can add next/prev later)
+  const game = state.games[0];
+
+  titleEl.textContent = `${game.awayTeam} @ ${game.homeTeam}`;
+  venueEl.textContent = game.venue || "";
+
+  const weatherParts = [];
+  if (game.temp != null) weatherParts.push(`${game.temp}°`);
+  if (game.wind != null) weatherParts.push(`Wind ${game.wind} mph`);
+  weatherEl.textContent = weatherParts.join(" • ");
+
+  renderLineup(game.lineups?.home || [], homeContainer);
+  renderLineup(game.lineups?.away || [], awayContainer);
+}
+
+function renderLineup(list, container) {
+  container.innerHTML = "";
+
+  list.forEach(player => {
+    // player is an object: { name, pos, ... }
+    const div = document.createElement("div");
+    div.className = "player-tile";
+
+    const name = player.name || "";
+    const pos = player.pos || "";
+
+    div.innerHTML = `
+      <span class="player-name">${name}</span>
+      ${pos ? `<span class="player-pos">${pos}</span>` : ""}
+    `;
+
+    container.appendChild(div);
+  });
+}
+/* ------------------------------
+   RENDER: ACCURACY
+--------------------------------*/
 function renderAccuracy() {
-  renderAccuracySystem();
-  renderAccuracyHRRBI();
-  renderAccuracyOutcomes();
-}
+  const systemEl = $("accuracy-system");
+  const listEl = $("accuracy-list");
+  if (!systemEl || !listEl) return;
 
-/* ------------------------------------------------------------
-   SYSTEM TRACKER
------------------------------------------------------------- */
-function renderAccuracySystem() {
-  const box = $("accuracy-system");
-  clear(box);
+  listEl.innerHTML = "";
 
-  if (!STATE.accuracy || !STATE.accuracy.system) return;
+  if (!state.accuracy) {
+    systemEl.textContent = "No accuracy data.";
+    return;
+  }
 
-  const sys = STATE.accuracy.system;
+  const sys = state.accuracy.system || {};
+  systemEl.textContent =
+    `Picks: ${sys.totalPicks ?? 0} • Hits: ${sys.hits ?? 0} • Misses: ${sys.misses ?? 0} • Accuracy: ${sys.accuracy ?? 0}%`;
 
-  const metrics = [
-    { label: "Total Picks", value: sys.totalPicks },
-    { label: "Hits", value: sys.hits },
-    { label: "Misses", value: sys.misses },
-    { label: "Accuracy", value: sys.accuracy + "%" }
-  ];
+  const outcomes = state.accuracy.outcomes || [];
+  if (!outcomes.length) {
+    listEl.innerHTML = `<div class="empty-state">No outcomes yet.</div>`;
+    return;
+  }
 
-  metrics.forEach(m => {
-    const div = create("div");
+  outcomes.forEach(o => {
+    const div = document.createElement("div");
+    div.className = "accuracy-row";
     div.innerHTML = `
-      <div class="accuracy-label">${m.label}</div>
-      <div class="accuracy-value">${m.value}</div>
+      <div class="accuracy-player">${o.player}</div>
+      <div class="accuracy-meta">
+        <span class="accuracy-team">${o.team || ""}</span>
+        <span class="accuracy-tier">${o.tier || ""}</span>
+        <span class="accuracy-hit">${o.hrHit ? "HR ✅" : "No HR"}</span>
+      </div>
     `;
-    box.appendChild(div);
+    listEl.appendChild(div);
   });
 }
 
-/* ------------------------------------------------------------
-   HR & RBI TRACKER
------------------------------------------------------------- */
-function renderAccuracyHRRBI() {
-  const box = $("accuracy-hr-rbi");
-  clear(box);
-
-  if (!STATE.accuracy || !STATE.accuracy.hrrbi) return;
-
-  const h = STATE.accuracy.hrrbi;
-
-  const metrics = [
-    { label: "HR Picks", value: h.hrPicks },
-    { label: "HR Hits", value: h.hrHits },
-    { label: "RBI Picks", value: h.rbiPicks },
-    { label: "RBI Hits", value: h.rbiHits }
-  ];
-
-  metrics.forEach(m => {
-    const div = create("div");
-    div.innerHTML = `
-      <div class="accuracy-label">${m.label}</div>
-      <div class="accuracy-value">${m.value}</div>
-    `;
-    box.appendChild(div);
-  });
+/* ------------------------------
+   TAB + ENGINE SWITCHING
+--------------------------------*/
+function switchTab(tab) {
+  setActiveTab(tab);
+  if (tab === "hr") {
+    renderSignals();
+  } else if (tab === "games") {
+    renderGames();
+  } else if (tab === "accuracy") {
+    renderAccuracy();
+  }
 }
 
-/* ------------------------------------------------------------
-   HR OUTCOMES LIST
------------------------------------------------------------- */
-function renderAccuracyOutcomes() {
-  const box = $("accuracy-hr-outcomes");
-  clear(box);
+function switchEngine(engine) {
+  if (engine !== "main" && engine !== "auto") return;
+  currentEngine = engine;
 
-  if (!STATE.accuracy || !STATE.accuracy.outcomes) return;
-
-  STATE.accuracy.outcomes.forEach(o => {
-    const row = create("div", "row-main");
-
-    const pillClass =
-      o.result === "hit" ? "row-pill hit" :
-      o.result === "miss" ? "row-pill miss" :
-      "row-pill pending";
-
-    row.innerHTML = `
-      <span class="row-title">${o.player}</span>
-      <span class="${pillClass}">${o.result.toUpperCase()}</span>
-    `;
-
-    box.appendChild(row);
-  });
-}
-
-/* ------------------------------------------------------------
-   INITIALIZE ACCURACY TAB
------------------------------------------------------------- */
-function initAccuracyTab() {
+  // Reload everything relevant
+  loadSignals();
+  loadGames();
   loadAccuracy();
 }
-/* ============================================================
-   NexariOS — Midnight Hybrid Radial (v7.1C)
-   app.js — CHUNK 5: Search Engine
-============================================================ */
 
-/* ------------------------------------------------------------
-   BUILD SEARCH INDEX
-   (Players, teams, stadiums — whatever the Worker provides)
------------------------------------------------------------- */
-function buildSearchIndex() {
-  STATE.searchIndex = [];
-
-  // Pull from signals (players)
-  STATE.signals.forEach(s => {
-    STATE.searchIndex.push({
-      type: "player",
-      name: s.player,
-      team: s.team,
-      opponent: s.opponent
-    });
-  });
-
-  // Pull from games (teams + stadiums)
-  STATE.games.forEach(g => {
-    if (g.homeTeam) {
-      STATE.searchIndex.push({
-        type: "team",
-        name: g.homeTeam,
-        venue: g.venue || ""
-      });
-    }
-    if (g.awayTeam) {
-      STATE.searchIndex.push({
-        type: "team",
-        name: g.awayTeam,
-        venue: g.venue || ""
-      });
-    }
-    if (g.venue) {
-      STATE.searchIndex.push({
-        type: "venue",
-        name: g.venue
-      });
-    }
-  });
-}
-
-/* ------------------------------------------------------------
-   FILTER SEARCH RESULTS
------------------------------------------------------------- */
-function searchFilter(query) {
-  if (!query || query.trim() === "") return [];
-
-  const q = query.toLowerCase();
-
-  return STATE.searchIndex.filter(item =>
-    item.name.toLowerCase().includes(q)
-  );
-}
-
-/* ------------------------------------------------------------
-   RENDER SEARCH RESULTS
------------------------------------------------------------- */
-function renderSearchResults(results) {
-  const box = $("search-results");
-  clear(box);
-
-  results.forEach(r => {
-    const li = create("li");
-
-    let subtitle = "";
-    if (r.type === "player") {
-      subtitle = `${r.team} vs ${r.opponent}`;
-    } else if (r.type === "team") {
-      subtitle = r.venue ? `Plays at ${r.venue}` : "";
-    } else if (r.type === "venue") {
-      subtitle = "Stadium";
-    }
-
-    li.innerHTML = `
-      <div class="row-main">
-        <span class="row-title">${r.name}</span>
-        <span class="row-tag">${r.type.toUpperCase()}</span>
-      </div>
-      <div class="row-sub">${subtitle}</div>
-    `;
-
-    box.appendChild(li);
-  });
-}
-
-/* ------------------------------------------------------------
-   INITIALIZE SEARCH TAB
------------------------------------------------------------- */
-function initSearchTab() {
-  const input = $("search-input");
-
-  input.addEventListener("input", () => {
-    const q = input.value;
-    const results = searchFilter(q);
-    renderSearchResults(results);
-  });
-}
-/* ============================================================
-   NexariOS — Midnight Hybrid Radial (v7.1C)
-   app.js — CHUNK 6: Navigation Engine
-============================================================ */
-
-/* ------------------------------------------------------------
-   SWITCH TAB
------------------------------------------------------------- */
-function switchTab(tab) {
-  STATE.activeTab = tab;
-
-  // Hide all tabs
-  document.querySelectorAll(".tab-view").forEach(t => {
-    t.classList.remove("active");
-  });
-
-  // Show selected tab
-  const active = document.querySelector(`#tab-${tab}`);
-  if (active) active.classList.add("active");
-
-  // Update sidebar active state
-  document.querySelectorAll(".sidebar-item").forEach(btn => {
-    btn.classList.toggle("active", btn.getAttribute("data-tab") === tab);
-  });
-
-  // Update bottom nav active state
-  document.querySelectorAll(".nav-item").forEach(btn => {
-    btn.classList.toggle("active", btn.getAttribute("data-tab") === tab);
-  });
-
-  // Move indicator (mobile)
-  updateNavIndicator();
-}
-
-/* ------------------------------------------------------------
-   NAV INDICATOR (MOBILE)
------------------------------------------------------------- */
-function updateNavIndicator() {
-  const indicator = $("nav-indicator");
-  const active = document.querySelector(".nav-item.active");
-
-  if (!indicator || !active) return;
-
-  const rect = active.getBoundingClientRect();
-  const parentRect = active.parentElement.getBoundingClientRect();
-
-  const width = rect.width * 0.6;
-  const left = rect.left - parentRect.left + (rect.width - width) / 2;
-
-  indicator.style.width = `${width}px`;
-  indicator.style.transform = `translateX(${left}px)`;
-}
-
-/* ------------------------------------------------------------
-   SIDEBAR NAVIGATION
------------------------------------------------------------- */
-function initSidebarNav() {
-  document.querySelectorAll(".sidebar-item").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const tab = btn.getAttribute("data-tab");
-      switchTab(tab);
-    });
-  });
-}
-
-/* ------------------------------------------------------------
-   BOTTOM NAVIGATION (MOBILE)
------------------------------------------------------------- */
-function initBottomNav() {
-  document.querySelectorAll(".nav-item").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const tab = btn.getAttribute("data-tab");
-      switchTab(tab);
-    });
-  });
-}
-
-/* ------------------------------------------------------------
-   DEVICE MODE SWITCHING
------------------------------------------------------------- */
-function initDeviceMode() {
-  const select = $("device-mode");
-
-  select.addEventListener("change", () => {
-    const mode = select.value;
-
-    document.body.classList.remove("device-auto", "device-mobile", "device-desktop");
-
-    if (mode === "auto") {
-      document.body.classList.add("device-auto");
-    } else if (mode === "mobile") {
-      document.body.classList.add("device-mobile");
-    } else if (mode === "desktop") {
-      document.body.classList.add("device-desktop");
-    }
-
-    // Recalculate nav indicator after layout shift
-    setTimeout(updateNavIndicator, 150);
-  });
-}
-
-/* ------------------------------------------------------------
-   INITIALIZE NAVIGATION
------------------------------------------------------------- */
-function initNavigation() {
-  initSidebarNav();
-  initBottomNav();
-  initDeviceMode();
-
-  // Default tab
-  switchTab("hr");
-
-  // Ensure indicator is placed correctly on load
-  setTimeout(updateNavIndicator, 200);
-}
-/* ============================================================
-   NexariOS — Midnight Hybrid Radial (v7.1C)
-   app.js — CHUNK 7: Boot Sequence
-============================================================ */
-
-/* ------------------------------------------------------------
-   INITIALIZE ALL TABS
------------------------------------------------------------- */
-function initTabs() {
-  initHRTab();
-  initGamesTab();
-  initAccuracyTab();
-  initSearchTab();
-}
-
-/* ------------------------------------------------------------
-   BUILD SEARCH INDEX AFTER DATA LOAD
------------------------------------------------------------- */
-async function loadAllDataThenBuildSearch() {
-  // Load signals first (search needs players)
-  await loadSignals();
-
-  // Load games (search needs teams + venues)
-  await loadGames();
-
-  // Load accuracy (independent)
-  await loadAccuracy();
-
-  // Build search index from all loaded data
-  buildSearchIndex();
-}
-
-/* ------------------------------------------------------------
-   FULL SYSTEM BOOT
------------------------------------------------------------- */
-async function bootNexariOS() {
-  console.log("NexariOS v7.1C — Midnight Hybrid Radial booting…");
-
-  // Initialize navigation first
-  initNavigation();
-
-  // Load all data, then build search index
-  await loadAllDataThenBuildSearch();
-
-  // Initialize tab logic (listeners, controls)
-  initTabs();
-
-  console.log("NexariOS v7.1C — System Ready.");
-}
-
-/* ------------------------------------------------------------
-   DOM READY
------------------------------------------------------------- */
+/* ------------------------------
+   INIT
+--------------------------------*/
 document.addEventListener("DOMContentLoaded", () => {
-  bootNexariOS();
+  // Tab buttons
+  document.querySelectorAll("[data-tab]").forEach(el => {
+    el.addEventListener("click", () => {
+      const tab = el.dataset.tab;
+      switchTab(tab);
+    });
+  });
+
+  // Engine toggle (if present)
+  const mainBtn = $("engine-main");
+  const autoBtn = $("engine-auto");
+  if (mainBtn) {
+    mainBtn.addEventListener("click", () => switchEngine("main"));
+  }
+  if (autoBtn) {
+    autoBtn.addEventListener("click", () => switchEngine("auto"));
+  }
+
+  // Initial state
+  setActiveTab("hr");
+  switchEngine("main"); // loads signals, games, accuracy
 });
