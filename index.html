@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>NexariOS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=5" />
   <meta name="theme-color" content="#050816" />
 </head>
 
@@ -47,12 +47,12 @@
           </div>
         </div>
 
-        <div class="card">
+        <div class="card compact">
           <div class="card-header">
             <span class="icon">☄️</span>
             <span>HR Signals</span>
           </div>
-          <ul id="hr-list" class="list"></ul>
+          <ul id="hr-list" class="list compact-list"></ul>
         </div>
       </section>
 
@@ -62,20 +62,21 @@
           <div class="section-title">Games</div>
         </div>
 
-        <div class="card">
+        <div class="card compact">
           <div class="card-header">
             <span class="icon">⚾️</span>
             <span>Games & Weather</span>
           </div>
-          <ul id="games-list" class="list"></ul>
+          <ul id="games-list" class="list compact-list"></ul>
         </div>
 
-        <div class="card glass">
+        <div class="card glass compact">
           <div class="card-header">
             <span class="icon">🧾</span>
             <span>Lineups</span>
           </div>
-          <ul id="lineups-list" class="list"></ul>
+          <div id="lineups-empty" class="sub">Tap a game to view lineups.</div>
+          <ul id="lineups-list" class="list compact-list"></ul>
         </div>
       </section>
 
@@ -85,7 +86,7 @@
           <div class="section-title">Accuracy (Today)</div>
         </div>
 
-        <div class="card">
+        <div class="card compact">
           <div class="card-header">
             <span class="icon">📊</span>
             <span>System Tracker</span>
@@ -93,28 +94,28 @@
           <div id="accuracy-system" class="accuracy-grid"></div>
         </div>
 
-        <div class="card glass">
+        <div class="card glass compact">
           <div class="card-header">
             <span class="icon">📈</span>
             <span>HR Outcomes</span>
           </div>
-          <div id="accuracy-hr-outcomes"></div>
+          <div id="accuracy-hr-outcomes" class="compact-outcomes"></div>
         </div>
       </section>
 
       <!-- SEARCH TAB -->
       <section id="tab-search" class="tab-view">
         <div class="section-bar">
-          <div class="section-title">Search Players</div>
+          <div class="section-title">Search</div>
         </div>
 
-        <div class="card">
+        <div class="card compact">
           <div class="card-header">
             <span class="icon">🔍</span>
-            <span>Search</span>
+            <span>Search Players</span>
           </div>
           <input id="search-input" class="search-input" type="text" placeholder="Search players, teams, stadiums..." />
-          <ul id="search-results" class="list"></ul>
+          <ul id="search-results" class="list compact-list"></ul>
         </div>
       </section>
 
@@ -124,8 +125,7 @@
           <div class="section-title">System</div>
         </div>
 
-        <!-- DISPLAY -->
-        <div class="card glass">
+        <div class="card glass compact">
           <div class="card-header">
             <span class="icon">✨</span>
             <span>Display</span>
@@ -138,8 +138,7 @@
           </div>
         </div>
 
-        <!-- SYSTEM -->
-        <div class="card glass">
+        <div class="card glass compact">
           <div class="card-header">
             <span class="icon">🧩</span>
             <span>System</span>
@@ -152,8 +151,7 @@
           </div>
         </div>
 
-        <!-- PERFORMANCE -->
-        <div class="card glass">
+        <div class="card glass compact">
           <div class="card-header">
             <span class="icon">⚡</span>
             <span>Performance</span>
@@ -165,27 +163,12 @@
             <span>Data Load</span><span id="perf-data">–</span>
           </div>
         </div>
-
-        <!-- SYSTEM INTELLIGENCE -->
-        <div class="card glass">
-          <div class="card-header">
-            <span class="icon">🧬</span>
-            <span>System Intelligence</span>
-          </div>
-          <div class="handbook">
-            <p><strong>OCM</strong> is the Overmind Composite Metric — lineup slot, park, weather, and context blended into one HR edge score.</p>
-            <p><strong>HR Base</strong> is derived from lineup slot (1–3) and represents raw HR expectation.</p>
-            <p><strong>Tier</strong> groups signals into Strong / Playable / Watch bands.</p>
-            <p><strong>Sportsbook Odds</strong> are synthetic, used for relative edge framing only.</p>
-            <p><strong>Accuracy</strong> tracks system picks only, by day.</p>
-            <p><strong>History7 / History30</strong> are rolling accuracy snapshots.</p>
-          </div>
-        </div>
       </section>
     </main>
 
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav">
+      <div class="nav-indicator" id="nav-indicator"></div>
       <div class="nav-item active" data-tab="hr"><span class="icon">☄️</span><span>HR</span></div>
       <div class="nav-item" data-tab="games"><span class="icon">⚾️</span><span>Games</span></div>
       <div class="nav-item" data-tab="accuracy"><span class="icon">📊</span><span>Accuracy</span></div>
@@ -195,7 +178,6 @@
 
   </div>
 
-  <!-- INLINE JS -->
   <script>
     const WORKER_BASE = "https://nexari.jardelterry.workers.dev";
 
@@ -204,7 +186,8 @@
     let accuracyData = null;
 
     let currentRange = "10";
-    let currentDate = new Date(); // UI date; Worker uses NY internally
+    let currentDate = new Date();
+    let selectedGameIndex = null;
 
     function toDateString(d) {
       const y = d.getFullYear();
@@ -252,6 +235,7 @@
         const t1 = performance.now();
         document.getElementById("perf-data").textContent = Math.round(t1 - t0) + " ms";
 
+        selectedGameIndex = null;
         updateDateLabel();
         renderHRView();
         renderGames();
@@ -268,7 +252,6 @@
       list.innerHTML = "";
 
       let signals = signalsData.filter(s => s.systemPick);
-
       signals.sort((a, b) => (b.overmindCompositeMetric || 0) - (a.overmindCompositeMetric || 0));
 
       if (currentRange !== "all") {
@@ -278,27 +261,21 @@
 
       signals.forEach(s => {
         const venue = s.context?.venueName || "";
-        const temp = s.context?.temp != null ? `${s.context.temp}°` : "";
-        const wind = s.context?.wind != null ? `${s.context.wind} mph` : "";
-        const cond = s.context?.conditions || "";
-        const envParts = [venue, temp, wind, cond].filter(Boolean).join(" · ");
-
         const dk = s.sportsbooks?.dk || "N/A";
+        const tier = s.tier || "Watch";
 
         const li = document.createElement("li");
         li.innerHTML = `
-          <div>
-            <strong>${s.player}</strong>
-            <span class="pill">${s.team || ""}</span>
-            ${venue ? `<span class="pill-small">${venue}</span>` : ""}
+          <div class="row-main">
+            <span class="row-title">${s.player}</span>
+            <span class="row-tag tier">${tier}</span>
+            <span class="row-tag team">${s.team || ""}</span>
+            <span class="row-pill ${s.hrHit ? "hit" : "miss"}">${s.hrHit ? "Hit" : "Miss"}</span>
           </div>
-          <div class="sub">
-            vs ${s.opponent || "—"} · OCM ${(s.overmindCompositeMetric || 0).toFixed(1)} · HR Base ${s.hr}
-            · Tier ${s.tier}
-            ${envParts ? ` · ${envParts}` : ""}
-            · DK ${dk}
-            <span class="pill ${s.hrHit ? "hit" : "miss"}">${s.hrHit ? "Hit" : "Miss"}</span>
+          <div class="row-sub">
+            vs ${s.opponent || "—"} · OCM ${(s.overmindCompositeMetric || 0).toFixed(1)} · HR ${s.hr} · DK ${dk}
           </div>
+          ${venue ? `<div class="row-sub venue">${venue}</div>` : ""}
         `;
         list.appendChild(li);
       });
@@ -312,29 +289,51 @@
       const list = document.getElementById("games-list");
       list.innerHTML = "";
 
-      gamesData.forEach(g => {
+      gamesData.forEach((g, idx) => {
+        const isSelected = selectedGameIndex === idx;
+
         const temp = g.temp != null ? `${g.temp}°` : "";
         const wind = g.wind != null ? `${g.wind} mph` : "";
         const cond = g.conditions || "";
         const envParts = [temp, wind, cond].filter(Boolean).join(" · ");
 
-        const scorePart =
-          g.awayScore != null && g.homeScore != null
-            ? ` · ${g.awayScore}–${g.homeScore}`
-            : "";
+        const hasScore = g.awayScore != null && g.homeScore != null;
+        const isFinal = (g.status || "").toLowerCase().includes("final") ||
+                        (g.status || "").toLowerCase().includes("completed");
+        const isLive = g.live;
 
-        const liveTag = g.live ? " · LIVE" : "";
+        let line2 = "";
+        let line3 = "";
+
+        if (isFinal && hasScore) {
+          line2 = `Final · ${g.awayScore}–${g.homeScore}`;
+          line3 = envParts ? envParts : "";
+        } else if (isLive && hasScore) {
+          line2 = `LIVE · ${g.awayScore}–${g.homeScore}`;
+          line3 = envParts ? envParts : "";
+        } else {
+          // Not started yet: show game time + weather
+          line2 = `${g.gameTime}`;
+          line3 = envParts ? envParts : (g.status ? g.status : "");
+        }
 
         const li = document.createElement("li");
+        li.classList.toggle("game-selected", isSelected);
         li.innerHTML = `
-          <div><strong>${g.away}</strong> @ <strong>${g.home}</strong></div>
-          <div class="sub">
-            ${g.gameTime} · ${g.status}${scorePart}${liveTag}
+          <div class="row-main">
+            <span class="row-title">${g.away}</span>
+            <span class="row-separator">@</span>
+            <span class="row-title">${g.home}</span>
           </div>
-          <div class="sub">
-            ${g.venueName || ""}${envParts ? " · " + envParts : ""}
-          </div>
+          <div class="row-sub">${line2}</div>
+          ${g.venueName ? `<div class="row-sub venue">${g.venueName}</div>` : ""}
+          ${line3 ? `<div class="row-sub">${line3}</div>` : ""}
         `;
+        li.addEventListener("click", () => {
+          selectedGameIndex = selectedGameIndex === idx ? null : idx;
+          renderGames();
+          renderLineups();
+        });
         list.appendChild(li);
       });
 
@@ -345,57 +344,57 @@
 
     function renderLineups() {
       const list = document.getElementById("lineups-list");
+      const empty = document.getElementById("lineups-empty");
       list.innerHTML = "";
 
-      gamesData.forEach(g => {
-        const header = document.createElement("li");
-        header.innerHTML = `
-          <div><strong>${g.away}</strong> @ <strong>${g.home}</strong></div>
-          <div class="sub">${g.venueName || ""}</div>
-        `;
-        list.appendChild(header);
+      if (selectedGameIndex == null || !gamesData[selectedGameIndex]) {
+        empty.style.display = "block";
+        return;
+      }
 
-        const awayPlayers = g.awayPlayers || [];
-        const homePlayers = g.homePlayers || [];
+      empty.style.display = "none";
+      const g = gamesData[selectedGameIndex];
 
-        if (!awayPlayers.length && !homePlayers.length) {
+      const awayPlayers = g.awayPlayers || [];
+      const homePlayers = g.homePlayers || [];
+
+      if (!awayPlayers.length && !homePlayers.length) {
+        list.innerHTML = `<li class="sub">No lineup data available.</li>`;
+        return;
+      }
+
+      if (awayPlayers.length) {
+        const subHeader = document.createElement("li");
+        subHeader.innerHTML = `<div class="subheader">Away – ${g.away}</div>`;
+        list.appendChild(subHeader);
+
+        awayPlayers.forEach(p => {
           const li = document.createElement("li");
-          li.innerHTML = `<div class="sub">No lineup data available.</div>`;
+          li.innerHTML = `
+            <div class="row-main">
+              <span class="row-title">${p.name}</span>
+              <span class="row-tag">${p.pos || ""}</span>
+            </div>
+          `;
           list.appendChild(li);
-          return;
-        }
+        });
+      }
 
-        if (awayPlayers.length) {
-          const subHeader = document.createElement("li");
-          subHeader.innerHTML = `<div class="subheader">Away Lineup – ${g.away}</div>`;
-          list.appendChild(subHeader);
+      if (homePlayers.length) {
+        const subHeader = document.createElement("li");
+        subHeader.innerHTML = `<div class="subheader">Home – ${g.home}</div>`;
+        list.appendChild(subHeader);
 
-          awayPlayers.forEach(p => {
-            const li = document.createElement("li");
-            li.innerHTML = `
-              <div><strong>${p.name}</strong> <span class="pill">${p.pos || ""}</span></div>
-            `;
-            list.appendChild(li);
-          });
-        }
-
-        if (homePlayers.length) {
-          const subHeader = document.createElement("li");
-          subHeader.innerHTML = `<div class="subheader">Home Lineup – ${g.home}</div>`;
-          list.appendChild(subHeader);
-
-          homePlayers.forEach(p => {
-            const li = document.createElement("li");
-            li.innerHTML = `
-              <div><strong>${p.name}</strong> <span class="pill">${p.pos || ""}</span></div>
-            `;
-            list.appendChild(li);
-          });
-        }
-      });
-
-      if (!gamesData.length) {
-        list.innerHTML = `<li class="sub">No games / lineups for this date.</li>`;
+        homePlayers.forEach(p => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+            <div class="row-main">
+              <span class="row-title">${p.name}</span>
+              <span class="row-tag">${p.pos || ""}</span>
+            </div>
+          `;
+          list.appendChild(li);
+        });
       }
     }
 
@@ -419,18 +418,18 @@
       grid.innerHTML = `
         <div class="accuracy-label">Accuracy</div><div class="accuracy-value">${percent}%</div>
         <div class="accuracy-label">Volume</div><div class="accuracy-value">${volume}</div>
-        <div class="accuracy-label">System Streak</div><div class="accuracy-value">${systemStreak}</div>
+        <div class="accuracy-label">Sys Streak</div><div class="accuracy-value">${systemStreak}</div>
         <div class="accuracy-label">Player Streak</div><div class="accuracy-value">${playerStreak}</div>
         <div class="accuracy-label">Hits</div><div class="accuracy-value">${hits}</div>
         <div class="accuracy-label">Misses</div><div class="accuracy-value">${misses}</div>
       `;
 
       const hitsList = (accuracyData.outcomes || []).map(s =>
-        `<div class="sub">${s.player} (${s.team || ""}) · Tier ${s.tier}</div>`
+        `<div class="row-sub">${s.player} (${s.team || ""}) · ${s.tier}</div>`
       ).join("");
 
       const missesList = (accuracyData.missed || []).map(s =>
-        `<div class="sub">${s.player} (${s.team || ""}) · Tier ${s.tier}</div>`
+        `<div class="row-sub">${s.player} (${s.team || ""}) · ${s.tier}</div>`
       ).join("");
 
       outcomesDiv.innerHTML = `
@@ -463,17 +462,19 @@
       list.innerHTML = results.map(s => {
         const venue = s.context?.venueName || "";
         const dk = s.sportsbooks?.dk || "N/A";
+        const tier = s.tier || "Watch";
         return `
           <li class="search-result">
-            <div>
-              <strong>${s.player}</strong>
-              <span class="pill">${s.team || ""}</span>
-              ${venue ? `<span class="pill-small">${venue}</span>` : ""}
+            <div class="row-main">
+              <span class="row-title">${s.player}</span>
+              <span class="row-tag tier">${tier}</span>
+              <span class="row-tag team">${s.team || ""}</span>
             </div>
-            <div class="sub">
+            <div class="row-sub">
               vs ${s.opponent || "—"} · OCM ${(s.overmindCompositeMetric || 0).toFixed(1)}
-              · HR Base ${s.hr} · Tier ${s.tier} · DK ${dk}
+              · HR ${s.hr} · DK ${dk}
             </div>
+            ${venue ? `<div class="row-sub venue">${venue}</div>` : ""}
           </li>
         `;
       }).join("");
@@ -486,6 +487,16 @@
     function setupNav() {
       const navItems = document.querySelectorAll(".nav-item");
       const tabs = document.querySelectorAll(".tab-view");
+      const indicator = document.getElementById("nav-indicator");
+
+      function moveIndicator(el) {
+        const rect = el.getBoundingClientRect();
+        const parentRect = el.parentElement.getBoundingClientRect();
+        const width = rect.width;
+        const left = rect.left - parentRect.left;
+        indicator.style.width = width + "px";
+        indicator.style.transform = `translateX(${left}px)`;
+      }
 
       navItems.forEach(item => {
         item.addEventListener("click", () => {
@@ -496,7 +507,16 @@
 
           tabs.forEach(t => t.classList.remove("active"));
           document.getElementById("tab-" + tab).classList.add("active");
+
+          moveIndicator(item);
         });
+      });
+
+      const active = document.querySelector(".nav-item.active");
+      if (active) moveIndicator(active);
+      window.addEventListener("resize", () => {
+        const active = document.querySelector(".nav-item.active");
+        if (active) moveIndicator(active);
       });
     }
 
