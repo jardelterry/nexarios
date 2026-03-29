@@ -1,7 +1,6 @@
 /* ============================================================
-   NexariOS v7.1 — Core Engine
-   Chunk 1: Navigation, Theme, Device Mode, Date Logic,
-            Sportsbook Selector, Initial Setup
+   NexariOS Midnight OS — v7.1B
+   CHUNK 1 — Core Engine + Navigation (PATCHED)
 ============================================================ */
 
 const WORKER_BASE = "https://nexari.jardelterry.workers.dev";
@@ -17,8 +16,10 @@ let currentRange = "10";
 let currentDate = new Date();
 let selectedGameIndex = null;
 
-let sportsbook = "dk"; // default
-let deviceMode = "auto"; // auto | mobile | desktop
+let sportsbook = "dk";
+let deviceMode = "auto";
+
+let SEARCH_INDEX = [];
 
 /* ------------------------------------------------------------
    DATE HELPERS
@@ -52,32 +53,26 @@ function updateDateLabel() {
 ------------------------------------------------------------ */
 async function fetchJSON(url) {
   const res = await fetch(url);
-  if (!res.ok) throw new Error("Fetch failed: " + url + " " + res.status);
+  if (!res.ok) throw new Error("Fetch failed: " + url);
   return res.json();
 }
 
 /* ------------------------------------------------------------
-   DEVICE MODE HANDLING
+   DEVICE MODE
 ------------------------------------------------------------ */
 function applyDeviceMode(mode) {
   const root = document.body;
-
   root.classList.remove("device-auto", "device-mobile", "device-desktop");
 
-  if (mode === "mobile") {
-    root.classList.add("device-mobile");
-  } else if (mode === "desktop") {
-    root.classList.add("device-desktop");
-  } else {
-    root.classList.add("device-auto");
-  }
+  if (mode === "mobile") root.classList.add("device-mobile");
+  else if (mode === "desktop") root.classList.add("device-desktop");
+  else root.classList.add("device-auto");
 }
 
 function setupDeviceMode() {
   const select = document.getElementById("device-mode");
-
-  // Load saved mode
   const saved = localStorage.getItem("nexarios-device-mode");
+
   if (saved) {
     deviceMode = saved;
     select.value = saved;
@@ -92,187 +87,87 @@ function setupDeviceMode() {
 }
 
 /* ------------------------------------------------------------
-   THEME HANDLING
+   THEME — Midnight OS stays dark
 ------------------------------------------------------------ */
 function setupThemeToggle() {
-  const body = document.body;
-  const toggle = document.getElementById("theme-toggle");
-  const label = document.getElementById("theme-label");
-
-  function applyTheme(theme) {
-    if (theme === "light") {
-      body.classList.add("theme-light");
-      body.classList.remove("theme-dark");
-      label.textContent = "Soft OS (Light)";
-    } else {
-      body.classList.add("theme-dark");
-      body.classList.remove("theme-light");
-      label.textContent = "Dark‑Carbon × Neon OS";
-    }
-  }
-
-  const saved = localStorage.getItem("nexarios-theme");
-  applyTheme(saved || "dark");
-
-  toggle.addEventListener("click", () => {
-    const isDark = body.classList.contains("theme-dark");
-    const next = isDark ? "light" : "dark";
-    localStorage.setItem("nexarios-theme", next);
-    applyTheme(next);
-  });
+  // Midnight OS is always dark — no toggle needed
 }
 
 /* ------------------------------------------------------------
-   NAVIGATION (Sidebar + Bottom Nav)
+   NAVIGATION — Midnight OS (PATCHED)
 ------------------------------------------------------------ */
-function setupNavigation() {
-  const sidebarItems = document.querySelectorAll(".sidebar-item");
-  const navItems = document.querySelectorAll(".nav-item");
-  const tabs = document.querySelectorAll(".tab-view");
+function activateTab(tabName) {
+  // Sidebar
+  document.querySelectorAll(".sidebar-item").forEach((item) => {
+    item.classList.toggle("active", item.dataset.tab === tabName);
+  });
+
+  // Bottom nav
+  document.querySelectorAll(".nav-item").forEach((item) => {
+    item.classList.toggle("active", item.dataset.tab === tabName);
+  });
+
+  // Tabs (PATCH: ensures only one tab is visible)
+  document.querySelectorAll(".tab-view").forEach((view) => {
+    view.classList.remove("active");
+  });
+  document.getElementById("tab-" + tabName).classList.add("active");
+
+  // Mobile indicator
   const indicator = document.getElementById("nav-indicator");
-
-  function activateTab(tabName) {
-    // Sidebar
-    sidebarItems.forEach((item) => {
-      item.classList.toggle("active", item.dataset.tab === tabName);
-    });
-
-    // Bottom nav
-    navItems.forEach((item) => {
-      item.classList.toggle("active", item.dataset.tab === tabName);
-    });
-
-    // Tabs
-    tabs.forEach((t) => t.classList.remove("active"));
-    document.getElementById("tab-" + tabName).classList.add("active");
-
-    // Move indicator (mobile only)
-    const active = document.querySelector(".nav-item.active");
-    if (active && indicator) {
-      const rect = active.getBoundingClientRect();
-      const parentRect = active.parentElement.getBoundingClientRect();
-      indicator.style.width = rect.width + "px";
-      indicator.style.transform = `translateX(${rect.left - parentRect.left}px)`;
-    }
+  const active = document.querySelector(".nav-item.active");
+  if (indicator && active) {
+    const rect = active.getBoundingClientRect();
+    const parentRect = active.parentElement.getBoundingClientRect();
+    indicator.style.width = rect.width + "px";
+    indicator.style.transform = `translateX(${rect.left - parentRect.left}px)`;
   }
+}
 
-  sidebarItems.forEach((item) => {
+function setupNavigation() {
+  document.querySelectorAll(".sidebar-item").forEach((item) => {
     item.addEventListener("click", () => activateTab(item.dataset.tab));
   });
 
-  navItems.forEach((item) => {
+  document.querySelectorAll(".nav-item").forEach((item) => {
     item.addEventListener("click", () => activateTab(item.dataset.tab));
   });
 
-  // Initialize
   activateTab("hr");
 }
-
-/* ------------------------------------------------------------
-   SPORTSBOOK SELECTOR
------------------------------------------------------------- */
-function setupSportsbookSelector() {
-  const select = document.getElementById("sportsbook");
-
-  const saved = localStorage.getItem("nexarios-sportsbook");
-  if (saved) {
-    sportsbook = saved;
-    select.value = saved;
-  }
-
-  select.addEventListener("change", () => {
-    sportsbook = select.value;
-    localStorage.setItem("nexarios-sportsbook", sportsbook);
-    renderHRView(); // refresh odds
-  });
-}
-
-/* ------------------------------------------------------------
-   INITIALIZATION
------------------------------------------------------------- */
-document.addEventListener("DOMContentLoaded", () => {
-  const t0 = performance.now();
-
-  setupNavigation();
-  setupThemeToggle();
-  setupDeviceMode();
-  setupSportsbookSelector();
-
-  // Date navigation
-  document.getElementById("prev-day").addEventListener("click", () => {
-    currentDate.setDate(currentDate.getDate() - 1);
-    updateDateLabel();
-    loadDataForCurrentDate();
-  });
-
-  document.getElementById("next-day").addEventListener("click", () => {
-    currentDate.setDate(currentDate.getDate() + 1);
-    updateDateLabel();
-    loadDataForCurrentDate();
-  });
-
-  updateDateLabel();
-  loadDataForCurrentDate().then(() => {
-    const t1 = performance.now();
-    document.getElementById("perf-render").textContent =
-      Math.round(t1 - t0) + " ms";
-  });
-});
 /* ============================================================
-   NexariOS v7.1 — Signals Engine
-   Chunk 2: HR Signals, Odds, Pending Logic, Rendering
+   NexariOS Midnight OS — v7.1B
+   CHUNK 2 — HR Signals Engine
 ============================================================ */
 
 /* ------------------------------------------------------------
-   CHECK IF ALL SIGNALS ARE PENDING
+   SIGNAL STATUS LOGIC
 ------------------------------------------------------------ */
 function allSignalsPending() {
-  if (!signalsData.length) return false;
-
-  // If NO games are final, everything is pending
-  const anyFinal = gamesData.some((g) => {
+  return !gamesData.some((g) => {
     const s = (g.status || "").toLowerCase();
     return s.includes("final") || s.includes("completed");
   });
-
-  return !anyFinal;
 }
 
-/* ------------------------------------------------------------
-   OUTCOME LABEL + CLASS
------------------------------------------------------------- */
-function getOutcomeLabel(signal) {
-  if (signal.hrHit) return "Hit";
+function getOutcomeLabel(s) {
+  if (s.hrHit) return "Hit";
   if (allSignalsPending()) return "Pending";
   return "Miss";
 }
 
-function getOutcomeClass(signal) {
-  if (signal.hrHit) return "hit";
+function getOutcomeClass(s) {
+  if (s.hrHit) return "hit";
   if (allSignalsPending()) return "pending";
   return "miss";
 }
 
 /* ------------------------------------------------------------
-   SPORTSBOOK ODDS MAPPING
+   SPORTSBOOK ODDS
 ------------------------------------------------------------ */
-function getOddsForSignal(signal) {
-  if (!signal.sportsbooks) return "N/A";
-
-  switch (sportsbook) {
-    case "dk":
-      return signal.sportsbooks.dk ?? "N/A";
-    case "fd":
-      return signal.sportsbooks.fd ?? "N/A";
-    case "cz":
-      return signal.sportsbooks.cz ?? "N/A";
-    case "mgm":
-      return signal.sportsbooks.mgm ?? "N/A";
-    case "pb":
-      return signal.sportsbooks.pb ?? "N/A";
-    default:
-      return "N/A";
-  }
+function getOddsForSignal(s) {
+  if (!s.sportsbooks) return "N/A";
+  return s.sportsbooks[sportsbook] ?? "N/A";
 }
 
 /* ------------------------------------------------------------
@@ -293,37 +188,34 @@ function renderHRView() {
 
   // Apply range
   if (currentRange !== "all") {
-    const n = parseInt(currentRange, 10);
-    signals = signals.slice(0, n);
+    signals = signals.slice(0, parseInt(currentRange, 10));
   }
 
   // Render each signal
   signals.forEach((s) => {
-    const venue = s.context?.venueName || "";
-    const tier = s.tier || "Watch";
-    const odds = getOddsForSignal(s);
     const label = getOutcomeLabel(s);
     const cls = getOutcomeClass(s);
+    const odds = getOddsForSignal(s);
 
     const li = document.createElement("li");
     li.innerHTML = `
       <div class="row-main">
         <span class="row-title">${s.player}</span>
-        <span class="row-tag tier">${tier}</span>
-        <span class="row-tag team">${s.team || ""}</span>
+        <span class="row-tag">${s.tier}</span>
+        <span class="row-tag">${s.team}</span>
         <span class="row-pill ${cls}">${label}</span>
       </div>
 
       <div class="row-sub">
-        vs ${s.opponent || "—"} · 
-        OCM ${(s.overmindCompositeMetric || 0).toFixed(1)} · 
+        vs ${s.opponent} · 
+        OCM ${s.overmindCompositeMetric.toFixed(1)} · 
         HR ${s.hr} · 
         ${sportsbook.toUpperCase()} ${odds}
       </div>
 
       ${
-        venue
-          ? `<div class="row-sub venue">${venue}</div>`
+        s.context?.venueName
+          ? `<div class="row-sub">${s.context.venueName}</div>`
           : ""
       }
     `;
@@ -340,11 +232,11 @@ function renderHRView() {
    RANGE BUTTONS
 ------------------------------------------------------------ */
 function setupRangeButtons() {
-  const buttons = document.querySelectorAll(".range-btn");
-
-  buttons.forEach((btn) => {
+  document.querySelectorAll(".range-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      buttons.forEach((b) => b.classList.remove("active"));
+      document
+        .querySelectorAll(".range-btn")
+        .forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
 
       currentRange = btn.dataset.range;
@@ -353,64 +245,60 @@ function setupRangeButtons() {
   });
 }
 /* ============================================================
-   NexariOS v7.1 — Games Engine
-   Chunk 3: Games, Weather, Lineups (Horizontal Chips)
+   NexariOS Midnight OS — v7.1B
+   CHUNK 3 — Games Engine
 ============================================================ */
 
 /* ------------------------------------------------------------
-   RENDER LINEUPS AS HORIZONTAL CHIPS
+   LINEUPS — Horizontal Chips
 ------------------------------------------------------------ */
 function renderLineupChips(players) {
-  if (!players || !players.length) {
-    return `<div class="sub">No lineup data available.</div>`;
-  }
+  if (!players || !players.length) return "";
 
   return `
     <div class="lineups-inline">
       ${players
-        .map(
-          (p) =>
-            `<div class="lineup-chip">${p.name} (${p.pos || ""})</div>`
-        )
+        .map((p) => `<div class="lineup-chip">${p.name} (${p.pos})</div>`)
         .join("")}
     </div>
   `;
 }
 
 /* ------------------------------------------------------------
-   FORMAT GAME STATUS + WEATHER
+   GAME STATUS + WEATHER
 ------------------------------------------------------------ */
-function formatGameStatus(game) {
-  const status = (game.status || "").toLowerCase();
-  const hasScore =
-    game.awayScore != null && game.homeScore != null;
+function formatGameStatus(g) {
+  const status = (g.status || "").toLowerCase();
+  const hasScore = g.awayScore != null && g.homeScore != null;
 
-  const temp = game.temp != null ? `${game.temp}°` : "";
-  const wind = game.wind != null ? `${game.wind} mph` : "";
-  const cond = game.conditions || "";
-
-  const weather = [temp, wind, cond].filter(Boolean).join(" · ");
+  const weather = [
+    g.temp != null ? `${g.temp}°` : "",
+    g.wind != null ? `${g.wind} mph` : "",
+    g.conditions || ""
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   // FINAL
   if (status.includes("final") || status.includes("completed")) {
     return {
-      line2: `Final · ${game.awayScore}–${game.homeScore}`,
+      line2: `Final · ${g.awayScore}–${g.homeScore}`,
       line3: weather
     };
   }
 
   // LIVE
-  if (game.live && hasScore) {
+  if (g.live && hasScore) {
     return {
-      line2: `LIVE · ${game.awayScore}–${game.homeScore}`,
+      line2: `LIVE · ${g.awayScore}–${g.homeScore}`,
       line3: weather
     };
   }
 
   // PRE-GAME
   return {
-    line2: game.gameTime || "TBD",
-    line3: weather || game.status || ""
+    line2: g.gameTime || "TBD",
+    line3: weather
   };
 }
 
@@ -423,7 +311,6 @@ function renderGames() {
 
   gamesData.forEach((g, idx) => {
     const isSelected = selectedGameIndex === idx;
-
     const { line2, line3 } = formatGameStatus(g);
 
     const li = document.createElement("li");
@@ -432,12 +319,12 @@ function renderGames() {
     li.innerHTML = `
       <div class="row-main">
         <span class="row-title">${g.away}</span>
-        <span class="row-separator">@</span>
+        <span>@</span>
         <span class="row-title">${g.home}</span>
       </div>
 
       <div class="row-sub">${line2}</div>
-      ${g.venueName ? `<div class="row-sub venue">${g.venueName}</div>` : ""}
+      ${g.venueName ? `<div class="row-sub">${g.venueName}</div>` : ""}
       ${line3 ? `<div class="row-sub">${line3}</div>` : ""}
 
       ${
@@ -466,12 +353,12 @@ function renderGames() {
   }
 }
 /* ============================================================
-   NexariOS v7.1 — Accuracy Engine
-   Chunk 4: Pending Logic, HR/RBI Tracker, Outcomes Rendering
+   NexariOS Midnight OS — v7.1B
+   CHUNK 4 — Accuracy Engine + Search Engine + Data Loader
 ============================================================ */
 
 /* ------------------------------------------------------------
-   CHECK IF ANY GAME IS FINAL
+   ACCURACY ENGINE
 ------------------------------------------------------------ */
 function anyGameFinal() {
   return gamesData.some((g) => {
@@ -480,13 +367,9 @@ function anyGameFinal() {
   });
 }
 
-/* ------------------------------------------------------------
-   BUILD ACCURACY METRICS
------------------------------------------------------------- */
 function buildAccuracyMetrics() {
   const finalExists = anyGameFinal();
 
-  // If no final games → everything is pending
   if (!finalExists) {
     return {
       accuracy: "Pending",
@@ -500,7 +383,6 @@ function buildAccuracyMetrics() {
     };
   }
 
-  // Otherwise compute real accuracy
   const picks = signalsData.filter((s) => s.systemPick);
   const hits = picks.filter((s) => s.hrHit);
   const misses = picks.filter((s) => !s.hrHit);
@@ -523,66 +405,47 @@ function buildAccuracyMetrics() {
   };
 }
 
-/* ------------------------------------------------------------
-   RENDER SYSTEM TRACKER GRID
------------------------------------------------------------- */
-function renderAccuracySystem(metrics) {
-  const grid = document.getElementById("accuracy-system");
-
-  grid.innerHTML = `
+function renderAccuracySystem(m) {
+  document.getElementById("accuracy-system").innerHTML = `
     <div class="accuracy-label">Accuracy</div>
-    <div class="accuracy-value">${metrics.accuracy}</div>
+    <div class="accuracy-value">${m.accuracy}</div>
 
     <div class="accuracy-label">Volume</div>
-    <div class="accuracy-value">${metrics.volume}</div>
+    <div class="accuracy-value">${m.volume}</div>
 
     <div class="accuracy-label">Sys Streak</div>
-    <div class="accuracy-value">${metrics.systemStreak}</div>
+    <div class="accuracy-value">${m.systemStreak}</div>
 
     <div class="accuracy-label">Player Streak</div>
-    <div class="accuracy-value">${metrics.playerStreak}</div>
+    <div class="accuracy-value">${m.playerStreak}</div>
   `;
 }
 
-/* ------------------------------------------------------------
-   RENDER HR + RBI TRACKER
------------------------------------------------------------- */
-function renderHRRBITracker(metrics) {
-  const grid = document.getElementById("accuracy-hr-rbi");
-
-  grid.innerHTML = `
+function renderHRRBITracker(m) {
+  document.getElementById("accuracy-hr-rbi").innerHTML = `
     <div class="accuracy-label">HR Hits</div>
-    <div class="accuracy-value">${metrics.hrHits}</div>
+    <div class="accuracy-value">${m.hrHits}</div>
 
     <div class="accuracy-label">RBI Hits</div>
-    <div class="accuracy-value">${metrics.rbiHits}</div>
+    <div class="accuracy-value">${m.rbiHits}</div>
 
     <div class="accuracy-label">Hits</div>
-    <div class="accuracy-value">${metrics.hits.length}</div>
+    <div class="accuracy-value">${m.hits.length}</div>
 
     <div class="accuracy-label">Misses</div>
-    <div class="accuracy-value">${metrics.misses.length}</div>
+    <div class="accuracy-value">${m.misses.length}</div>
   `;
 }
 
-/* ------------------------------------------------------------
-   RENDER OUTCOMES LIST
------------------------------------------------------------- */
-function renderAccuracyOutcomes(metrics) {
+function renderAccuracyOutcomes(m) {
   const container = document.getElementById("accuracy-hr-outcomes");
 
-  const hitsList = metrics.hits
-    .map(
-      (s) =>
-        `<div class="outcome-row hit-row">${s.player} (${s.team}) · ${s.tier}</div>`
-    )
+  const hitsList = m.hits
+    .map((s) => `<div class="outcome-row hit-row">${s.player} (${s.team})</div>`)
     .join("");
 
-  const missesList = metrics.misses
-    .map(
-      (s) =>
-        `<div class="outcome-row miss-row">${s.player} (${s.team}) · ${s.tier}</div>`
-    )
+  const missesList = m.misses
+    .map((s) => `<div class="outcome-row miss-row">${s.player} (${s.team})</div>`)
     .join("");
 
   container.innerHTML = `
@@ -600,29 +463,20 @@ function renderAccuracyOutcomes(metrics) {
   `;
 }
 
-/* ------------------------------------------------------------
-   MAIN RENDER FUNCTION
------------------------------------------------------------- */
 function renderAccuracy() {
-  const metrics = buildAccuracyMetrics();
-
-  renderAccuracySystem(metrics);
-  renderHRRBITracker(metrics);
-  renderAccuracyOutcomes(metrics);
+  const m = buildAccuracyMetrics();
+  renderAccuracySystem(m);
+  renderHRRBITracker(m);
+  renderAccuracyOutcomes(m);
 }
-/* ============================================================
-   NexariOS v7.1 — Search Engine
-   Chunk 5: Full Player Index, Deduping, Venue Matching
-============================================================ */
 
 /* ------------------------------------------------------------
-   BUILD FULL SEARCH INDEX
-   (Signals + Lineups + Rosters)
+   SEARCH ENGINE
 ------------------------------------------------------------ */
 function buildSearchIndex() {
   const index = [];
 
-  // 1. HR signals players
+  // HR signals
   signalsData.forEach((s) => {
     index.push({
       player: s.player,
@@ -631,13 +485,13 @@ function buildSearchIndex() {
       venue: s.context?.venueName || "",
       ocm: s.overmindCompositeMetric || 0,
       hr: s.hr,
-      tier: s.tier || "Watch",
-      sportsbooks: s.sportsbooks || {},
-      hrHit: s.hrHit || false
+      tier: s.tier,
+      sportsbooks: s.sportsbooks,
+      hrHit: s.hrHit
     });
   });
 
-  // 2. Lineup players (away + home)
+  // Lineups
   gamesData.forEach((g) => {
     (g.awayPlayers || []).forEach((p) => {
       index.push({
@@ -668,30 +522,24 @@ function buildSearchIndex() {
     });
   });
 
-  // 3. Deduplicate by player + team
+  // Deduplicate
   const map = new Map();
   index.forEach((item) => {
     const key = `${item.player}-${item.team}`;
     if (!map.has(key)) map.set(key, item);
   });
 
-  // 4. Alphabetize
   return Array.from(map.values()).sort((a, b) =>
     a.player.localeCompare(b.player)
   );
 }
 
-let SEARCH_INDEX = [];
-
-/* ------------------------------------------------------------
-   RENDER SEARCH RESULTS
------------------------------------------------------------- */
 function renderSearchResults(query) {
   const list = document.getElementById("search-results");
   const q = query.trim().toLowerCase();
 
   if (!q) {
-    list.innerHTML = `<li class="sub">Type a player, team, opponent, or stadium.</li>`;
+    list.innerHTML = `<li class="sub">Type a player, team, or stadium.</li>`;
     return;
   }
 
@@ -711,16 +559,16 @@ function renderSearchResults(query) {
 
   list.innerHTML = results
     .map((s) => {
-      const odds = s.sportsbooks ? getOddsForSignal(s) : "N/A";
-      const label = getOutcomeLabel(s);
-      const cls = getOutcomeClass(s);
+      const odds = s.ocm !== null ? getOddsForSignal(s) : "N/A";
+      const label = s.ocm !== null ? getOutcomeLabel(s) : "";
+      const cls = s.ocm !== null ? getOutcomeClass(s) : "";
 
       return `
         <li class="search-result">
           <div class="row-main">
             <span class="row-title">${s.player}</span>
-            <span class="row-tag tier">${s.tier}</span>
-            <span class="row-tag team">${s.team || ""}</span>
+            <span class="row-tag">${s.tier}</span>
+            <span class="row-tag">${s.team}</span>
             ${
               s.ocm !== null
                 ? `<span class="row-pill ${cls}">${label}</span>`
@@ -729,7 +577,7 @@ function renderSearchResults(query) {
           </div>
 
           <div class="row-sub">
-            vs ${s.opponent || "—"}
+            vs ${s.opponent}
             ${
               s.ocm !== null
                 ? `· OCM ${s.ocm.toFixed(1)} · HR ${s.hr} · ${sportsbook.toUpperCase()} ${odds}`
@@ -737,37 +585,23 @@ function renderSearchResults(query) {
             }
           </div>
 
-          ${
-            s.venue
-              ? `<div class="row-sub venue">${s.venue}</div>`
-              : ""
-          }
+          ${s.venue ? `<div class="row-sub">${s.venue}</div>` : ""}
         </li>
       `;
     })
     .join("");
 }
 
-/* ------------------------------------------------------------
-   SETUP SEARCH INPUT
------------------------------------------------------------- */
 function setupSearch() {
-  const input = document.getElementById("search-input");
-
-  input.addEventListener("input", (e) => {
-    renderSearchResults(e.target.value);
-  });
+  document
+    .getElementById("search-input")
+    .addEventListener("input", (e) => renderSearchResults(e.target.value));
 }
-/* ============================================================
-   NexariOS v7.1 — Data Loader + Render Pipeline
-   Chunk 6: Worker Fetch, Integration, Full UI Render
-============================================================ */
 
 /* ------------------------------------------------------------
-   LOAD DATA FOR CURRENT DATE
+   DATA LOADER
 ------------------------------------------------------------ */
 async function loadDataForCurrentDate() {
-  const t0 = performance.now();
   const dateStr = toDateString(currentDate);
 
   try {
@@ -781,25 +615,39 @@ async function loadDataForCurrentDate() {
     signalsData = signalsRes?.signals || [];
     accuracyData = accuracyRes?.accuracy || null;
 
-    // Build search index
     SEARCH_INDEX = buildSearchIndex();
 
-    // Render everything
     renderHRView();
     renderGames();
     renderAccuracy();
     renderSearchResults("");
 
-    const t1 = performance.now();
-    document.getElementById("perf-data").textContent =
-      Math.round(t1 - t0) + " ms";
   } catch (err) {
     console.error("Data load error:", err);
   }
 }
 
 /* ------------------------------------------------------------
-   FINAL HOOKS
+   FINAL SETUP
 ------------------------------------------------------------ */
-setupRangeButtons();
-setupSearch();
+document.addEventListener("DOMContentLoaded", () => {
+  setupNavigation();
+  setupRangeButtons();
+  setupSportsbookSelector();
+  setupSearch();
+  setupDeviceMode();
+  updateDateLabel();
+  loadDataForCurrentDate();
+
+  document.getElementById("prev-day").addEventListener("click", () => {
+    currentDate.setDate(currentDate.getDate() - 1);
+    updateDateLabel();
+    loadDataForCurrentDate();
+  });
+
+  document.getElementById("next-day").addEventListener("click", () => {
+    currentDate.setDate(currentDate.getDate() + 1);
+    updateDateLabel();
+    loadDataForCurrentDate();
+  });
+});

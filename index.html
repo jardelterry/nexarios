@@ -2,38 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NexariOS v7.1</title>
+  <title>NexariOS — Midnight OS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#050816" />
-  <link rel="stylesheet" href="style.css?v=7.1" />
+  <meta name="theme-color" content="#0a0c10" />
+  <link rel="stylesheet" href="style.css?v=7.1B" />
 </head>
 
 <body class="theme-dark device-auto">
   <div class="app-root">
 
-    <!-- DESKTOP SIDEBAR (macOS-style) -->
+    <!-- SIDEBAR — Midnight OS -->
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-title">
-          <span class="sidebar-icon">☄️</span>
-          <span class="sidebar-text">NexariOS</span>
-        </div>
+      <div class="sidebar-title">
+        <span>☄️</span>
+        <span>NexariOS</span>
       </div>
+
       <nav class="sidebar-nav">
         <button class="sidebar-item active" data-tab="hr">
-          <span class="icon">☄️</span><span>HR Signals</span>
+          <span>☄️</span><span>HR Signals</span>
         </button>
         <button class="sidebar-item" data-tab="games">
-          <span class="icon">⚾️</span><span>Games</span>
+          <span>⚾️</span><span>Games</span>
         </button>
         <button class="sidebar-item" data-tab="accuracy">
-          <span class="icon">📊</span><span>Accuracy</span>
+          <span>📊</span><span>Accuracy</span>
         </button>
         <button class="sidebar-item" data-tab="search">
-          <span class="icon">🔍</span><span>Search</span>
+          <span>🔍</span><span>Search</span>
         </button>
         <button class="sidebar-item" data-tab="settings">
-          <span class="icon">⚙️</span><span>Settings</span>
+          <span>⚙️</span><span>Settings</span>
         </button>
       </nav>
     </aside>
@@ -44,16 +43,8 @@
       <!-- MOBILE HEADER -->
       <header class="app-header">
         <div class="title">
-          <span class="icon">☄️</span>
+          <span>☄️</span>
           <span>NexariOS</span>
-        </div>
-        <div class="header-right">
-          <div class="theme-toggle" id="theme-toggle">
-            <span>Dark</span>
-            <div class="toggle-switch">
-              <div class="toggle-knob"></div>
-            </div>
-          </div>
         </div>
       </header>
 
@@ -62,54 +53,53 @@
 
         <!-- HR TAB -->
         <section id="tab-hr" class="tab-view active">
-          <div class="section-bar">
-            <div class="section-title">HR Signals</div>
-          </div>
+          <div class="section-title">HR Signals</div>
 
-          <div class="hr-controls">
-            <div class="range-buttons">
-              <button class="range-btn active" data-range="10">Top 10</button>
-              <button class="range-btn" data-range="20">Top 20</button>
-              <button class="range-btn" data-range="all">All</button>
-            </div>
-            <div class="hr-subcontrols">
-              <div class="date-nav">
-                <button id="prev-day">◀</button>
-                <span id="current-date-label">Today</span>
-                <button id="next-day">▶</button>
-              </div>
-              <div class="sportsbook-select">
-                <label for="sportsbook">Book</label>
-                <select id="sportsbook">
-                  <option value="dk">DraftKings</option>
-                  <option value="fd">FanDuel</option>
-                  <option value="cz">Caesars</option>
-                  <option value="mgm">BetMGM</option>
-                  <option value="pb">PointsBet</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="card compact">
+          <div class="card">
             <div class="card-header">
-              <span class="icon">☄️</span>
+              <span>☄️</span>
               <span>HR Signals</span>
             </div>
+
+            <div class="hr-controls">
+              <div class="range-buttons">
+                <button class="range-btn active" data-range="10">Top 10</button>
+                <button class="range-btn" data-range="20">Top 20</button>
+                <button class="range-btn" data-range="all">All</button>
+              </div>
+
+              <div class="hr-subcontrols">
+                <div class="date-nav">
+                  <button id="prev-day">◀</button>
+                  <span id="current-date-label">Today</span>
+                  <button id="next-day">▶</button>
+                </div>
+
+                <div class="sportsbook-select">
+                  <label for="sportsbook">Book</label>
+                  <select id="sportsbook">
+                    <option value="dk">DraftKings</option>
+                    <option value="fd">FanDuel</option>
+                    <option value="cz">Caesars</option>
+                    <option value="mgm">BetMGM</option>
+                    <option value="pb">PointsBet</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
             <ul id="hr-list" class="list compact-list"></ul>
           </div>
         </section>
 
         <!-- GAMES TAB -->
         <section id="tab-games" class="tab-view">
-          <div class="section-bar">
-            <div class="section-title">Games</div>
-          </div>
+          <div class="section-title">Games & Weather</div>
 
-          <div class="card compact">
+          <div class="card">
             <div class="card-header">
-              <span class="icon">⚾️</span>
-              <span>Games & Weather</span>
+              <span>⚾️</span>
+              <span>Games</span>
             </div>
             <ul id="games-list" class="list compact-list"></ul>
           </div>
@@ -117,29 +107,27 @@
 
         <!-- ACCURACY TAB -->
         <section id="tab-accuracy" class="tab-view">
-          <div class="section-bar">
-            <div class="section-title">Accuracy (Today)</div>
-          </div>
+          <div class="section-title">Accuracy</div>
 
-          <div class="card compact">
+          <div class="card">
             <div class="card-header">
-              <span class="icon">📊</span>
+              <span>📊</span>
               <span>System Tracker</span>
             </div>
             <div id="accuracy-system" class="accuracy-grid"></div>
           </div>
 
-          <div class="card glass compact">
+          <div class="card glass">
             <div class="card-header">
-              <span class="icon">📈</span>
+              <span>📈</span>
               <span>HR & RBI Tracker</span>
             </div>
             <div id="accuracy-hr-rbi" class="accuracy-grid"></div>
           </div>
 
-          <div class="card glass compact">
+          <div class="card glass">
             <div class="card-header">
-              <span class="icon">🎯</span>
+              <span>🎯</span>
               <span>HR Outcomes</span>
             </div>
             <div id="accuracy-hr-outcomes" class="compact-outcomes"></div>
@@ -148,38 +136,35 @@
 
         <!-- SEARCH TAB -->
         <section id="tab-search" class="tab-view">
-          <div class="section-bar">
-            <div class="section-title">Search</div>
-          </div>
+          <div class="section-title">Search</div>
 
-          <div class="card compact">
+          <div class="card">
             <div class="card-header">
-              <span class="icon">🔍</span>
+              <span>🔍</span>
               <span>Search Players</span>
             </div>
-            <input id="search-input" class="search-input" type="text"
+
+            <input id="search-input" class="search-input"
                    placeholder="Search players, teams, stadiums..." />
+
             <ul id="search-results" class="list compact-list"></ul>
           </div>
         </section>
 
         <!-- SETTINGS TAB -->
         <section id="tab-settings" class="tab-view">
-          <div class="section-bar">
-            <div class="section-title">System</div>
-          </div>
+          <div class="section-title">System</div>
 
-          <div class="card glass compact">
+          <div class="card glass">
             <div class="card-header">
-              <span class="icon">✨</span>
+              <span>⚙️</span>
               <span>Display</span>
             </div>
+
             <div class="metric-row">
-              <span>Theme</span><span id="theme-label">Dark‑Carbon × Neon OS</span>
+              <span>Theme</span><span>Midnight OS</span>
             </div>
-            <div class="metric-row">
-              <span>Accent</span><span>Violet Primary · Electric Blue Secondary</span>
-            </div>
+
             <div class="metric-row">
               <span>Device Mode</span>
               <select id="device-mode">
@@ -188,86 +173,38 @@
                 <option value="desktop">Desktop</option>
               </select>
             </div>
-            <div class="sub">
-              Auto: detects screen size. Desktop: macOS‑style sidebar. Mobile: bottom nav only.
-            </div>
           </div>
 
-          <div class="card glass compact">
+          <div class="card glass">
             <div class="card-header">
-              <span class="icon">🧩</span>
+              <span>🧩</span>
               <span>Engine</span>
             </div>
+
             <div class="metric-row">
-              <span>Version</span><span>v6.6 Overmind OCM</span>
+              <span>Version</span><span>v7.1B Midnight OS</span>
             </div>
+
             <div class="metric-row">
               <span>Worker</span><span>nexari.jardelterry.workers.dev</span>
-            </div>
-          </div>
-
-          <div class="card glass compact">
-            <div class="card-header">
-              <span class="icon">🧠</span>
-              <span>System Intelligence</span>
-            </div>
-            <div class="handbook">
-              <div class="subheader">Outcome Pills</div>
-              <p><strong>Hit (Green):</strong> Player homered today.</p>
-              <p><strong>Miss (Red):</strong> Game is final and player did not homer.</p>
-              <p><strong>Pending (Gold):</strong> Game not started or in progress and player has not homered yet.</p>
-
-              <div class="subheader">Tiers</div>
-              <p><strong>Strong:</strong> HR Base ≥ 26.</p>
-              <p><strong>Playable:</strong> HR Base ≥ 18.</p>
-              <p><strong>Watch:</strong> HR Base &gt; 0.</p>
-
-              <div class="subheader">Games & Weather</div>
-              <p><strong>Pre‑Game:</strong> Game time + weather when available.</p>
-              <p><strong>Live:</strong> LIVE + score + weather.</p>
-              <p><strong>Final:</strong> Final + score + weather.</p>
-
-              <div class="subheader">Lineups</div>
-              <p>Tap a game to expand lineups under it. Lineups are shown as horizontal chips (Name (POS)) wrapping left‑to‑right.</p>
-
-              <div class="subheader">Accuracy</div>
-              <p>If no games are final, Accuracy and outcomes are shown as Pending. Hits/Misses only count final games.</p>
-
-              <div class="subheader">Signals</div>
-              <p><strong>OCM:</strong> Overmind Composite Metric.</p>
-              <p><strong>HR Base:</strong> Raw HR expectation by lineup slot.</p>
-              <p><strong>DK/FD/etc:</strong> Synthetic odds for relative comparison only.</p>
-            </div>
-          </div>
-
-          <div class="card glass compact">
-            <div class="card-header">
-              <span class="icon">⚡</span>
-              <span>Performance</span>
-            </div>
-            <div class="metric-row">
-              <span>Render Time</span><span id="perf-render">–</span>
-            </div>
-            <div class="metric-row">
-              <span>Data Load</span><span id="perf-data">–</span>
             </div>
           </div>
         </section>
       </main>
 
-      <!-- MOBILE BOTTOM NAV -->
+      <!-- MOBILE NAV -->
       <nav class="bottom-nav">
         <div class="nav-indicator" id="nav-indicator"></div>
-        <div class="nav-item active" data-tab="hr"><span class="icon">☄️</span><span>HR</span></div>
-        <div class="nav-item" data-tab="games"><span class="icon">⚾️</span><span>Games</span></div>
-        <div class="nav-item" data-tab="accuracy"><span class="icon">📊</span><span>Accuracy</span></div>
-        <div class="nav-item" data-tab="search"><span class="icon">🔍</span><span>Search</span></div>
-        <div class="nav-item" data-tab="settings"><span class="icon">⚙️</span><span>Settings</span></div>
+        <div class="nav-item active" data-tab="hr"><span>☄️</span><span>HR</span></div>
+        <div class="nav-item" data-tab="games"><span>⚾️</span><span>Games</span></div>
+        <div class="nav-item" data-tab="accuracy"><span>📊</span><span>Accuracy</span></div>
+        <div class="nav-item" data-tab="search"><span>🔍</span><span>Search</span></div>
+        <div class="nav-item" data-tab="settings"><span>⚙️</span><span>Settings</span></div>
       </nav>
 
     </div>
   </div>
 
-  <script src="app.js?v=7.1"></script>
+  <script src="app.js?v=7.1B"></script>
 </body>
 </html>
