@@ -1,6 +1,5 @@
 /* ============================================
    NexariOS v6.6 — Global Styles
-   Clean, futuristic, glowing UI
    ============================================ */
 
 :root {
@@ -23,7 +22,7 @@
 
 /* Theme Handling */
 body[data-theme="dark"] {
-  background: var(--bg-dark);
+  background: radial-gradient(circle at top, #141827 0, #050509 45%, #000000 100%);
   color: var(--text-dark);
 }
 
@@ -32,25 +31,32 @@ body[data-theme="light"] {
   color: var(--text-light);
 }
 
-/* ============================================
-   Page Visibility
-   ============================================ */
+/* Base */
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  font-size: var(--base-font-size);
+  padding-bottom: 72px;
+}
 
 .page {
   display: none;
   padding: 16px;
   position: relative;
   z-index: 1;
+  animation: pageFade 0.25s ease-out;
 }
 
 .page.active {
   display: block;
 }
 
-/* ============================================
-   Headers
-   ============================================ */
+@keyframes pageFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
+/* Headers */
 .pageHeader {
   margin-bottom: 16px;
 }
@@ -69,10 +75,7 @@ body[data-theme="light"] {
   margin-bottom: 6px;
 }
 
-/* ============================================
-   LIVE TICKER (Games Only)
-   ============================================ */
-
+/* Live Ticker */
 #liveTicker {
   display: none;
   width: 100%;
@@ -103,10 +106,26 @@ body[data-theme="light"] {
   100% { transform: translateX(-50%); }
 }
 
-/* ============================================
-   HR Signals — Ultra Futuristic Glow
-   ============================================ */
+/* HR Widget */
+.hrWidget {
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(255,77,77,0.18), rgba(77,166,255,0.18));
+  box-shadow: 0 0 16px rgba(0,0,0,0.6);
+  font-size: 0.9rem;
+}
 
+.hrWidgetTitle {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.hrWidgetList div {
+  margin-bottom: 2px;
+}
+
+/* HR Signals */
 .signal {
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.05);
@@ -161,11 +180,38 @@ body[data-theme="light"] {
   background: var(--accent-watch);
 }
 
+/* Animated OCM Hex */
 .ocmHex {
+  position: relative;
+  overflow: hidden;
   padding: 2px 6px;
   border-radius: 6px;
   font-size: 0.75rem;
   margin-left: 6px;
+}
+
+.ocmHex::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(255,255,255,0.0),
+    rgba(255,255,255,0.4),
+    rgba(255,255,255,0.0)
+  );
+  animation: ocmSpin 4s linear infinite;
+  opacity: 0.6;
+}
+
+.ocmHex span {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes ocmSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .ocmHex-strong {
@@ -199,20 +245,27 @@ body[data-theme="light"] {
   opacity: 0.8;
 }
 
+/* Animated HR bar */
 .hrBar {
   height: 4px;
   border-radius: 4px;
-  background: #444;
+  background: linear-gradient(90deg, #ff4d4d, #ffb84d, #4da6ff);
+  background-size: 200% 100%;
+  animation: hrBarPulse 3s ease-in-out infinite;
   margin-top: 6px;
 }
 
-/* ============================================
-   Games Page
-   ============================================ */
+@keyframes hrBarPulse {
+  0% { background-position: 0% 0; opacity: 0.9; }
+  50% { background-position: 100% 0; opacity: 1; }
+  100% { background-position: 0% 0; opacity: 0.9; }
+}
 
+/* Games */
 .game {
-  padding: 14px;
+  padding: 12px;
   border-bottom: 1px solid var(--border-color-dark);
+  cursor: pointer;
 }
 
 .gameHeader .title {
@@ -234,6 +287,17 @@ body[data-theme="light"] {
   margin-left: 6px;
 }
 
+.gameDetails {
+  margin-top: 8px;
+  display: none;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.game.expanded .gameDetails {
+  display: block;
+}
+
 .lineup {
   margin-top: 8px;
   font-size: 0.9rem;
@@ -247,10 +311,7 @@ body[data-theme="light"] {
   margin: 2px;
 }
 
-/* ============================================
-   Accuracy Page
-   ============================================ */
-
+/* Accuracy */
 .accuracyBlock {
   margin-bottom: 20px;
 }
@@ -286,10 +347,7 @@ body[data-theme="light"] {
   margin: 2px;
 }
 
-/* ============================================
-   Search Page
-   ============================================ */
-
+/* Search */
 .searchInput {
   width: 100%;
   padding: 10px;
@@ -305,16 +363,27 @@ body[data-theme="light"] {
   border-bottom: 1px solid var(--border-color-dark);
 }
 
+.searchResult .name {
+  font-weight: 600;
+}
+
+.searchResult .meta {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.searchResult .oddsBlock {
+  margin-top: 4px;
+  font-size: 0.9rem;
+}
+
 .stadiumDetails {
   margin-top: 10px;
   opacity: 0.85;
   font-size: 0.9rem;
 }
 
-/* ============================================
-   Collapsible Sections
-   ============================================ */
-
+/* Collapsible */
 .collapsible {
   margin-bottom: 16px;
 }
@@ -341,10 +410,7 @@ body[data-theme="light"] {
   opacity: 0.7;
 }
 
-/* ============================================
-   Settings
-   ============================================ */
-
+/* Settings */
 .settingsGroup {
   margin-bottom: 20px;
 }
@@ -389,10 +455,7 @@ body[data-theme="light"] {
   font-size: 0.9rem;
 }
 
-/* ============================================
-   Bottom Navigation — A1 (Emoji + Label)
-   ============================================ */
-
+/* Bottom Nav — A1 */
 #bottomNav {
   position: fixed;
   bottom: 0;
@@ -406,6 +469,7 @@ body[data-theme="light"] {
   align-items: center;
   border-top: 1px solid var(--border-color-dark);
   z-index: 999;
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.7);
 }
 
 .navItem {
@@ -413,14 +477,22 @@ body[data-theme="light"] {
   text-align: center;
   padding: 6px 0;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   opacity: 0.7;
   line-height: 1.1;
+}
+
+.navItem .emoji {
+  display: block;
+  font-size: calc(var(--icon-size) * 0.6);
+  line-height: 1;
+  margin-bottom: 2px;
 }
 
 .navItem.active {
   opacity: 1;
   font-weight: 600;
+  text-shadow: 0 0 8px rgba(77,166,255,0.8);
 }
 
 #navSlider {
@@ -431,4 +503,16 @@ body[data-theme="light"] {
   background: #4da6ff;
   box-shadow: 0 0 12px #4da6ff;
   transition: left 0.25s, width 0.25s;
+}
+
+/* Misc */
+.emptyState {
+  opacity: 0.7;
+  font-size: 0.9rem;
+  padding: 12px 0;
+}
+
+.muted {
+  opacity: 0.6;
+  font-size: 0.9rem;
 }

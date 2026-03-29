@@ -1,5 +1,5 @@
 // NexariOS v6.6 — Final Build (Chunk 1/3)
-// Fully patched: icons restored, sportsbook restored, nav fixed, glow-ready
+// Fully patched: icons, sportsbook, search, swipe, glow
 
 // ===============================
 // API BASE
@@ -40,6 +40,7 @@ const navSlider = document.getElementById("navSlider");
 const signalsContainer = document.getElementById("signalsContainer");
 const hrViewSelect = document.getElementById("hrViewSelect");
 const sportsbookSelect = document.getElementById("sportsbookSelect");
+const hrWidget = document.getElementById("hrWidget");
 
 const gamesContainer = document.getElementById("gamesContainer");
 
@@ -75,6 +76,9 @@ const prevDateBtn = document.getElementById("prevDateBtn");
 const nextDateBtn = document.getElementById("nextDateBtn");
 
 const liveTickerContent = document.getElementById("liveTickerContent");
+
+// Page order for swipe nav
+const pageOrder = ["hr", "games", "accuracy", "search", "settings"];
 
 // ===============================
 // UTILITIES
@@ -147,7 +151,7 @@ async function forceRebuild(dateStr) {
 }
 
 // ===============================
-// NAVIGATION
+// NAVIGATION + SWIPE
 // ===============================
 function setActivePage(key) {
   Object.keys(pages).forEach(k => {
@@ -177,8 +181,46 @@ navItems.forEach(item => {
   });
 });
 
+function getActivePageKey() {
+  return pageOrder.find(k => pages[k].classList.contains("active")) || "hr";
+}
+
+function setActivePageByIndex(idx) {
+  const clamped = (idx + pageOrder.length) % pageOrder.length;
+  setActivePage(pageOrder[clamped]);
+}
+
+let touchStartX = null;
+let touchStartY = null;
+
+document.addEventListener("touchstart", e => {
+  const t = e.touches[0];
+  touchStartX = t.clientX;
+  touchStartY = t.clientY;
+});
+
+document.addEventListener("touchend", e => {
+  if (touchStartX == null || touchStartY == null) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchStartX;
+  const dy = t.clientY - touchStartY;
+
+  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+    const currentKey = getActivePageKey();
+    const idx = pageOrder.indexOf(currentKey);
+    if (dx < 0) {
+      setActivePageByIndex(idx + 1);
+    } else {
+      setActivePageByIndex(idx - 1);
+    }
+  }
+
+  touchStartX = null;
+  touchStartY = null;
+});
+
 // ===============================
-// HR TAB — CLEAN RENDER
+// HR TAB — RENDER
 // ===============================
 function renderSignals() {
   signalsContainer.innerHTML = "";
@@ -245,8 +287,28 @@ function renderSignals() {
     signalsContainer.appendChild(div);
   });
 }
+
+function renderHrWidget() {
+  if (!signals.length) {
+    hrWidget.innerHTML = "";
+    return;
+  }
+
+  const top = signals.slice(0, 3);
+  hrWidget.innerHTML = `
+    <div class="hrWidgetTitle">Today’s HR Picks</div>
+    <div class="hrWidgetList">
+      ${top
+        .map(
+          (s, i) =>
+            `<div>${i + 1}. ${s.player} — ${s.team} vs ${s.opponent}</div>`
+        )
+        .join("")}
+    </div>
+  `;
+}
 // ===============================
-// RENDER — GAMES
+// RENDER — GAMES (COMPACT + EXPANDABLE LINEUPS)
 // ===============================
 function renderGames() {
   gamesContainer.innerHTML = "";
@@ -274,9 +336,8 @@ function renderGames() {
       <div class="gameHeader">
         <div class="title">${g.away} @ ${g.home}</div>
         <div class="metaLine">
-          ${g.gameTime || ""}<br>
-          ${g.status || ""} ${liveBadge}<br>
-          ${score}
+          ${g.gameTime || ""} · ${g.status || ""} ${liveBadge}
+          ${score ? `<br>${score}` : ""}
         </div>
       </div>
 
@@ -313,6 +374,10 @@ function renderGames() {
         </div>
       </div>
     `;
+
+    div.addEventListener("click", () => {
+      div.classList.toggle("expanded");
+    });
 
     gamesContainer.appendChild(div);
   });
@@ -399,7 +464,7 @@ function renderAccuracy() {
 }
 
 // ===============================
-// RENDER — SEARCH RESULTS
+// RENDER — SEARCH RESULTS (PLAYERS + HR PROBABILITY)
 // ===============================
 function renderSearchResults(query) {
   searchResults.innerHTML = "";
@@ -636,16 +701,22 @@ async function refreshAll() {
     ]);
 
     renderSignals();
+    renderHrWidget();
     renderGames();
     renderAccuracy();
     renderLiveTicker();
+
+    // keep search results in sync with current query
+    if (playerSearchInput && playerSearchInput.value) {
+      renderSearchResults(playerSearchInput.value);
+    }
   } catch (err) {
     console.error("Refresh failed", err);
   }
 }
 
 // ===============================
-// INIT
+// INIT + WIRING
 // ===============================
 async function init() {
   loadSettings();
@@ -659,6 +730,31 @@ async function init() {
 
   const activeItem = navItems.find(n => n.classList.contains("active"));
   if (activeItem) moveNavSliderTo(activeItem);
+
+  // HR controls
+  hrViewSelect?.addEventListener("change", () => {
+    renderSignals();
+    renderHrWidget();
+  });
+
+  sportsbookSelect?.addEventListener("change", () => {
+    currentSportsbook = sportsbookSelect.value;
+    renderSignals();
+    renderHrWidget();
+    if (playerSearchInput && playerSearchInput.value) {
+      renderSearchResults(playerSearchInput.value);
+    }
+  });
+
+  // Search input live
+  playerSearchInput?.addEventListener("input", () => {
+    renderSearchResults(playerSearchInput.value);
+  });
+
+  // System info (optional simple text)
+  if (systemInfo) {
+    systemInfo.textContent = `NexariOS v6.6 — ${navigator.userAgent}`;
+  }
 }
 
 init();
