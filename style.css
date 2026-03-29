@@ -1,7 +1,6 @@
 /* --------------------------------------------------
-   NexariOS v6.6 — Full CSS Rewrite
-   Includes: Glow Rings, Hex Badge, Ticker, Pulse,
-   Desktop Layout, Swipe Nav, Hidden Overmind
+   NexariOS v6.6 — Corrected Full CSS
+   Fixes: page stacking, desktop nav, layout conflicts
 -------------------------------------------------- */
 
 /* ROOT VARIABLES */
@@ -25,7 +24,9 @@
     --accent-soft: #a5b4fc;
 }
 
-/* GLOBAL */
+/* --------------------------------------------------
+   GLOBAL
+-------------------------------------------------- */
 body {
     margin: 0;
     padding: 0;
@@ -36,8 +37,14 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* FIX: Only active page is visible */
 .page {
+    display: none;
     padding: 36px 14px 80px;
+}
+
+.page.active {
+    display: block;
 }
 
 /* --------------------------------------------------
@@ -89,20 +96,58 @@ body {
 }
 
 /* --------------------------------------------------
-   NAVIGATION
+   NAVIGATION (BOTTOM + SIDE)
 -------------------------------------------------- */
 #bottomNav {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 64px;
     background: var(--bg-soft);
     border-top: 1px solid var(--border-subtle);
     display: flex;
     justify-content: space-around;
     align-items: center;
     z-index: 999;
+}
+
+/* Default: stacked (bottom nav) */
+body[data-navlayout="stacked"] #bottomNav {
+    bottom: 0;
+    top: auto;
+    left: 0;
+    right: 0;
+    height: 64px;
+    flex-direction: row;
+}
+
+/* Side nav (desktop only) */
+@media (min-width: 900px) {
+    body[data-device="desktop"][data-navlayout="side"] #bottomNav {
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: auto;
+        width: 80px;
+        height: 100vh;
+        flex-direction: column;
+        justify-content: flex-start;
+        padding-top: 32px;
+        border-right: 1px solid var(--border-subtle);
+        border-top: none;
+    }
+
+    body[data-device="desktop"][data-navlayout="side"] .page {
+        padding-left: 96px;
+        padding-right: 24px;
+        padding-bottom: 24px;
+    }
+
+    body[data-device="desktop"][data-navlayout="side"] #navSlider {
+        width: 4px;
+        height: 40px;
+        left: auto;
+        right: 0;
+        bottom: auto;
+        transition: top 0.25s, height 0.25s;
+    }
 }
 
 .navItem {
@@ -345,20 +390,4 @@ body {
 -------------------------------------------------- */
 body.swiping-horizontal {
     touch-action: pan-y;
-}
-
-/* --------------------------------------------------
-   DESKTOP LAYOUT
--------------------------------------------------- */
-@media (min-width: 900px) {
-    body[data-device="desktop"] .page {
-        max-width: 1100px;
-        margin: 0 auto;
-    }
-
-    body[data-device="desktop"] #accuracyDeep {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 16px;
-    }
 }
