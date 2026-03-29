@@ -1,7 +1,27 @@
-// NexariOS v6.6 — Full UI Logic Upgrade
-// Includes: Glow Rings, Hex Badge, Pulse, Ticker, Swipe Nav, Desktop Layout
+// NexariOS v6.6 – Frontend Engine (Hardened)
+// Wired to Nexari Auto Worker: https://nexari-auto.jardelterry.workers.dev
 
-const API_BASE = "";
+// ------------------------------
+// API BASE (Nexari Auto Worker)
+// ------------------------------
+const API_BASE = "https://nexari-auto.jardelterry.workers.dev";
+
+// Normalize base so we never get double slashes
+function apiUrl(path) {
+  const base = API_BASE.replace(/\/+$/, "");
+  const p = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${p}`;
+}
+
+// ------------------------------
+// STATE
+// ------------------------------
+let signals = [];
+let games = [];
+let accuracy = null;
+
+let currentDate = null;
+let currentSportsbook = "dk";
 
 // ------------------------------
 // DOM HOOKS
@@ -10,16 +30,16 @@ const body = document.body;
 
 // Pages
 const pages = {
-  hr: document.getElementById("hrPage"),
-  games: document.getElementById("gamesPage"),
-  accuracy: document.getElementById("accuracyPage"),
-  search: document.getElementById("searchPage"),
-  settings: document.getElementById("settingsPage")
+  hr: document.getElementById("page-hr"),
+  games: document.getElementById("page-games"),
+  accuracy: document.getElementById("page-accuracy"),
+  search: document.getElementById("page-search"),
+  settings: document.getElementById("page-settings")
 };
 
 // Nav
 const bottomNav = document.getElementById("bottomNav");
-const navItems = Array.from(bottomNav.querySelectorAll(".navItem"));
+const navItems = Array.from(document.querySelectorAll(".navItem"));
 const navSlider = document.getElementById("navSlider");
 
 // HR
@@ -29,9 +49,6 @@ const sportsbookSelects = Array.from(document.querySelectorAll(".sportsbookSelec
 
 // Games
 const gamesContainer = document.getElementById("gamesContainer");
-const prevDateBtn = document.getElementById("prevDate");
-const nextDateBtn = document.getElementById("nextDate");
-const currentDateLabel = document.getElementById("currentDateLabel");
 
 // Accuracy
 const accDaily = document.getElementById("accDaily");
@@ -60,55 +77,106 @@ const forceRebuildBtn = document.getElementById("forceRebuildBtn");
 const clearCacheBtn = document.getElementById("clearCacheBtn");
 const systemInfo = document.getElementById("systemInfo");
 
-// LIVE Ticker
-const liveTickerContent = document.getElementById("liveTickerContent");
+// Date nav
+const currentDateLabel = document.getElementById("currentDateLabel");
+const prevDateBtn = document.getElementById("prevDateBtn");
+const nextDateBtn = document.getElementById("nextDateBtn");
 
-// ------------------------------
-// STATE
-// ------------------------------
-let signals = [];
-let games = [];
-let accuracy = null;
-let currentDate = null;
-let autoRefreshTimer = null;
-let currentSportsbook = "dk";
-let overmindMode = "c"; // logic preserved
+// Live ticker
+const liveTickerContent = document.getElementById("liveTickerContent");
 
 // ------------------------------
 // UTILITIES
 // ------------------------------
 function formatDateLabel(iso) {
-  const dt = new Date(iso + "T12:00:00");
-  return dt.toLocaleDateString("en-US", {
+  if (!iso) return "";
+  const dt = new Date(iso);
+  if (isNaN(dt.getTime())) return iso;
+  const fmt = new Intl.DateTimeFormat("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric"
   });
+  return fmt.format(dt);
 }
 
-function shiftDate(iso, delta) {
-  const dt = new Date(iso + "T12:00:00");
-  dt.setDate(dt.getDate() + delta);
+function shiftDate(iso, deltaDays) {
+  const dt = new Date(iso);
+  if (isNaN(dt.getTime())) return iso;
+  dt.setDate(dt.getDate() + deltaDays);
   return dt.toISOString().slice(0, 10);
 }
 
-function saveSettings() {
-  const s = {
-    theme: body.dataset.theme,
-    device: body.dataset.device,
-    navlayout: body.dataset.navlayout,
-    fontSize: fontSizeSlider.value,
-    iconSize: iconSizeSlider.value,
-    autoRefresh: autoRefreshSelect.value,
-    overmindMode
-  };
-  localStorage.setItem("nexarios-settings", JSON.stringify(s));
+function getTierKey(tier) {
+  if (!tier) return "watch";
+  const t = tier.toLowerCase();
+  if (t.startsWith("strong")) return "strong";
+  if (t.startsWith("playable")) return "playable";
+  return "watch";
 }
 
+function getOcmIntensityClass(ocm) {
+  const v = Number(ocm) || 0;
+  if (v >= 90) return "ocmHex-intensity-ultra";
+  if (v >= 80) return "ocmHex-intensity-high";
+  if (v >= 65) return "ocmHex-intensity-med";
+  return "ocmHex-intensity-low";
+}
+
+// ------------------------------
+// API HELPERS
+// ------------------------------
+async function apiGet(path) {
+  const url = apiUrl(path);
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`API error: ${path}`);
+  }
+  return res.json();
+}
+
+async function fetchSignals(dateStr) {
+  const qs = dateStr ? `?date=${encodeURIComponent(dateStr)}` : "";
+  const data = await apiGet(`/signals${qs}`);
+  signals = Array.isArray(data.signals) ? data.signals : [];
+}
+
+async function fetchGames(dateStr) {
+  const qs = dateStr ? `?date=${encodeURIComponent(dateStr)}` : "";
+  const data = await apiGet(`/games${qs}`);
+  games = Array.isArray(data.games) ? data.games : [];
+}
+
+async function fetchAccuracy() {
+  const data = await apiGet(`/accuracy`);
+  accuracy = data && data.accuracy ? data.accuracy : null;
+}
+
+async function fetchDebug() {
+  const data = await apiGet(`/debug`);
+  return {
+    version: data.version,
+    signalCount: data.signals,
+    gameCount: data.games,
+    lastUpdate: data.date
+  };
+}
+
+async function forceRebuild(dateStr) {
+  const qs = dateStr ? `?date=${encodeURIComponent(dateStr)}` : "";
+  return apiGet(`/rebuild${qs}`);
+}
+
+// ------------------------------
+// SETTINGS PERSISTENCE
+// ------------------------------
+const SETTINGS_KEY = "nexari-settings-v66";
+
 function loadSettings() {
-  const raw = localStorage.getItem("nexarios-settings");
-  if (!raw) return;
   try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return;
+
     const s = JSON.parse(raw);
 
     if (s.theme) {
@@ -120,138 +188,137 @@ function loadSettings() {
 
     if (s.device) {
       body.dataset.device = s.device;
-      deviceModeSelect.value = s.device;
+      if (deviceModeSelect) deviceModeSelect.value = s.device;
     }
 
-    if (s.navlayout) {
-      body.dataset.navlayout = s.navlayout;
-      navLayoutSelect.value = s.navlayout;
+    if (typeof s.baseFontSize === "number" && fontSizeSlider) {
+      fontSizeSlider.value = s.baseFontSize;
+      document.documentElement.style.setProperty("--base-font-size", s.baseFontSize + "px");
     }
 
-    if (s.fontSize) {
-      fontSizeSlider.value = s.fontSize;
-      document.documentElement.style.setProperty("--base-font-size", s.fontSize + "px");
-    }
-
-    if (s.iconSize) {
+    if (typeof s.iconSize === "number" && iconSizeSlider) {
       iconSizeSlider.value = s.iconSize;
       document.documentElement.style.setProperty("--icon-size", s.iconSize + "px");
     }
 
-    if (s.autoRefresh) {
+    if (s.navLayout && navLayoutSelect) {
+      body.dataset.navlayout = s.navLayout;
+      navLayoutSelect.value = s.navLayout;
+    }
+
+    if (s.autoRefresh && autoRefreshSelect) {
       autoRefreshSelect.value = s.autoRefresh;
     }
 
-    if (s.overmindMode) {
-      overmindMode = s.overmindMode;
+    if (s.sportsbook && sportsbookSelects.length) {
+      currentSportsbook = s.sportsbook;
+      sportsbookSelects.forEach(sel => (sel.value = s.sportsbook));
     }
-  } catch {}
+  } catch (e) {
+    console.warn("Settings load failed:", e);
+  }
 }
 
-function applyAutoRefresh() {
-  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-  const sec = parseInt(autoRefreshSelect.value, 10);
-  if (sec > 0) {
-    autoRefreshTimer = setInterval(refreshAll, sec * 1000);
+function saveSettings() {
+  try {
+    const s = {
+      theme: body.dataset.theme || "dark",
+      device: body.dataset.device || "auto",
+      baseFontSize: fontSizeSlider ? Number(fontSizeSlider.value) : 16,
+      iconSize: iconSizeSlider ? Number(iconSizeSlider.value) : 58,
+      navLayout: body.dataset.navlayout || "stacked",
+      autoRefresh: autoRefreshSelect ? autoRefreshSelect.value : "off",
+      sportsbook: currentSportsbook
+    };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  } catch (e) {
+    console.warn("Settings save failed:", e);
   }
 }
 
 // ------------------------------
-// TIER + OCM HELPERS
+// AUTO REFRESH
 // ------------------------------
-function getTierKey(tier) {
-  if (!tier) return "watch";
-  const t = tier.toLowerCase();
-  if (t.includes("strong")) return "strong";
-  if (t.includes("playable")) return "playable";
-  return "watch";
-}
+let autoRefreshTimer = null;
 
-function getOcmIntensityClass(ocm) {
-  if (ocm == null) return "ocmHex-intensity-low";
-  if (ocm < 40) return "ocmHex-intensity-low";
-  if (ocm < 70) return "ocmHex-intensity-med";
-  if (ocm < 90) return "ocmHex-intensity-high";
-  return "ocmHex-intensity-ultra";
+function applyAutoRefresh() {
+  if (autoRefreshTimer) {
+    clearInterval(autoRefreshTimer);
+    autoRefreshTimer = null;
+  }
+
+  if (!autoRefreshSelect) return;
+
+  const mode = autoRefreshSelect.value;
+  if (mode === "off") return;
+
+  let intervalMs = 0;
+  if (mode === "5") intervalMs = 5 * 60 * 1000;
+  if (mode === "10") intervalMs = 10 * 60 * 1000;
+  if (mode === "15") intervalMs = 15 * 60 * 1000;
+
+  if (intervalMs > 0) {
+    autoRefreshTimer = setInterval(() => {
+      refreshAll();
+    }, intervalMs);
+  }
 }
 
 // ------------------------------
 // NAVIGATION
 // ------------------------------
-function setActivePage(pageId) {
-  Object.values(pages).forEach(p => p.classList.remove("active"));
-  pages[pageId].classList.add("active");
+function setActivePage(key) {
+  Object.keys(pages).forEach(k => {
+    if (!pages[k]) return;
+    pages[k].classList.toggle("active", k === key);
+  });
 
   navItems.forEach(item => {
-    const active = item.dataset.page === pages[pageId].id;
-    item.classList.toggle("active", active);
-    if (active) moveNavSliderTo(item);
+    const target = item.dataset.target;
+    item.classList.toggle("active", target === key);
   });
+
+  const activeItem = navItems.find(n => n.classList.contains("active"));
+  if (activeItem) {
+    moveNavSliderTo(activeItem);
+  }
 }
 
 function moveNavSliderTo(item) {
-  const rect = item.getBoundingClientRect();
-  const parent = bottomNav.getBoundingClientRect();
-  navSlider.style.left = `${rect.left - parent.left}px`;
-  navSlider.style.width = `${rect.width}px`;
+  if (!navSlider || !item || !bottomNav) return;
+
+  const rectNav = bottomNav.getBoundingClientRect();
+  const rectItem = item.getBoundingClientRect();
+
+  const width = rectItem.width;
+  const left = rectItem.left - rectNav.left;
+
+  navSlider.style.width = `${width}px`;
+  navSlider.style.left = `${left}px`;
 }
 
 navItems.forEach(item => {
   item.addEventListener("click", () => {
-    const page = item.dataset.page;
-    if (page === "hrPage") setActivePage("hr");
-    if (page === "gamesPage") setActivePage("games");
-    if (page === "accuracyPage") setActivePage("accuracy");
-    if (page === "searchPage") setActivePage("search");
-    if (page === "settingsPage") setActivePage("settings");
+    const target = item.dataset.target;
+    if (!target) return;
+    setActivePage(target);
   });
 });
 
 // ------------------------------
-// API
-// ------------------------------
-async function apiGet(path, params = {}) {
-  const url = new URL(path, window.location.origin);
-  Object.entries(params).forEach(([k, v]) => v != null && url.searchParams.set(k, v));
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`API error: ${path}`);
-  return res.json();
-}
-
-async function fetchSignals(date) {
-  const data = await apiGet("/signals", date ? { date } : {});
-  signals = data.signals || [];
-}
-
-async function fetchGames(date) {
-  const data = await apiGet("/games", date ? { date } : {});
-  games = data.games || [];
-}
-
-async function fetchAccuracy() {
-  const data = await apiGet("/accuracy");
-  accuracy = data.accuracy || null;
-}
-
-async function fetchDebug() {
-  return apiGet("/debug");
-}
-
-async function forceRebuild(date) {
-  return apiGet("/rebuild", date ? { date } : {});
-}
-// ------------------------------
 // RENDER — HR SIGNALS (UPGRADED)
 // ------------------------------
 function renderSignals() {
+  if (!signalsContainer) return;
+
   signalsContainer.innerHTML = "";
 
-  if (!signals.length) {
+  if (!signals || !signals.length) {
     signalsContainer.innerHTML = `<div class="emptyState">No signals available.</div>`;
     return;
   }
 
-  const limit = parseInt(hrViewSelect.value, 10);
+  const limit = parseInt(hrViewSelect.value, 10) || 10;
   const sb = currentSportsbook;
   const subset = signals.slice(0, limit);
 
@@ -313,13 +380,13 @@ function renderSignals() {
     `;
 
     const bar = div.querySelector(".hrBar");
-    bar.style.width = `${barWidth}%`;
-
-    // Momentum pulse
-    if (ocm >= 80 && tierKey === "strong") {
-      bar.classList.add("momentumStrong");
-    } else if (ocm >= 70 && tierKey === "playable") {
-      bar.classList.add("momentumPlayable");
+    if (bar) {
+      bar.style.width = `${barWidth}%`;
+      if (ocm >= 80 && tierKey === "strong") {
+        bar.classList.add("momentumStrong");
+      } else if (ocm >= 70 && tierKey === "playable") {
+        bar.classList.add("momentumPlayable");
+      }
     }
 
     signalsContainer.appendChild(div);
@@ -330,9 +397,11 @@ function renderSignals() {
 // RENDER — GAMES
 // ------------------------------
 function renderGames() {
+  if (!gamesContainer) return;
+
   gamesContainer.innerHTML = "";
 
-  if (!games.length) {
+  if (!games || !games.length) {
     gamesContainer.innerHTML = `<div class="emptyState">No games scheduled.</div>`;
     return;
   }
@@ -348,12 +417,15 @@ function renderGames() {
 
     const liveBadge = g.live ? `<span class="liveBadge">LIVE</span>` : "";
 
+    const awayPlayers = Array.isArray(g.awayPlayers) ? g.awayPlayers : [];
+    const homePlayers = Array.isArray(g.homePlayers) ? g.homePlayers : [];
+
     div.innerHTML = `
       <div class="gameHeader">
         <div class="title">${g.away} @ ${g.home}</div>
         <div class="metaLine">
-          ${g.gameTime}<br>
-          ${g.status} ${liveBadge}<br>
+          ${g.gameTime || ""}<br>
+          ${g.status || ""} ${liveBadge}<br>
           ${score}
         </div>
       </div>
@@ -366,7 +438,7 @@ function renderGames() {
 
         <div class="lineup">
           <strong>Away Lineup:</strong><br>
-          ${g.awayPlayers
+          ${awayPlayers
             .map(
               p => `
               <span class="playerTag">
@@ -379,7 +451,7 @@ function renderGames() {
 
         <div class="lineup">
           <strong>Home Lineup:</strong><br>
-          ${g.homePlayers
+          ${homePlayers
             .map(
               p => `
               <span class="playerTag">
@@ -400,6 +472,8 @@ function renderGames() {
 // LIVE TICKER
 // ------------------------------
 function renderLiveTicker() {
+  if (!liveTickerContent) return;
+
   if (!games || !games.length) {
     liveTickerContent.textContent = "";
     liveTickerContent.classList.remove("scrolling");
@@ -429,61 +503,60 @@ function renderLiveTicker() {
 
   liveTickerContent.classList.add("scrolling");
 }
+
 // ------------------------------
 // RENDER — ACCURACY
 // ------------------------------
 function renderAccuracy() {
   if (!accuracy) {
-    accDaily.textContent = "0%";
-    accDailyBar.style.width = "0%";
-    acc7.textContent = "0%";
-    acc30.textContent = "0%";
-    trend7.textContent = "";
-    trend30.textContent = "";
-    trendBar7.style.width = "0%";
-    trendBar30.style.width = "0%";
-    accVolume.textContent = "0 picks";
-    accHRHitters.innerHTML = `<div class="muted">No HR hitters recorded yet.</div>`;
+    if (accDaily) accDaily.textContent = "0%";
+    if (accDailyBar) accDailyBar.style.width = "0%";
+    if (acc7) acc7.textContent = "0%";
+    if (acc30) acc30.textContent = "0%";
+    if (trend7) trend7.textContent = "";
+    if (trend30) trend30.textContent = "";
+    if (trendBar7) trendBar7.style.width = "0%";
+    if (trendBar30) trendBar30.style.width = "0%";
+    if (accVolume) accVolume.textContent = "0 picks";
+    if (accHRHitters) accHRHitters.innerHTML = `<div class="muted">No HR hitters recorded yet.</div>`;
     return;
   }
 
-  // Daily accuracy
   const pct = accuracy.percent ?? 0;
-  accDaily.textContent = `${pct}%`;
-  accDailyBar.style.width = `${pct}%`;
+  if (accDaily) accDaily.textContent = `${pct}%`;
+  if (accDailyBar) accDailyBar.style.width = `${pct}%`;
 
-  // 7‑day + 30‑day averages
-  const h7 = accuracy.history7 || [];
-  const h30 = accuracy.history30 || [];
+  const h7 = Array.isArray(accuracy.history7) ? accuracy.history7 : [];
+  const h30 = Array.isArray(accuracy.history30) ? accuracy.history30 : [];
 
   const avg7 = h7.length ? Math.round(h7.reduce((a, b) => a + b, 0) / h7.length) : 0;
   const avg30 = h30.length ? Math.round(h30.reduce((a, b) => a + b, 0) / h30.length) : 0;
 
-  acc7.textContent = `${avg7}%`;
-  acc30.textContent = `${avg30}%`;
+  if (acc7) acc7.textContent = `${avg7}%`;
+  if (acc30) acc30.textContent = `${avg30}%`;
 
-  // Trend text
-  trend7.textContent = h7.map(v => `${v}%`).join(" · ");
-  trend30.textContent = h30.map(v => `${v}%`).join(" · ");
+  if (trend7) trend7.textContent = h7.map(v => `${v}%`).join(" · ");
+  if (trend30) trend30.textContent = h30.map(v => `${v}%`).join(" · ");
 
-  // Trend bars
-  trendBar7.style.width = `${avg7}%`;
-  trendBar30.style.width = `${avg30}%`;
+  if (trendBar7) trendBar7.style.width = `${avg7}%`;
+  if (trendBar30) trendBar30.style.width = `${avg30}%`;
 
-  // Prediction volume
-  accVolume.textContent = `${accuracy.predictionVolume || 0} picks`;
+  if (accVolume) accVolume.textContent = `${accuracy.predictionVolume || 0} picks`;
 
-  // HR hitters today
-  const hrHitters = accuracy.hrHittersToday || [];
-  accHRHitters.innerHTML = hrHitters.length
-    ? hrHitters.map(p => `<div class="pill">${p}</div>`).join("")
-    : `<div class="muted">No HR hitters recorded yet.</div>`;
+  const hrHitters = Array.isArray(accuracy.hrHittersToday) ? accuracy.hrHittersToday : [];
+  if (accHRHitters) {
+    accHRHitters.innerHTML = hrHitters.length
+      ? hrHitters.map(p => `<div class="pill">${p}</div>`).join("")
+      : `<div class="muted">No HR hitters recorded yet.</div>`;
+  }
 }
 
 // ------------------------------
 // RENDER — SEARCH RESULTS
 // ------------------------------
 function renderSearchResults(query) {
+  if (!searchResults) return;
+
   searchResults.innerHTML = "";
 
   if (!query) {
@@ -494,7 +567,7 @@ function renderSearchResults(query) {
   const q = query.toLowerCase();
   const sb = currentSportsbook;
 
-  const matches = signals.filter(s => {
+  const matches = (signals || []).filter(s => {
     return (
       (s.player || "").toLowerCase().includes(q) ||
       (s.team || "").toLowerCase().includes(q) ||
@@ -537,95 +610,17 @@ function renderSearchResults(query) {
     `;
 
     const bar = div.querySelector(".hrBar");
-    bar.style.width = `${barWidth}%`;
+    if (bar) bar.style.width = `${barWidth}%`;
 
     searchResults.appendChild(div);
   });
 }
-// ------------------------------
-// SETTINGS HANDLERS
-// ------------------------------
-themeToggle.addEventListener("click", e => {
-  if (!e.target.classList.contains("segBtn")) return;
-  const theme = e.target.dataset.theme;
-  body.dataset.theme = theme;
-
-  themeToggle.querySelectorAll(".segBtn").forEach(btn =>
-    btn.classList.toggle("active", btn.dataset.theme === theme)
-  );
-
-  saveSettings();
-});
-
-deviceModeSelect.addEventListener("change", () => {
-  body.dataset.device = deviceModeSelect.value;
-  saveSettings();
-});
-
-fontSizeSlider.addEventListener("input", () => {
-  document.documentElement.style.setProperty("--base-font-size", fontSizeSlider.value + "px");
-  saveSettings();
-});
-
-iconSizeSlider.addEventListener("input", () => {
-  document.documentElement.style.setProperty("--icon-size", iconSizeSlider.value + "px");
-  saveSettings();
-});
-
-navLayoutSelect.addEventListener("change", () => {
-  body.dataset.navlayout = navLayoutSelect.value;
-  saveSettings();
-});
-
-autoRefreshSelect.addEventListener("change", () => {
-  applyAutoRefresh();
-  saveSettings();
-});
-
-forceRebuildBtn.addEventListener("click", async () => {
-  forceRebuildBtn.disabled = true;
-  forceRebuildBtn.textContent = "Rebuilding…";
-  try {
-    await forceRebuild(currentDate);
-    await refreshAll();
-  } catch (err) {
-    console.error(err);
-  }
-  forceRebuildBtn.disabled = false;
-  forceRebuildBtn.textContent = "Force Rebuild";
-});
-
-clearCacheBtn.addEventListener("click", () => {
-  localStorage.clear();
-  location.reload();
-});
-
-// ------------------------------
-// DATE NAVIGATION
-// ------------------------------
-prevDateBtn.addEventListener("click", () => {
-  currentDate = shiftDate(currentDate, -1);
-  currentDateLabel.textContent = formatDateLabel(currentDate);
-  refreshAll();
-});
-
-nextDateBtn.addEventListener("click", () => {
-  currentDate = shiftDate(currentDate, 1);
-  currentDateLabel.textContent = formatDateLabel(currentDate);
-  refreshAll();
-});
-
-// ------------------------------
-// SEARCH INPUT
-// ------------------------------
-playerSearchInput.addEventListener("input", () => {
-  renderSearchResults(playerSearchInput.value.trim());
-});
 
 // ------------------------------
 // SYSTEM INFO
 // ------------------------------
 async function renderSystemInfo() {
+  if (!systemInfo) return;
   try {
     const dbg = await fetchDebug();
     systemInfo.innerHTML = `
@@ -651,12 +646,114 @@ async function refreshAll() {
     renderSignals();
     renderGames();
     renderAccuracy();
-    renderSearchResults(playerSearchInput.value.trim());
+    renderSearchResults(playerSearchInput ? playerSearchInput.value.trim() : "");
     renderLiveTicker();
     await renderSystemInfo();
   } catch (err) {
     console.error("Refresh error:", err);
   }
+}
+
+// ------------------------------
+// SETTINGS HANDLERS
+// ------------------------------
+if (themeToggle) {
+  themeToggle.addEventListener("click", e => {
+    if (!e.target.classList.contains("segBtn")) return;
+    const theme = e.target.dataset.theme;
+    body.dataset.theme = theme;
+
+    themeToggle.querySelectorAll(".segBtn").forEach(btn =>
+      btn.classList.toggle("active", btn.dataset.theme === theme)
+    );
+
+    saveSettings();
+  });
+}
+
+if (deviceModeSelect) {
+  deviceModeSelect.addEventListener("change", () => {
+    body.dataset.device = deviceModeSelect.value;
+    saveSettings();
+  });
+}
+
+if (fontSizeSlider) {
+  fontSizeSlider.addEventListener("input", () => {
+    document.documentElement.style.setProperty("--base-font-size", fontSizeSlider.value + "px");
+    saveSettings();
+  });
+}
+
+if (iconSizeSlider) {
+  iconSizeSlider.addEventListener("input", () => {
+    document.documentElement.style.setProperty("--icon-size", iconSizeSlider.value + "px");
+    saveSettings();
+  });
+}
+
+if (navLayoutSelect) {
+  navLayoutSelect.addEventListener("change", () => {
+    body.dataset.navlayout = navLayoutSelect.value;
+    saveSettings();
+  });
+}
+
+if (autoRefreshSelect) {
+  autoRefreshSelect.addEventListener("change", () => {
+    applyAutoRefresh();
+    saveSettings();
+  });
+}
+
+if (forceRebuildBtn) {
+  forceRebuildBtn.addEventListener("click", async () => {
+    forceRebuildBtn.disabled = true;
+    forceRebuildBtn.textContent = "Rebuilding…";
+    try {
+      await forceRebuild(currentDate);
+      await refreshAll();
+    } catch (err) {
+      console.error(err);
+    }
+    forceRebuildBtn.disabled = false;
+    forceRebuildBtn.textContent = "Force Rebuild";
+  });
+}
+
+if (clearCacheBtn) {
+  clearCacheBtn.addEventListener("click", () => {
+    localStorage.clear();
+    location.reload();
+  });
+}
+
+// ------------------------------
+// DATE NAVIGATION
+// ------------------------------
+if (prevDateBtn) {
+  prevDateBtn.addEventListener("click", () => {
+    currentDate = shiftDate(currentDate, -1);
+    if (currentDateLabel) currentDateLabel.textContent = formatDateLabel(currentDate);
+    refreshAll();
+  });
+}
+
+if (nextDateBtn) {
+  nextDateBtn.addEventListener("click", () => {
+    currentDate = shiftDate(currentDate, 1);
+    if (currentDateLabel) currentDateLabel.textContent = formatDateLabel(currentDate);
+    refreshAll();
+  });
+}
+
+// ------------------------------
+// SEARCH INPUT
+// ------------------------------
+if (playerSearchInput) {
+  playerSearchInput.addEventListener("input", () => {
+    renderSearchResults(playerSearchInput.value.trim());
+  });
 }
 
 // ------------------------------
@@ -668,7 +765,7 @@ let touchLocked = false;
 
 function getCurrentPageIndex() {
   const order = ["hr", "games", "accuracy", "search", "settings"];
-  const activeKey = order.find(key => pages[key].classList.contains("active"));
+  const activeKey = order.find(key => pages[key] && pages[key].classList.contains("active"));
   return order.indexOf(activeKey);
 }
 
@@ -687,22 +784,26 @@ document.addEventListener("touchstart", e => {
   touchLocked = false;
 });
 
-document.addEventListener("touchmove", e => {
-  if (window.innerWidth > 900) return;
-  if (!touchStartX || !touchStartY) return;
+document.addEventListener(
+  "touchmove",
+  e => {
+    if (window.innerWidth > 900) return;
+    if (!touchStartX || !touchStartY) return;
 
-  const dx = e.touches[0].clientX - touchStartX;
-  const dy = e.touches[0].clientY - touchStartY;
+    const dx = e.touches[0].clientX - touchStartX;
+    const dy = e.touches[0].clientY - touchStartY;
 
-  if (!touchLocked && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 24) {
-    touchLocked = true;
-    document.body.classList.add("swiping-horizontal");
-  }
+    if (!touchLocked && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 24) {
+      touchLocked = true;
+      document.body.classList.add("swiping-horizontal");
+    }
 
-  if (touchLocked) {
-    e.preventDefault();
-  }
-}, { passive: false });
+    if (touchLocked) {
+      e.preventDefault();
+    }
+  },
+  { passive: false }
+);
 
 document.addEventListener("touchend", e => {
   if (window.innerWidth > 900) return;
@@ -737,20 +838,24 @@ async function init() {
   loadSettings();
 
   currentDate = new Date().toISOString().slice(0, 10);
-  currentDateLabel.textContent = formatDateLabel(currentDate);
+  if (currentDateLabel) currentDateLabel.textContent = formatDateLabel(currentDate);
 
-  sportsbookSelects.forEach(sel => {
-    sel.addEventListener("change", () => {
-      currentSportsbook = sel.value;
-      sportsbookSelects.forEach(s2 => (s2.value = sel.value));
-      renderSignals();
-      renderSearchResults(playerSearchInput.value.trim());
+  if (sportsbookSelects.length) {
+    sportsbookSelects.forEach(sel => {
+      sel.addEventListener("change", () => {
+        currentSportsbook = sel.value;
+        sportsbookSelects.forEach(s2 => (s2.value = sel.value));
+        renderSignals();
+        renderSearchResults(playerSearchInput ? playerSearchInput.value.trim() : "");
+        saveSettings();
+      });
     });
-  });
+  }
 
   applyAutoRefresh();
+  setActivePage("hr");
   await refreshAll();
-  moveNavSliderTo(navItems[0]);
+  if (navItems.length) moveNavSliderTo(navItems[0]);
 }
 
 init();
