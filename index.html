@@ -9,23 +9,30 @@
 
 <body data-theme="dark" data-device="auto" data-navlayout="stacked">
 
-  <!-- ========================= -->
-  <!-- TOP LIVE TICKER (GAMES ONLY) -->
-  <!-- ========================= -->
+  <!-- LIVE TICKER (Games Only) -->
   <div id="liveTicker" class="page-games-only">
     <div id="liveTickerContent"></div>
   </div>
 
   <!-- ========================= -->
-  <!-- MAIN PAGES -->
-  <!-- ========================= -->
-
   <!-- HR PAGE -->
+  <!-- ========================= -->
   <div id="page-hr" class="page active">
     <div class="pageHeader">
       <h1>HR View 🔥</h1>
+
       <div class="subHeader">
-        <span>Sportsbook:</span>
+        <label>Sportsbook:</label>
+        <select id="sportsbookSelect">
+          <option value="dk">DK</option>
+          <option value="fd">FD</option>
+          <option value="mgm">MGM</option>
+          <option value="cz">CZ</option>
+        </select>
+      </div>
+
+      <div class="subHeader">
+        <label>View:</label>
         <select id="hrViewSelect">
           <option value="10">Top 10</option>
           <option value="20">Top 20</option>
@@ -33,10 +40,13 @@
         </select>
       </div>
     </div>
+
     <div id="signalsContainer"></div>
   </div>
 
+  <!-- ========================= -->
   <!-- GAMES PAGE -->
+  <!-- ========================= -->
   <div id="page-games" class="page">
     <div class="pageHeader">
       <h1>Games</h1>
@@ -49,7 +59,9 @@
     <div id="gamesContainer"></div>
   </div>
 
+  <!-- ========================= -->
   <!-- ACCURACY PAGE -->
+  <!-- ========================= -->
   <div id="page-accuracy" class="page">
     <div class="pageHeader">
       <h1>Accuracy</h1>
@@ -86,7 +98,9 @@
     </div>
   </div>
 
+  <!-- ========================= -->
   <!-- SEARCH PAGE -->
+  <!-- ========================= -->
   <div id="page-search" class="page">
     <div class="pageHeader">
       <h1>Search</h1>
@@ -124,7 +138,9 @@
     <div id="searchResults"></div>
   </div>
 
+  <!-- ========================= -->
   <!-- SETTINGS PAGE -->
+  <!-- ========================= -->
   <div id="page-settings" class="page">
     <div class="pageHeader">
       <h1>Settings</h1>
@@ -188,7 +204,7 @@
       <div id="systemInfo" class="systemInfo"></div>
     </div>
 
-    <!-- Collapsible Info Section (Bottom) -->
+    <!-- Collapsible Info Section -->
     <div class="collapsible">
       <div class="collapsibleHeader" data-target="infoContent">
         <span>Info</span>
@@ -268,14 +284,14 @@ Customize:
   </div>
 
   <!-- ========================= -->
-  <!-- BOTTOM NAVIGATION -->
+  <!-- BOTTOM NAVIGATION (A1 STYLE) -->
   <!-- ========================= -->
   <div id="bottomNav">
-    <div class="navItem active" data-target="hr">HR</div>
-    <div class="navItem" data-target="games">Games</div>
-    <div class="navItem" data-target="accuracy">Accuracy</div>
-    <div class="navItem" data-target="search">Search</div>
-    <div class="navItem" data-target="settings">Settings</div>
+    <div class="navItem active" data-target="hr">🔥<br>HR</div>
+    <div class="navItem" data-target="games">⚾️<br>Games</div>
+    <div class="navItem" data-target="accuracy">📊<br>Accuracy</div>
+    <div class="navItem" data-target="search">🔍<br>Search</div>
+    <div class="navItem" data-target="settings">⚙️<br>Settings</div>
     <div id="navSlider"></div>
   </div>
 

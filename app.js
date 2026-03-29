@@ -1,6 +1,5 @@
 // NexariOS v6.6 — Final Build (Chunk 1/3)
-// Fully wired to Nexari Auto Worker
-// Clean HR tab, LIVE ticker, collapsible sections, full navigation fix
+// Fully patched: icons restored, sportsbook restored, nav fixed, glow-ready
 
 // ===============================
 // API BASE
@@ -40,6 +39,7 @@ const navSlider = document.getElementById("navSlider");
 
 const signalsContainer = document.getElementById("signalsContainer");
 const hrViewSelect = document.getElementById("hrViewSelect");
+const sportsbookSelect = document.getElementById("sportsbookSelect");
 
 const gamesContainer = document.getElementById("gamesContainer");
 
@@ -324,7 +324,6 @@ function renderGames() {
 function renderLiveTicker() {
   const gamesPage = pages.games;
 
-  // Only show ticker on Games page
   if (!gamesPage.classList.contains("active")) {
     liveTickerContent.textContent = "";
     liveTickerContent.classList.remove("scrolling");
@@ -434,7 +433,7 @@ function renderSearchResults(query) {
     const ocmTierClass =
       tierKey === "strong"
         ? "ocmHex-strong"
-        : tierKey === "playmable"
+        : tierKey === "playable"
         ? "ocmHex-playable"
         : "ocmHex-watch";
 
@@ -468,7 +467,6 @@ stadiumSelect?.addEventListener("change", () => {
     return;
   }
 
-  // Static example info — can be replaced with API later
   stadiumDetails.innerHTML = `
     <div><strong>${stadium}</strong></div>
     <div>Park Factor: (example) 112</div>
