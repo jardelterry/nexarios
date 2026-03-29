@@ -1,15 +1,16 @@
-// app.js — NexariOS v7.1C+ (Midnight OS Advanced)
+// app.js — NexariOS v7.1C (logic-only patch)
+// UI is untouched. This only fixes data flow and behavior.
 
-// MAIN WORKER
 const BASE = "https://nexari.jardelterry.workers.dev";
 
 let currentTab = "hr";
-let currentDateOffset = 0; // 0 = today, -1 = yesterday, etc.
+let currentDateOffset = 0; // 0 = today
 
 let state = {
   signals: [],
   games: [],
-  accuracy: null
+  accuracy: null,
+  searchResults: []
 };
 
 function $(id) {
@@ -37,9 +38,8 @@ function getDateParam(offset) {
   return d.toISOString().slice(0, 10);
 }
 
-/* ------------------------------
-   LOADERS
---------------------------------*/
+/* ---------------- LOADERS ---------------- */
+
 async function loadSignals() {
   try {
     const dateStr = getDateParam(currentDateOffset);
@@ -47,12 +47,15 @@ async function loadSignals() {
     url.searchParams.set("date", dateStr);
 
     const data = await fetchJSON(url.toString());
-    state.signals = Array.isArray(data.signals) ? data.signals : [];
+    const rawSignals = Array.isArray(data.signals) ? data.signals : [];
+    state.signals = rawSignals.slice();
 
-    // sort strongest first by OCM
-    state.signals.sort(
-      (a, b) => (b.overmindCompositeMetric || 0) - (a.overmindCompositeMetric || 0)
-    );
+    // sort strongest first if OCM exists
+    state.signals.sort((a, b) => {
+      const ao = a.overmindCompositeMetric ?? a.ocm ?? 0;
+      const bo = b.overmindCompositeMetric ?? b.ocm ?? 0;
+      return bo - ao;
+    });
 
     renderSignals();
   } catch (e) {
@@ -82,7 +85,7 @@ async function loadAccuracy() {
   try {
     const url = new URL(BASE + "/accuracy");
     const data = await fetchJSON(url.toString());
-    state.accuracy = data.accuracy || null;
+    state.accuracy = data.accuracy || data || null;
     renderAccuracy();
   } catch (e) {
     console.error("loadAccuracy error", e);
@@ -91,9 +94,29 @@ async function loadAccuracy() {
   }
 }
 
-/* ------------------------------
-   HR SIGNALS
---------------------------------*/
+let searchTimeout = null;
+async function loadSearch(query) {
+  if (!query || !query.trim()) {
+    state.searchResults = [];
+    renderSearch();
+    return;
+  }
+
+  try {
+    const url = new URL(BASE + "/search");
+    url.searchParams.set("q", query.trim());
+    const data = await fetchJSON(url.toString());
+    state.searchResults = Array.isArray(data.results) ? data.results : [];
+    renderSearch();
+  } catch (e) {
+    console.error("loadSearch error", e);
+    state.searchResults = [];
+    renderSearch();
+  }
+}
+
+/* ---------------- HR SIGNALS ---------------- */
+
 function getSelectedRange() {
   const btn = document.querySelector(".range-btn.active");
   if (!btn) return "10";
@@ -127,20 +150,23 @@ function renderSignals() {
   }
 
   const book = getSelectedBook();
-  const maxOCM = Math.max(...signals.map(s => s.overmindCompositeMetric || 0), 1);
+
+  const maxOCM = Math.max(
+    ...signals.map(s => (s.overmindCompositeMetric ?? s.ocm ?? 0)),
+    1
+  );
 
   signals.forEach(sig => {
     const li = document.createElement("li");
     li.className = "list-row";
 
-    const odds = sig.sportsbooks || {};
-    const line = odds[book] || "N/A";
+    const odds = sig.sportsbooks || sig.odds || {};
+    const line = odds[book] ?? "N/A";
 
-    const ocm = sig.overmindCompositeMetric || 0;
+    const ocm = sig.overmindCompositeMetric ?? sig.ocm ?? 0;
     const strengthPct = Math.round((ocm / maxOCM) * 100);
 
-    // HR probability (0–1 or 0–100) → normalize
-    const rawProb = sig.hrProbability != null ? sig.hrProbability : sig.hrProb;
+    const rawProb = sig.hrProbability ?? sig.hrProb;
     let probPct = 0;
     if (rawProb != null) {
       probPct = rawProb <= 1 ? Math.round(rawProb * 100) : Math.round(rawProb);
@@ -155,10 +181,10 @@ function renderSignals() {
 
     li.innerHTML = `
       <div class="row-main">
-        <div class="row-title">${sig.player}</div>
+        <div class="row-title">${sig.player || sig.name || "Unknown"}</div>
         <div class="row-sub">
           <span>${sig.team || ""}</span>
-          ${sig.opponent ? `<span>vs ${sig.opponent}</span>` : ""}
+          ${sig.opponent || sig.opp ? `<span>vs ${sig.opponent || sig.opp}</span>` : ""}
         </div>
 
         ${
@@ -166,8 +192,8 @@ function renderSignals() {
             ? `<div class="matchup-strip">
                  <span>vs ${vsText}</span>
                  ${
-                   sig.batterVsPitcher
-                     ? `<span>${sig.batterVsPitcher}</span>`
+                   sig.batterVsPitcher || sig.bvp
+                     ? `<span>${sig.batterVsPitcher || sig.bvp}</span>`
                      : ""
                  }
                </div>`
@@ -191,7 +217,7 @@ function renderSignals() {
         }
       </div>
       <div class="row-side">
-        <div class="pill tier">${sig.tier}</div>
+        <div class="pill tier">${sig.tier || "Strong"}</div>
         <div class="pill ocm">${Math.round(ocm)}</div>
         <div class="pill odds">${line}</div>
       </div>
@@ -200,9 +226,8 @@ function renderSignals() {
   });
 }
 
-/* ------------------------------
-   GAMES + CLICKABLE LINEUPS
---------------------------------*/
+/* ---------------- GAMES + LINEUPS ---------------- */
+
 function renderGames() {
   const list = $("games-list");
   if (!list) return;
@@ -224,17 +249,13 @@ function renderGames() {
     if (g.wind != null) weatherParts.push(`Wind ${g.wind} mph`);
 
     const isLive = !!g.isLive;
-    const statusText = g.status || (isLive ? "LIVE" : g.gameTime || "");
+    const statusText = g.status || (isLive ? "LIVE" : g.gameTime || g.time || "");
 
     li.innerHTML = `
       <div class="row-main">
         <div class="row-title">
-          ${g.awayTeam} @ ${g.homeTeam}
-          ${
-            isLive
-              ? `<span class="live-dot"></span>`
-              : ""
-          }
+          ${g.awayTeam || g.away || ""} @ ${g.homeTeam || g.home || ""}
+          ${isLive ? `<span class="live-dot"></span>` : ""}
         </div>
         <div class="row-sub">
           <span>${g.venue || ""}</span>
@@ -261,7 +282,6 @@ function toggleGameLineups(li, game) {
 
   const isOpen = container.classList.contains("open");
   if (isOpen) {
-    // collapse
     container.style.maxHeight = container.scrollHeight + "px";
     requestAnimationFrame(() => {
       container.classList.remove("open");
@@ -270,30 +290,31 @@ function toggleGameLineups(li, game) {
     return;
   }
 
-  const home = (game.lineups && game.lineups.home) || [];
-  const away = (game.lineups && game.lineups.away) || [];
+  const lineups = game.lineups || {};
+  const homeArr = Array.isArray(lineups.home) ? lineups.home : [];
+  const awayArr = Array.isArray(lineups.away) ? lineups.away : [];
 
-  const homeList = home
+  const homeList = homeArr
     .map(
       p =>
-        `<div class="player-row"><span>${p.name}</span><span>${p.pos || ""}</span></div>`
+        `<div class="player-row"><span>${p.name || p.player || "Unknown"}</span><span>${p.pos || p.position || ""}</span></div>`
     )
     .join("");
-  const awayList = away
+  const awayList = awayArr
     .map(
       p =>
-        `<div class="player-row"><span>${p.name}</span><span>${p.pos || ""}</span></div>`
+        `<div class="player-row"><span>${p.name || p.player || "Unknown"}</span><span>${p.pos || p.position || ""}</span></div>`
     )
     .join("");
 
   inner.innerHTML = `
     <div class="lineup-columns">
       <div class="lineup-col">
-        <div class="lineup-title">${game.homeTeam}</div>
+        <div class="lineup-title">${game.homeTeam || game.home || ""}</div>
         ${homeList || `<div class="player-row empty-state">No lineup yet.</div>`}
       </div>
       <div class="lineup-col">
-        <div class="lineup-title">${game.awayTeam}</div>
+        <div class="lineup-title">${game.awayTeam || game.away || ""}</div>
         ${awayList || `<div class="player-row empty-state">No lineup yet.</div>`}
       </div>
     </div>
@@ -303,9 +324,8 @@ function toggleGameLineups(li, game) {
   container.style.maxHeight = container.scrollHeight + "px";
 }
 
-/* ------------------------------
-   ACCURACY (RICHER)
---------------------------------*/
+/* ---------------- ACCURACY ---------------- */
+
 function renderAccuracy() {
   const sysEl = $("accuracy-system");
   const hrRbiEl = $("accuracy-hr-rbi");
@@ -321,37 +341,41 @@ function renderAccuracy() {
     return;
   }
 
-  const sys = state.accuracy.system || {};
-  const history7 = state.accuracy.history7 || [];
-  const history30 = state.accuracy.history30 || [];
-  const hrHittersToday = state.accuracy.hrHittersToday || [];
-  const bestStreak = state.accuracy.bestStreak || null;
+  const acc = state.accuracy;
+  const system = acc.system || acc || {};
+  const history7 = Array.isArray(acc.history7) ? acc.history7 : [];
+  const history30 = Array.isArray(acc.history30) ? acc.history30 : [];
+  const hrHittersToday = Array.isArray(acc.hrHittersToday)
+    ? acc.hrHittersToday
+    : [];
+  const bestStreak = acc.bestStreak || null;
+  const outcomes = Array.isArray(acc.outcomes) ? acc.outcomes : [];
 
   sysEl.innerHTML = `
     <div class="metric-row">
-      <span>Total Picks</span><span>${sys.totalPicks ?? 0}</span>
+      <span>Total Picks</span><span>${system.totalPicks ?? 0}</span>
     </div>
     <div class="metric-row">
-      <span>Hits</span><span>${sys.hits ?? 0}</span>
+      <span>Hits</span><span>${system.hits ?? 0}</span>
     </div>
     <div class="metric-row">
-      <span>Misses</span><span>${sys.misses ?? 0}</span>
+      <span>Misses</span><span>${system.misses ?? 0}</span>
     </div>
     <div class="metric-row">
-      <span>Accuracy</span><span>${sys.accuracy ?? 0}%</span>
+      <span>Accuracy</span><span>${system.accuracy ?? 0}%</span>
     </div>
     ${
       bestStreak
         ? `<div class="metric-row">
              <span>Best HR Streak</span>
-             <span>${bestStreak.player} (${bestStreak.length} games)</span>
+             <span>${bestStreak.player || "Unknown"} (${bestStreak.length ?? 0} games)</span>
            </div>`
         : ""
     }
   `;
 
-  const last7 = history7.length ? history7[history7.length - 1] : sys.accuracy ?? 0;
-  const last30 = history30.length ? history30[history30.length - 1] : sys.accuracy ?? 0;
+  const last7 = history7.length ? history7[history7.length - 1] : system.accuracy ?? 0;
+  const last30 = history30.length ? history30[history30.length - 1] : system.accuracy ?? 0;
 
   hrRbiEl.innerHTML = `
     <div class="metric-row">
@@ -365,7 +389,6 @@ function renderAccuracy() {
     </div>
   `;
 
-  const outcomes = state.accuracy.outcomes || [];
   if (!outcomes.length) {
     outcomesEl.innerHTML = `<div class="empty-state">No outcomes yet.</div>`;
     return;
@@ -376,11 +399,11 @@ function renderAccuracy() {
     div.className = "outcome-row";
     div.innerHTML = `
       <div class="outcome-main">
-        <span class="outcome-player">${o.player}</span>
+        <span class="outcome-player">${o.player || "Unknown"}</span>
         <span class="outcome-team">${o.team || ""}</span>
       </div>
       <div class="outcome-side">
-        <span class="outcome-tier">${o.tier || ""}</span>
+        <span class="outcome-tier">${o.tier || "Strong"}</span>
         <span class="outcome-hit">${o.hrHit ? "HR ✅" : "No HR"}</span>
       </div>
     `;
@@ -388,9 +411,38 @@ function renderAccuracy() {
   });
 }
 
-/* ------------------------------
-   TABS + NAV INDICATOR
---------------------------------*/
+/* ---------------- SEARCH ---------------- */
+
+function renderSearch() {
+  const list = $("search-results");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  if (!state.searchResults.length) {
+    list.innerHTML = `<li class="empty-state">No results.</li>`;
+    return;
+  }
+
+  state.searchResults.forEach(r => {
+    const li = document.createElement("li");
+    li.className = "list-row";
+    li.innerHTML = `
+      <div class="row-main">
+        <div class="row-title">${r.player || r.name || "Unknown"}</div>
+        <div class="row-sub">
+          ${r.team ? `<span>${r.team}</span>` : ""}
+          ${r.position ? `<span>${r.position}</span>` : ""}
+          ${r.stadium ? `<span>${r.stadium}</span>` : ""}
+        </div>
+      </div>
+    `;
+    list.appendChild(li);
+  });
+}
+
+/* ---------------- TABS ---------------- */
+
 function setActiveTab(tab) {
   currentTab = tab;
 
@@ -407,7 +459,6 @@ function setActiveTab(tab) {
     sec.classList.toggle("active", id === tab);
   });
 
-  // move nav indicator
   const indicator = $("nav-indicator");
   if (indicator && navItems.length) {
     const index = Array.from(navItems).findIndex(i => i.dataset.tab === tab);
@@ -423,13 +474,13 @@ function switchTab(tab) {
   if (tab === "hr") renderSignals();
   if (tab === "games") renderGames();
   if (tab === "accuracy") renderAccuracy();
+  if (tab === "search") renderSearch();
 }
 
-/* ------------------------------
-   INIT + EVENTS
---------------------------------*/
+/* ---------------- INIT ---------------- */
+
 document.addEventListener("DOMContentLoaded", () => {
-  // Tab buttons (sidebar + bottom nav)
+  // Tabs
   document.querySelectorAll("[data-tab]").forEach(el => {
     el.addEventListener("click", () => {
       const tab = el.dataset.tab;
@@ -467,6 +518,16 @@ document.addEventListener("DOMContentLoaded", () => {
       currentDateOffset += 1;
       loadSignals();
       loadGames();
+    });
+  }
+
+  // Search input
+  const searchInput = $("search-input");
+  if (searchInput) {
+    searchInput.addEventListener("input", e => {
+      const q = e.target.value;
+      if (searchTimeout) clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => loadSearch(q), 250);
     });
   }
 
