@@ -65,15 +65,14 @@ body {
 .tab-view.active {
   display: block;
 }
-/* CARDS (Carbon + Glass Hybrid) */
+
+/* CARDS (Carbon + Glass Hybrid) — FIXED */
 .card {
   background: linear-gradient(
       to bottom right,
       rgba(255, 255, 255, 0.06),
       rgba(255, 255, 255, 0.02)
-    ),
-    url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='200' height='200' fill='%23000000'/%3E%3Cpath d='M0 0 L200 200 M200 0 L0 200' stroke='%230a0f24' stroke-width='0.6'/%3E%3C/svg%3E");
-  background-size: cover;
+    );
   border-radius: 16px;
   padding: 14px 16px;
   margin-bottom: 14px;
@@ -134,6 +133,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
+
 /* PILLS */
 .pill {
   display: inline-block;
@@ -184,6 +184,7 @@ body {
   line-height: 1.55;
   color: #c8d2ff;
 }
+
 /* BOTTOM NAV */
 .bottom-nav {
   position: fixed;
