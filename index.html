@@ -1,255 +1,284 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>NexariOS v6.6</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexariOS v6.6</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 
-<body data-device="auto" data-theme="dark" data-navlayout="stacked">
+<body data-theme="dark" data-device="auto" data-navlayout="stacked">
 
-    <!-- LIVE TICKER (NEW) -->
-    <div id="liveTicker">
-        <span class="liveLabel">LIVE</span>
-        <div id="liveTickerContent"></div>
+  <!-- ========================= -->
+  <!-- TOP LIVE TICKER (GAMES ONLY) -->
+  <!-- ========================= -->
+  <div id="liveTicker" class="page-games-only">
+    <div id="liveTickerContent"></div>
+  </div>
+
+  <!-- ========================= -->
+  <!-- MAIN PAGES -->
+  <!-- ========================= -->
+
+  <!-- HR PAGE -->
+  <div id="page-hr" class="page active">
+    <div class="pageHeader">
+      <h1>HR View 🔥</h1>
+      <div class="subHeader">
+        <span>Sportsbook:</span>
+        <select id="hrViewSelect">
+          <option value="10">Top 10</option>
+          <option value="20">Top 20</option>
+          <option value="999">All</option>
+        </select>
+      </div>
+    </div>
+    <div id="signalsContainer"></div>
+  </div>
+
+  <!-- GAMES PAGE -->
+  <div id="page-games" class="page">
+    <div class="pageHeader">
+      <h1>Games</h1>
+      <div class="dateNav">
+        <button id="prevDateBtn">◀</button>
+        <span id="currentDateLabel"></span>
+        <button id="nextDateBtn">▶</button>
+      </div>
+    </div>
+    <div id="gamesContainer"></div>
+  </div>
+
+  <!-- ACCURACY PAGE -->
+  <div id="page-accuracy" class="page">
+    <div class="pageHeader">
+      <h1>Accuracy</h1>
     </div>
 
-    <!-- BOTTOM NAVIGATION (GLOWING) -->
-    <div id="bottomNav">
-        <div class="navItem active" data-page="hrPage">
-            <span class="icon">🔥</span>
-            <span class="label">HR</span>
-        </div>
-
-        <div class="navItem" data-page="gamesPage">
-            <span class="icon">⚾</span>
-            <span class="label">Games</span>
-        </div>
-
-        <div class="navItem" data-page="accuracyPage">
-            <span class="icon">📊</span>
-            <span class="label">Accuracy</span>
-        </div>
-
-        <div class="navItem" data-page="searchPage">
-            <span class="icon">🧬</span>
-            <span class="label">Search</span>
-        </div>
-
-        <div class="navItem" data-page="settingsPage">
-            <span class="icon">⚙️</span>
-            <span class="label">Settings</span>
-        </div>
-
-        <div id="navSlider"></div>
+    <div class="accuracyBlock">
+      <div class="accLabel">Today</div>
+      <div id="accDaily" class="accValue">0%</div>
+      <div class="accBar"><div id="accDailyBar"></div></div>
     </div>
 
-    <!-- HR PAGE -->
-    <div id="hrPage" class="page active">
-        <div id="hrControls">
-            <label class="fieldLabel">HR View:</label>
-            <select id="hrViewSelect">
-                <option value="10">Top 10</option>
-                <option value="20">Top 20</option>
-            </select>
-
-            <label class="fieldLabel">Sportsbook:</label>
-            <select class="sportsbookSelect">
-                <option value="dk">DK</option>
-                <option value="fd">FD</option>
-                <option value="mgm">MGM</option>
-                <option value="cz">CZ</option>
-                <option value="fanatics">Fanatics</option>
-            </select>
-        </div>
-
-        <div id="signalsContainer"></div>
+    <div class="accuracyBlock">
+      <div class="accLabel">7‑Day Trend</div>
+      <div id="acc7" class="accValue">0%</div>
+      <div class="accBar"><div id="trendBar7"></div></div>
+      <div id="trend7" class="trendList"></div>
     </div>
 
-    <!-- GAMES PAGE -->
-    <div id="gamesPage" class="page">
-        <div id="calendarBar">
-            <button id="prevDate" class="clickerBtn">◀</button>
-            <span id="currentDateLabel"></span>
-            <button id="nextDate" class="clickerBtn">▶</button>
-        </div>
-        <div id="gamesContainer"></div>
+    <div class="accuracyBlock">
+      <div class="accLabel">30‑Day Trend</div>
+      <div id="acc30" class="accValue">0%</div>
+      <div class="accBar"><div id="trendBar30"></div></div>
+      <div id="trend30" class="trendList"></div>
     </div>
 
-    <!-- ACCURACY PAGE -->
-    <div id="accuracyPage" class="page">
-
-        <h2 class="accHeader">System Intelligence Summary</h2>
-
-        <div id="accuracyContainer"></div>
-
-        <div id="accuracyDeep">
-
-            <div class="accCard">
-                <h3>Daily Accuracy</h3>
-                <div id="accDaily"></div>
-                <div class="microBar" id="accDailyBar"></div>
-            </div>
-
-            <div class="accCard">
-                <h3>7‑Day Trend</h3>
-                <div id="acc7"></div>
-                <div id="trend7" class="sparkline"></div>
-                <div class="trendBar" id="trendBar7"></div>
-            </div>
-
-            <div class="accCard">
-                <h3>30‑Day Trend</h3>
-                <div id="acc30"></div>
-                <div id="trend30" class="sparkline"></div>
-                <div class="trendBar" id="trendBar30"></div>
-            </div>
-
-            <div class="accCard">
-                <h3>Tier Breakdown</h3>
-                <div id="accBreakdown"></div>
-            </div>
-
-            <div class="accCard">
-                <h3>Top Teams</h3>
-                <div id="accTeams"></div>
-            </div>
-
-            <div class="accCard">
-                <h3>Top Players</h3>
-                <div id="accPlayers"></div>
-            </div>
-
-            <div class="accCard">
-                <h3>Prediction Volume</h3>
-                <div id="accVolume"></div>
-            </div>
-
-            <div class="accCard">
-                <h3>Current Streaks</h3>
-                <div id="accStreaks"></div>
-            </div>
-
-            <div class="accCard">
-                <h3>HR Hitters Today</h3>
-                <div id="accHRHitters"></div>
-            </div>
-
-        </div>
+    <div class="accuracyBlock">
+      <div class="accLabel">Prediction Volume</div>
+      <div id="accVolume" class="accValue">0 picks</div>
     </div>
 
-    <!-- SEARCH PAGE -->
-    <div id="searchPage" class="page">
-        <h2 class="accHeader">Player Search</h2>
+    <div class="accuracyBlock">
+      <div class="accLabel">HR Hitters Today</div>
+      <div id="accHRHitters" class="pillContainer"></div>
+    </div>
+  </div>
 
-        <div class="searchBarWrapper">
-            <input type="text" id="playerSearchInput" placeholder="Search player or team...">
-        </div>
-
-        <div class="searchControls">
-            <label class="fieldLabel">Sportsbook:</label>
-            <select class="sportsbookSelect">
-                <option value="dk">DK</option>
-                <option value="fd">FD</option>
-                <option value="mgm">MGM</option>
-                <option value="cz">CZ</option>
-                <option value="fanatics">Fanatics</option>
-            </select>
-        </div>
-
-        <div id="searchResults"></div>
+  <!-- SEARCH PAGE -->
+  <div id="page-search" class="page">
+    <div class="pageHeader">
+      <h1>Search</h1>
     </div>
 
-    <!-- SETTINGS PAGE -->
-    <div id="settingsPage" class="page">
-        <div class="settingsSection">
-            <h3>Display</h3>
+    <input id="playerSearchInput" class="searchInput" placeholder="Search players or teams…" />
 
-            <label>Theme:</label>
-            <div id="themeToggle" class="segmented">
-                <button data-theme="dark" class="segBtn active">Dark</button>
-                <button data-theme="light" class="segBtn">Light</button>
-                <button data-theme="auto" class="segBtn">Auto</button>
-            </div>
+    <!-- Collapsible Stadium Info -->
+    <div class="collapsible">
+      <div class="collapsibleHeader" data-target="stadiumInfoContent">
+        <span>Stadium Info</span>
+        <span class="arrow">▼</span>
+      </div>
 
-            <label>Device Mode:</label>
-            <select id="deviceModeSelect">
-                <option value="auto">Auto</option>
-                <option value="mobile">Mobile</option>
-                <option value="desktop">Desktop</option>
-            </select>
+      <div id="stadiumInfoContent" class="collapsibleContent">
+        <label>Stadium:</label>
+        <select id="stadiumSelect">
+          <option value="">Select Stadium</option>
+          <option>Yankee Stadium</option>
+          <option>Fenway Park</option>
+          <option>Dodger Stadium</option>
+          <option>Coors Field</option>
+          <option>Wrigley Field</option>
+          <option>Great American Ball Park</option>
+          <option>Citizens Bank Park</option>
+          <option>Globe Life Field</option>
+          <option>T‑Mobile Park</option>
+          <option>Oracle Park</option>
+        </select>
 
-            <label>Font Size:</label>
-            <input type="range" id="fontSizeSlider" min="12" max="22" value="16">
-
-            <label>Icon Size:</label>
-            <input type="range" id="iconSizeSlider" min="40" max="80" value="58">
-
-            <label>Nav Layout:</label>
-            <select id="navLayoutSelect">
-                <option value="stacked">Icons on top</option>
-                <option value="side">Icons left (desktop)</option>
-            </select>
-        </div>
-
-        <div class="settingsSection">
-            <h3>Data</h3>
-            <label>Auto Refresh:</label>
-            <select id="autoRefreshSelect">
-                <option value="0">Off</option>
-                <option value="30">30s</option>
-                <option value="60">60s</option>
-                <option value="300">5m</option>
-            </select>
-
-            <button id="forceRebuildBtn">Force Rebuild</button>
-            <button id="clearCacheBtn">Clear Cache</button>
-        </div>
-
-        <div class="settingsSection">
-            <h3>System</h3>
-            <div id="systemInfo"></div>
-        </div>
-
-        <!-- OVERMIND SECTION (HIDDEN BUT LOGIC PRESERVED) -->
-        <div class="settingsSection overmindHidden">
-            <h3>Overmind Mode</h3>
-            <div id="overmindToggle" class="segmented">
-                <button class="segBtn active" data-mode="c">C</button>
-                <button class="segBtn" data-mode="d">D</button>
-                <button class="segBtn" data-mode="e">E</button>
-                <button class="segBtn" data-mode="f">F</button>
-                <button class="segBtn" data-mode="g">G</button>
-            </div>
-        </div>
-
-        <div class="settingsSection">
-            <h3>How to Use NexariOS</h3>
-
-            <div class="infoBlock">
-                <h3>HR Signals</h3>
-                <p>Shows the strongest home run candidates ranked by probability.</p>
-                <p>Red = Strong, Yellow = Playable, Gray = Watch.</p>
-                <p>The animated bar under each player visualizes HR probability.</p>
-            </div>
-
-            <div class="infoBlock">
-                <h3>Games</h3>
-                <p>Tap a game row to expand lineups, weather, LIVE status, and final scores.</p>
-            </div>
-
-            <div class="infoBlock">
-                <h3>Accuracy</h3>
-                <p>Tracks system performance, streaks, HR hitters, and outcomes over time.</p>
-            </div>
-
-            <div class="infoBlock">
-                <h3>Search</h3>
-                <p>Use the Search tab to look up any player and see their HR probability and sportsbook odds, even if not in the Top 10–20.</p>
-            </div>
-        </div>
+        <div id="stadiumDetails" class="stadiumDetails"></div>
+      </div>
     </div>
 
-    <script src="app.js"></script>
+    <div id="searchResults"></div>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div id="page-settings" class="page">
+    <div class="pageHeader">
+      <h1>Settings</h1>
+    </div>
+
+    <div class="settingsGroup">
+      <label>Theme</label>
+      <div id="themeToggle" class="segmented">
+        <button class="segBtn active" data-theme="dark">Dark</button>
+        <button class="segBtn" data-theme="light">Light</button>
+      </div>
+    </div>
+
+    <div class="settingsGroup">
+      <label>Device Mode</label>
+      <select id="deviceModeSelect">
+        <option value="auto">Auto</option>
+        <option value="mobile">Mobile</option>
+        <option value="desktop">Desktop</option>
+      </select>
+    </div>
+
+    <div class="settingsGroup">
+      <label>Font Size</label>
+      <input type="range" id="fontSizeSlider" min="12" max="22" value="16" />
+    </div>
+
+    <div class="settingsGroup">
+      <label>Icon Size</label>
+      <input type="range" id="iconSizeSlider" min="40" max="80" value="58" />
+    </div>
+
+    <div class="settingsGroup">
+      <label>Navigation Layout</label>
+      <select id="navLayoutSelect">
+        <option value="stacked">Stacked</option>
+        <option value="spread">Spread</option>
+      </select>
+    </div>
+
+    <div class="settingsGroup">
+      <label>Auto Refresh</label>
+      <select id="autoRefreshSelect">
+        <option value="off">Off</option>
+        <option value="5">Every 5 min</option>
+        <option value="10">Every 10 min</option>
+        <option value="15">Every 15 min</option>
+      </select>
+    </div>
+
+    <div class="settingsGroup">
+      <button id="forceRebuildBtn" class="actionBtn">Force Rebuild</button>
+    </div>
+
+    <div class="settingsGroup">
+      <button id="clearCacheBtn" class="actionBtn">Clear Cache</button>
+    </div>
+
+    <div class="settingsGroup">
+      <label>System Info</label>
+      <div id="systemInfo" class="systemInfo"></div>
+    </div>
+
+    <!-- Collapsible Info Section (Bottom) -->
+    <div class="collapsible">
+      <div class="collapsibleHeader" data-target="infoContent">
+        <span>Info</span>
+        <span class="arrow">▼</span>
+      </div>
+
+      <div id="infoContent" class="collapsibleContent">
+        <pre class="infoText">
+NexariOS v6.6 — System Guide
+
+HR View (Home Run Signals)
+Nexari ranks hitters using the Overmind Composite Metric (OCM), a probability‑driven score built from:
+• Lineup position
+• Park factor
+• Temperature
+• Wind direction
+• Weather conditions
+• Venue characteristics
+• System‑calibrated HR base values
+
+The HR tab shows:
+• Player
+• Team vs Opponent
+• Sportsbook odds
+• HR Base
+• OCM score
+• Tier ring (Strong / Playable / Watch)
+• Momentum bar
+
+The list is always sorted by highest probability first.
+Use the dropdown to view Top 10, Top 20, or All.
+
+Games View
+Shows:
+• Matchups
+• Game time
+• Weather
+• Lineups
+• Scores
+• Status
+
+A compact LIVE ticker appears at the top of this page only, showing all live games with scores.
+
+Accuracy View
+Tracks Nexari’s performance:
+• Daily accuracy
+• 7‑day trend
+• 30‑day trend
+• Prediction volume
+• HR hitters that actually hit today
+
+Search View
+Search for any player or team.
+
+A collapsible Stadium Info section includes:
+• Stadium dropdown
+• Park factor
+• Weather
+• Wind
+• Notes
+
+This keeps the HR tab clean and minimal.
+
+Settings
+Customize:
+• Theme
+• Device mode
+• Font size
+• Icon size
+• Navigation layout
+• Auto‑refresh
+• Force rebuild
+• System info
+        </pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================= -->
+  <!-- BOTTOM NAVIGATION -->
+  <!-- ========================= -->
+  <div id="bottomNav">
+    <div class="navItem active" data-target="hr">HR</div>
+    <div class="navItem" data-target="games">Games</div>
+    <div class="navItem" data-target="accuracy">Accuracy</div>
+    <div class="navItem" data-target="search">Search</div>
+    <div class="navItem" data-target="settings">Settings</div>
+    <div id="navSlider"></div>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>

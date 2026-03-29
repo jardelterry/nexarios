@@ -1,393 +1,415 @@
-/* --------------------------------------------------
-   NexariOS v6.6 — Corrected Full CSS
-   Fixes: page stacking, desktop nav, layout conflicts
--------------------------------------------------- */
+/* ============================================
+   NexariOS v6.6 — Global Styles
+   Clean, minimal, Apple‑style UI
+   ============================================ */
 
-/* ROOT VARIABLES */
 :root {
-    --base-font-size: 16px;
-    --icon-size: 58px;
+  --base-font-size: 16px;
+  --icon-size: 58px;
 
-    --bg: #0b0d11;
-    --bg-soft: #13161c;
-    --bg-card: #161a21;
+  --bg-dark: #0d0d0f;
+  --bg-light: #f7f7f7;
 
-    --text: #e5e7eb;
-    --text-muted: #9ca3af;
+  --text-dark: #eaeaea;
+  --text-light: #1a1a1a;
 
-    --border-subtle: #2a2f38;
+  --accent-strong: #ff4d4d;
+  --accent-playable: #ffb84d;
+  --accent-watch: #4da6ff;
 
-    --accent-strong: #ff3355;
-    --accent-playable: #ffd94a;
-    --accent-watch: #6b7280;
+  --bar-strong: #ff4d4d;
+  --bar-playable: #ffb84d;
+  --bar-watch: #4da6ff;
 
-    --accent-soft: #a5b4fc;
+  --border-color-dark: #2a2a2d;
+  --border-color-light: #dcdcdc;
 }
 
-/* --------------------------------------------------
-   GLOBAL
--------------------------------------------------- */
-body {
-    margin: 0;
-    padding: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
-    font-size: var(--base-font-size);
-    -webkit-font-smoothing: antialiased;
+/* Theme Handling */
+body[data-theme="dark"] {
+  background: var(--bg-dark);
+  color: var(--text-dark);
 }
 
-/* FIX: Only active page is visible */
+body[data-theme="light"] {
+  background: var(--bg-light);
+  color: var(--text-light);
+}
+
+/* ============================================
+   Page Visibility
+   ============================================ */
+
 .page {
-    display: none;
-    padding: 36px 14px 80px;
+  display: none;
+  padding: 16px;
+  position: relative;
+  z-index: 1;
 }
 
 .page.active {
-    display: block;
+  display: block;
 }
 
-/* --------------------------------------------------
-   LIVE TICKER
--------------------------------------------------- */
+/* ============================================
+   Headers
+   ============================================ */
+
+.pageHeader {
+  margin-bottom: 16px;
+}
+
+.pageHeader h1 {
+  font-size: 1.4rem;
+  margin: 0 0 4px 0;
+}
+
+.subHeader {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============================================
+   LIVE Ticker (Games Only)
+   ============================================ */
+
 #liveTicker {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 26px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0 10px;
-    background: linear-gradient(90deg, #1f2933, #05060a);
-    border-bottom: 1px solid var(--border-subtle);
-    z-index: 998;
-    font-size: 12px;
-    color: var(--text-muted);
-    overflow: hidden;
+  display: none;
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(255, 0, 0, 0.15);
+  border-bottom: 1px solid rgba(255, 0, 0, 0.25);
 }
 
-.liveLabel {
-    font-weight: 600;
-    color: var(--accent-strong);
-    text-shadow: 0 0 8px rgba(255, 51, 85, 0.9);
+.page-games.active #liveTicker {
+  display: flex;
 }
 
 #liveTickerContent {
-    white-space: nowrap;
-    overflow: hidden;
-    flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  flex: 1;
 }
 
-#liveTickerContent span {
-    display: inline-block;
-    margin-right: 24px;
-    opacity: 0.9;
+#liveTickerContent.scrolling span {
+  display: inline-block;
+  padding-right: 32px;
+  animation: tickerScroll 18s linear infinite;
 }
 
 @keyframes tickerScroll {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
-#liveTickerContent.scrolling {
-    animation: tickerScroll 18s linear infinite;
-}
+/* ============================================
+   HR Signals
+   ============================================ */
 
-/* --------------------------------------------------
-   NAVIGATION (BOTTOM + SIDE)
--------------------------------------------------- */
-#bottomNav {
-    position: fixed;
-    background: var(--bg-soft);
-    border-top: 1px solid var(--border-subtle);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    z-index: 999;
-}
-
-/* Default: stacked (bottom nav) */
-body[data-navlayout="stacked"] #bottomNav {
-    bottom: 0;
-    top: auto;
-    left: 0;
-    right: 0;
-    height: 64px;
-    flex-direction: row;
-}
-
-/* Side nav (desktop only) */
-@media (min-width: 900px) {
-    body[data-device="desktop"][data-navlayout="side"] #bottomNav {
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: auto;
-        width: 80px;
-        height: 100vh;
-        flex-direction: column;
-        justify-content: flex-start;
-        padding-top: 32px;
-        border-right: 1px solid var(--border-subtle);
-        border-top: none;
-    }
-
-    body[data-device="desktop"][data-navlayout="side"] .page {
-        padding-left: 96px;
-        padding-right: 24px;
-        padding-bottom: 24px;
-    }
-
-    body[data-device="desktop"][data-navlayout="side"] #navSlider {
-        width: 4px;
-        height: 40px;
-        left: auto;
-        right: 0;
-        bottom: auto;
-        transition: top 0.25s, height 0.25s;
-    }
-}
-
-.navItem {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    width: 20%;
-    padding-top: 4px;
-    opacity: 0.6;
-    transition: opacity 0.2s;
-}
-
-.navItem.active {
-    opacity: 1;
-}
-
-#navSlider {
-    position: absolute;
-    bottom: 0;
-    height: 3px;
-    width: 20%;
-    background: var(--accent-soft);
-    border-radius: 3px;
-    transition: left 0.25s, width 0.25s;
-}
-
-/* --------------------------------------------------
-   HR SIGNALS
--------------------------------------------------- */
 .signal {
-    background: var(--bg-card);
-    padding: 12px;
-    border-radius: 10px;
-    margin-bottom: 12px;
-    border: 1px solid var(--border-subtle);
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color-dark);
 }
 
 .signalLine1,
 .signalLine2,
 .signalLine3 {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
 }
 
-/* Tier Glow Ring */
+.signalPlayer {
+  font-weight: 600;
+}
+
+.signalTeam,
+.signalOpponent,
+.signalOdds {
+  opacity: 0.8;
+  font-size: 0.9rem;
+}
+
 .tierRing {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 6px;
+  margin-top: 4px;
 }
 
 .tier-strong-ring {
-    border: 2px solid var(--accent-strong);
-    box-shadow: 0 0 10px rgba(255, 51, 85, 0.9);
+  background: var(--accent-strong);
 }
 
 .tier-playable-ring {
-    border: 2px solid var(--accent-playable);
-    box-shadow: 0 0 10px rgba(255, 217, 74, 0.9);
+  background: var(--accent-playable);
 }
 
 .tier-watch-ring {
-    border: 2px solid var(--accent-watch);
-    box-shadow: 0 0 6px rgba(107, 114, 128, 0.6);
+  background: var(--accent-watch);
 }
 
-/* HR Bar */
+.ocmHex {
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  margin-left: 6px;
+}
+
+.ocmHex-strong {
+  background: rgba(255, 77, 77, 0.2);
+  color: #ff4d4d;
+}
+
+.ocmHex-playable {
+  background: rgba(255, 184, 77, 0.2);
+  color: #ffb84d;
+}
+
+.ocmHex-watch {
+  background: rgba(77, 166, 255, 0.2);
+  color: #4da6ff;
+}
+
 .hrBar {
-    height: 6px;
-    border-radius: 4px;
-    background: linear-gradient(90deg, #4f46e5, #818cf8);
-    margin-top: 6px;
-}
-
-/* Momentum Pulse */
-@keyframes momentumPulseStrong {
-    0% { box-shadow: 0 0 6px rgba(255, 51, 85, 0.7); }
-    50% { box-shadow: 0 0 16px rgba(255, 51, 85, 1); }
-    100% { box-shadow: 0 0 6px rgba(255, 51, 85, 0.7); }
-}
-
-@keyframes momentumPulsePlayable {
-    0% { box-shadow: 0 0 4px rgba(255, 217, 74, 0.6); }
-    50% { box-shadow: 0 0 10px rgba(255, 217, 74, 0.9); }
-    100% { box-shadow: 0 0 4px rgba(255, 217, 74, 0.6); }
+  height: 4px;
+  border-radius: 4px;
+  background: #444;
+  margin-top: 6px;
 }
 
 .momentumStrong {
-    animation: momentumPulseStrong 1.4s ease-in-out infinite;
+  background: var(--bar-strong) !important;
 }
 
 .momentumPlayable {
-    animation: momentumPulsePlayable 1.8s ease-in-out infinite;
+  background: var(--bar-playable) !important;
 }
 
-/* --------------------------------------------------
-   HEX OCM BADGE (H2 OUTLINE + G4 HYBRID)
--------------------------------------------------- */
-.ocmHex {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2px 10px;
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    position: relative;
-    margin-left: 8px;
-    color: var(--accent-soft);
-}
+/* ============================================
+   Games Page
+   ============================================ */
 
-.ocmHex::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border: 1.5px solid currentColor;
-    border-radius: 6px;
-    clip-path: polygon(
-        10% 0%,
-        90% 0%,
-        100% 50%,
-        90% 100%,
-        10% 100%,
-        0% 50%
-    );
-    box-shadow: 0 0 10px currentColor;
-    opacity: 0.9;
-}
-
-.ocmHex span {
-    position: relative;
-    z-index: 1;
-}
-
-/* Tier color base */
-.ocmHex-strong { color: var(--accent-strong); }
-.ocmHex-playable { color: var(--accent-playable); }
-.ocmHex-watch { color: var(--accent-watch); }
-
-/* Intensity */
-.ocmHex-intensity-low {
-    filter: brightness(0.8);
-    opacity: 0.7;
-}
-.ocmHex-intensity-med {
-    filter: brightness(1);
-    opacity: 0.9;
-}
-.ocmHex-intensity-high {
-    filter: brightness(1.2);
-    opacity: 1;
-}
-.ocmHex-intensity-ultra {
-    filter: brightness(1.4);
-    opacity: 1;
-    text-shadow: 0 0 12px currentColor;
-}
-
-/* --------------------------------------------------
-   GAMES PAGE
--------------------------------------------------- */
 .game {
-    background: var(--bg-card);
-    padding: 12px;
-    border-radius: 10px;
-    margin-bottom: 12px;
-    border: 1px solid var(--border-subtle);
+  padding: 14px;
+  border-bottom: 1px solid var(--border-color-dark);
+}
+
+.gameHeader .title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.metaLine {
+  opacity: 0.8;
+  font-size: 0.9rem;
 }
 
 .liveBadge {
-    color: var(--accent-strong);
-    font-weight: 600;
-    text-shadow: 0 0 8px rgba(255, 51, 85, 0.9);
+  background: #ff4d4d;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  margin-left: 6px;
 }
 
-/* --------------------------------------------------
-   ACCURACY PAGE
--------------------------------------------------- */
-.accCard {
-    background: var(--bg-card);
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid var(--border-subtle);
-    margin-bottom: 12px;
+.lineup {
+  margin-top: 8px;
+  font-size: 0.9rem;
 }
 
-.microBar,
-.trendBar {
-    height: 6px;
-    border-radius: 4px;
-    background: #4f46e5;
+.playerTag {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin: 2px;
 }
 
-/* --------------------------------------------------
-   SEARCH PAGE
--------------------------------------------------- */
+/* ============================================
+   Accuracy Page
+   ============================================ */
+
+.accuracyBlock {
+  margin-bottom: 20px;
+}
+
+.accLabel {
+  opacity: 0.8;
+  margin-bottom: 4px;
+}
+
+.accValue {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.accBar {
+  height: 6px;
+  background: #333;
+  border-radius: 4px;
+  margin-top: 6px;
+}
+
+.accBar div {
+  height: 100%;
+  background: #4da6ff;
+  border-radius: 4px;
+}
+
+.pillContainer .pill {
+  display: inline-block;
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 6px;
+  margin: 2px;
+}
+
+/* ============================================
+   Search Page
+   ============================================ */
+
+.searchInput {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color-dark);
+  background: transparent;
+  color: inherit;
+}
+
 .searchResult {
-    background: var(--bg-card);
-    padding: 12px;
-    border-radius: 10px;
-    margin-bottom: 12px;
-    border: 1px solid var(--border-subtle);
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color-dark);
 }
 
-/* --------------------------------------------------
-   SETTINGS PAGE
--------------------------------------------------- */
-.settingsSection {
-    margin-bottom: 24px;
+.stadiumDetails {
+  margin-top: 10px;
+  opacity: 0.85;
+  font-size: 0.9rem;
+}
+
+/* ============================================
+   Collapsible Sections
+   ============================================ */
+
+.collapsible {
+  margin-bottom: 16px;
+}
+
+.collapsibleHeader {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.collapsibleContent {
+  display: none;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-color-dark);
+}
+
+.collapsibleContent.active {
+  display: block;
+}
+
+.arrow {
+  opacity: 0.7;
+}
+
+/* ============================================
+   Settings
+   ============================================ */
+
+.settingsGroup {
+  margin-bottom: 20px;
+}
+
+.settingsGroup label {
+  display: block;
+  margin-bottom: 6px;
+  opacity: 0.8;
 }
 
 .segmented {
-    display: flex;
-    gap: 6px;
+  display: flex;
+  gap: 6px;
 }
 
 .segBtn {
-    padding: 6px 12px;
-    background: var(--bg-soft);
-    border-radius: 6px;
-    border: 1px solid var(--border-subtle);
-    color: var(--text-muted);
+  flex: 1;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color-dark);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
 }
 
 .segBtn.active {
-    background: var(--accent-soft);
-    color: #000;
+  background: rgba(255,255,255,0.1);
 }
 
-/* Hide Overmind UI */
-.overmindHidden {
-    display: none;
+.actionBtn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color-dark);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
 }
 
-/* --------------------------------------------------
-   SWIPE NAVIGATION
--------------------------------------------------- */
-body.swiping-horizontal {
-    touch-action: pan-y;
+.systemInfo {
+  opacity: 0.85;
+  font-size: 0.9rem;
+}
+
+/* ============================================
+   Bottom Navigation
+   ============================================ */
+
+#bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 58px;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(10px);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-top: 1px solid var(--border-color-dark);
+}
+
+.navItem {
+  flex: 1;
+  text-align: center;
+  padding: 10px 0;
+  cursor: pointer;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+.navItem.active {
+  opacity: 1;
+  font-weight: 600;
+}
+
+#navSlider {
+  position: absolute;
+  bottom: 0;
+  height: 3px;
+  width: 0;
+  background: #4da6ff;
+  transition: left 0.25s, width 0.25s;
 }

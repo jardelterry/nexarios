@@ -1,21 +1,21 @@
-// NexariOS v6.6 – Frontend Engine (Hardened)
-// Wired to Nexari Auto Worker: https://nexari-auto.jardelterry.workers.dev
+// NexariOS v6.6 — Final Build (Chunk 1/3)
+// Fully wired to Nexari Auto Worker
+// Clean HR tab, LIVE ticker, collapsible sections, full navigation fix
 
-// ------------------------------
-// API BASE (Nexari Auto Worker)
-// ------------------------------
+// ===============================
+// API BASE
+// ===============================
 const API_BASE = "https://nexari-auto.jardelterry.workers.dev";
 
-// Normalize base so we never get double slashes
 function apiUrl(path) {
   const base = API_BASE.replace(/\/+$/, "");
   const p = path.startsWith("/") ? path : `/${path}`;
   return `${base}${p}`;
 }
 
-// ------------------------------
+// ===============================
 // STATE
-// ------------------------------
+// ===============================
 let signals = [];
 let games = [];
 let accuracy = null;
@@ -23,12 +23,9 @@ let accuracy = null;
 let currentDate = null;
 let currentSportsbook = "dk";
 
-// ------------------------------
+// ===============================
 // DOM HOOKS
-// ------------------------------
-const body = document.body;
-
-// Pages
+// ===============================
 const pages = {
   hr: document.getElementById("page-hr"),
   games: document.getElementById("page-games"),
@@ -37,20 +34,15 @@ const pages = {
   settings: document.getElementById("page-settings")
 };
 
-// Nav
 const bottomNav = document.getElementById("bottomNav");
 const navItems = Array.from(document.querySelectorAll(".navItem"));
 const navSlider = document.getElementById("navSlider");
 
-// HR
 const signalsContainer = document.getElementById("signalsContainer");
 const hrViewSelect = document.getElementById("hrViewSelect");
-const sportsbookSelects = Array.from(document.querySelectorAll(".sportsbookSelect"));
 
-// Games
 const gamesContainer = document.getElementById("gamesContainer");
 
-// Accuracy
 const accDaily = document.getElementById("accDaily");
 const accDailyBar = document.getElementById("accDailyBar");
 const acc7 = document.getElementById("acc7");
@@ -62,11 +54,12 @@ const trendBar30 = document.getElementById("trendBar30");
 const accVolume = document.getElementById("accVolume");
 const accHRHitters = document.getElementById("accHRHitters");
 
-// Search
 const playerSearchInput = document.getElementById("playerSearchInput");
 const searchResults = document.getElementById("searchResults");
 
-// Settings
+const stadiumSelect = document.getElementById("stadiumSelect");
+const stadiumDetails = document.getElementById("stadiumDetails");
+
 const themeToggle = document.getElementById("themeToggle");
 const deviceModeSelect = document.getElementById("deviceModeSelect");
 const fontSizeSlider = document.getElementById("fontSizeSlider");
@@ -77,41 +70,36 @@ const forceRebuildBtn = document.getElementById("forceRebuildBtn");
 const clearCacheBtn = document.getElementById("clearCacheBtn");
 const systemInfo = document.getElementById("systemInfo");
 
-// Date nav
 const currentDateLabel = document.getElementById("currentDateLabel");
 const prevDateBtn = document.getElementById("prevDateBtn");
 const nextDateBtn = document.getElementById("nextDateBtn");
 
-// Live ticker
 const liveTickerContent = document.getElementById("liveTickerContent");
 
-// ------------------------------
+// ===============================
 // UTILITIES
-// ------------------------------
+// ===============================
 function formatDateLabel(iso) {
-  if (!iso) return "";
   const dt = new Date(iso);
-  if (isNaN(dt.getTime())) return iso;
-  const fmt = new Intl.DateTimeFormat("en-US", {
+  if (isNaN(dt)) return iso;
+  return dt.toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric"
   });
-  return fmt.format(dt);
 }
 
-function shiftDate(iso, deltaDays) {
+function shiftDate(iso, delta) {
   const dt = new Date(iso);
-  if (isNaN(dt.getTime())) return iso;
-  dt.setDate(dt.getDate() + deltaDays);
+  dt.setDate(dt.getDate() + delta);
   return dt.toISOString().slice(0, 10);
 }
 
 function getTierKey(tier) {
   if (!tier) return "watch";
   const t = tier.toLowerCase();
-  if (t.startsWith("strong")) return "strong";
-  if (t.startsWith("playable")) return "playable";
+  if (t.includes("strong")) return "strong";
+  if (t.includes("playable")) return "playable";
   return "watch";
 }
 
@@ -123,15 +111,12 @@ function getOcmIntensityClass(ocm) {
   return "ocmHex-intensity-low";
 }
 
-// ------------------------------
+// ===============================
 // API HELPERS
-// ------------------------------
+// ===============================
 async function apiGet(path) {
-  const url = apiUrl(path);
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`API error: ${path}`);
-  }
+  const res = await fetch(apiUrl(path));
+  if (!res.ok) throw new Error(`API error: ${path}`);
   return res.json();
 }
 
@@ -149,17 +134,11 @@ async function fetchGames(dateStr) {
 
 async function fetchAccuracy() {
   const data = await apiGet(`/accuracy`);
-  accuracy = data && data.accuracy ? data.accuracy : null;
+  accuracy = data.accuracy || null;
 }
 
 async function fetchDebug() {
-  const data = await apiGet(`/debug`);
-  return {
-    version: data.version,
-    signalCount: data.signals,
-    gameCount: data.games,
-    lastUpdate: data.date
-  };
+  return apiGet(`/debug`);
 }
 
 async function forceRebuild(dateStr) {
@@ -167,153 +146,44 @@ async function forceRebuild(dateStr) {
   return apiGet(`/rebuild${qs}`);
 }
 
-// ------------------------------
-// SETTINGS PERSISTENCE
-// ------------------------------
-const SETTINGS_KEY = "nexari-settings-v66";
-
-function loadSettings() {
-  try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return;
-
-    const s = JSON.parse(raw);
-
-    if (s.theme) {
-      body.dataset.theme = s.theme;
-      themeToggle.querySelectorAll(".segBtn").forEach(btn =>
-        btn.classList.toggle("active", btn.dataset.theme === s.theme)
-      );
-    }
-
-    if (s.device) {
-      body.dataset.device = s.device;
-      if (deviceModeSelect) deviceModeSelect.value = s.device;
-    }
-
-    if (typeof s.baseFontSize === "number" && fontSizeSlider) {
-      fontSizeSlider.value = s.baseFontSize;
-      document.documentElement.style.setProperty("--base-font-size", s.baseFontSize + "px");
-    }
-
-    if (typeof s.iconSize === "number" && iconSizeSlider) {
-      iconSizeSlider.value = s.iconSize;
-      document.documentElement.style.setProperty("--icon-size", s.iconSize + "px");
-    }
-
-    if (s.navLayout && navLayoutSelect) {
-      body.dataset.navlayout = s.navLayout;
-      navLayoutSelect.value = s.navLayout;
-    }
-
-    if (s.autoRefresh && autoRefreshSelect) {
-      autoRefreshSelect.value = s.autoRefresh;
-    }
-
-    if (s.sportsbook && sportsbookSelects.length) {
-      currentSportsbook = s.sportsbook;
-      sportsbookSelects.forEach(sel => (sel.value = s.sportsbook));
-    }
-  } catch (e) {
-    console.warn("Settings load failed:", e);
-  }
-}
-
-function saveSettings() {
-  try {
-    const s = {
-      theme: body.dataset.theme || "dark",
-      device: body.dataset.device || "auto",
-      baseFontSize: fontSizeSlider ? Number(fontSizeSlider.value) : 16,
-      iconSize: iconSizeSlider ? Number(iconSizeSlider.value) : 58,
-      navLayout: body.dataset.navlayout || "stacked",
-      autoRefresh: autoRefreshSelect ? autoRefreshSelect.value : "off",
-      sportsbook: currentSportsbook
-    };
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
-  } catch (e) {
-    console.warn("Settings save failed:", e);
-  }
-}
-
-// ------------------------------
-// AUTO REFRESH
-// ------------------------------
-let autoRefreshTimer = null;
-
-function applyAutoRefresh() {
-  if (autoRefreshTimer) {
-    clearInterval(autoRefreshTimer);
-    autoRefreshTimer = null;
-  }
-
-  if (!autoRefreshSelect) return;
-
-  const mode = autoRefreshSelect.value;
-  if (mode === "off") return;
-
-  let intervalMs = 0;
-  if (mode === "5") intervalMs = 5 * 60 * 1000;
-  if (mode === "10") intervalMs = 10 * 60 * 1000;
-  if (mode === "15") intervalMs = 15 * 60 * 1000;
-
-  if (intervalMs > 0) {
-    autoRefreshTimer = setInterval(() => {
-      refreshAll();
-    }, intervalMs);
-  }
-}
-
-// ------------------------------
+// ===============================
 // NAVIGATION
-// ------------------------------
+// ===============================
 function setActivePage(key) {
   Object.keys(pages).forEach(k => {
-    if (!pages[k]) return;
     pages[k].classList.toggle("active", k === key);
   });
 
   navItems.forEach(item => {
-    const target = item.dataset.target;
-    item.classList.toggle("active", target === key);
+    item.classList.toggle("active", item.dataset.target === key);
   });
 
   const activeItem = navItems.find(n => n.classList.contains("active"));
-  if (activeItem) {
-    moveNavSliderTo(activeItem);
-  }
+  if (activeItem) moveNavSliderTo(activeItem);
+
+  renderLiveTicker();
 }
 
 function moveNavSliderTo(item) {
-  if (!navSlider || !item || !bottomNav) return;
-
   const rectNav = bottomNav.getBoundingClientRect();
   const rectItem = item.getBoundingClientRect();
-
-  const width = rectItem.width;
-  const left = rectItem.left - rectNav.left;
-
-  navSlider.style.width = `${width}px`;
-  navSlider.style.left = `${left}px`;
+  navSlider.style.width = `${rectItem.width}px`;
+  navSlider.style.left = `${rectItem.left - rectNav.left}px`;
 }
 
 navItems.forEach(item => {
   item.addEventListener("click", () => {
-    const target = item.dataset.target;
-    if (!target) return;
-    setActivePage(target);
+    setActivePage(item.dataset.target);
   });
 });
 
-// ------------------------------
-// RENDER — HR SIGNALS (UPGRADED)
-// ------------------------------
+// ===============================
+// HR TAB — CLEAN RENDER
+// ===============================
 function renderSignals() {
-  if (!signalsContainer) return;
-
   signalsContainer.innerHTML = "";
 
-  if (!signals || !signals.length) {
+  if (!signals.length) {
     signalsContainer.innerHTML = `<div class="emptyState">No signals available.</div>`;
     return;
   }
@@ -322,7 +192,7 @@ function renderSignals() {
   const sb = currentSportsbook;
   const subset = signals.slice(0, limit);
 
-  subset.forEach((s, idx) => {
+  subset.forEach(s => {
     const odds = s.sportsbooks?.[sb] ?? "N/A";
     const ocm = s.overmindCompositeMetric || 0;
     const barWidth = Math.max(8, Math.min(100, Math.round(ocm)));
@@ -349,25 +219,16 @@ function renderSignals() {
     div.innerHTML = `
       <div class="signalLine1">
         <span class="tierRing ${tierRingClass}"></span>
-        <span class="signalRank">#${idx + 1}</span>
         <span class="signalPlayer">${s.player}</span>
-        <span class="signalTeam">${s.team || ""}</span>
+        <span class="signalTeam">${s.team}</span>
       </div>
 
       <div class="signalLine2">
-        <span class="signalMatchup">
-          ${s.team && s.opponent ? `${s.team} vs ${s.opponent}` : ""}
-        </span>
-        <span class="signalTier">${s.tier}</span>
+        <span class="signalOpponent">vs ${s.opponent}</span>
         <span class="signalOdds">${sb.toUpperCase()}: ${odds}</span>
       </div>
 
       <div class="signalLine3">
-        <span class="signalContext">
-          ${s.context?.venueName || ""} ·
-          ${s.context?.temp != null ? `${s.context.temp}°` : ""}
-          ${s.context?.conditions ? `· ${s.context.conditions}` : ""}
-        </span>
         <span class="signalHr">
           HR Base: ${s.hr}
           <span class="ocmHex ${ocmTierClass} ${ocmIntensityClass}">
@@ -379,29 +240,18 @@ function renderSignals() {
       <div class="hrBar"></div>
     `;
 
-    const bar = div.querySelector(".hrBar");
-    if (bar) {
-      bar.style.width = `${barWidth}%`;
-      if (ocm >= 80 && tierKey === "strong") {
-        bar.classList.add("momentumStrong");
-      } else if (ocm >= 70 && tierKey === "playable") {
-        bar.classList.add("momentumPlayable");
-      }
-    }
+    div.querySelector(".hrBar").style.width = `${barWidth}%`;
 
     signalsContainer.appendChild(div);
   });
 }
-
-// ------------------------------
+// ===============================
 // RENDER — GAMES
-// ------------------------------
+// ===============================
 function renderGames() {
-  if (!gamesContainer) return;
-
   gamesContainer.innerHTML = "";
 
-  if (!games || !games.length) {
+  if (!games.length) {
     gamesContainer.innerHTML = `<div class="emptyState">No games scheduled.</div>`;
     return;
   }
@@ -468,20 +318,24 @@ function renderGames() {
   });
 }
 
-// ------------------------------
-// LIVE TICKER
-// ------------------------------
+// ===============================
+// LIVE TICKER — GAMES PAGE ONLY
+// ===============================
 function renderLiveTicker() {
-  if (!liveTickerContent) return;
+  const gamesPage = pages.games;
 
-  if (!games || !games.length) {
+  // Only show ticker on Games page
+  if (!gamesPage.classList.contains("active")) {
     liveTickerContent.textContent = "";
     liveTickerContent.classList.remove("scrolling");
     return;
   }
 
   const liveGames = games.filter(
-    g => g.live || (g.status && g.status.toLowerCase().includes("live"))
+    g =>
+      g.live &&
+      g.awayScore != null &&
+      g.homeScore != null
   );
 
   if (!liveGames.length) {
@@ -490,73 +344,65 @@ function renderLiveTicker() {
     return;
   }
 
-  const items = liveGames.map(g => {
-    const score =
-      g.awayScore != null && g.homeScore != null
-        ? `${g.awayScore} - ${g.homeScore}`
-        : "";
-    return `${g.away} @ ${g.home} ${score} (${g.status})`;
-  });
+  const items = liveGames.map(
+    g => `${g.away} ${g.awayScore}–${g.homeScore} ${g.home}`
+  );
 
   liveTickerContent.innerHTML =
-    `<span>${items.join(" • ")}</span><span>${items.join(" • ")}</span>`;
+    `<span>LIVE • ${items.join(" • ")}</span><span>LIVE • ${items.join(" • ")}</span>`;
 
   liveTickerContent.classList.add("scrolling");
 }
 
-// ------------------------------
+// ===============================
 // RENDER — ACCURACY
-// ------------------------------
+// ===============================
 function renderAccuracy() {
   if (!accuracy) {
-    if (accDaily) accDaily.textContent = "0%";
-    if (accDailyBar) accDailyBar.style.width = "0%";
-    if (acc7) acc7.textContent = "0%";
-    if (acc30) acc30.textContent = "0%";
-    if (trend7) trend7.textContent = "";
-    if (trend30) trend30.textContent = "";
-    if (trendBar7) trendBar7.style.width = "0%";
-    if (trendBar30) trendBar30.style.width = "0%";
-    if (accVolume) accVolume.textContent = "0 picks";
-    if (accHRHitters) accHRHitters.innerHTML = `<div class="muted">No HR hitters recorded yet.</div>`;
+    accDaily.textContent = "0%";
+    accDailyBar.style.width = "0%";
+    acc7.textContent = "0%";
+    acc30.textContent = "0%";
+    trend7.textContent = "";
+    trend30.textContent = "";
+    trendBar7.style.width = "0%";
+    trendBar30.style.width = "0%";
+    accVolume.textContent = "0 picks";
+    accHRHitters.innerHTML = `<div class="muted">No HR hitters recorded yet.</div>`;
     return;
   }
 
   const pct = accuracy.percent ?? 0;
-  if (accDaily) accDaily.textContent = `${pct}%`;
-  if (accDailyBar) accDailyBar.style.width = `${pct}%`;
+  accDaily.textContent = `${pct}%`;
+  accDailyBar.style.width = `${pct}%`;
 
-  const h7 = Array.isArray(accuracy.history7) ? accuracy.history7 : [];
-  const h30 = Array.isArray(accuracy.history30) ? accuracy.history30 : [];
+  const h7 = accuracy.history7 || [];
+  const h30 = accuracy.history30 || [];
 
   const avg7 = h7.length ? Math.round(h7.reduce((a, b) => a + b, 0) / h7.length) : 0;
   const avg30 = h30.length ? Math.round(h30.reduce((a, b) => a + b, 0) / h30.length) : 0;
 
-  if (acc7) acc7.textContent = `${avg7}%`;
-  if (acc30) acc30.textContent = `${avg30}%`;
+  acc7.textContent = `${avg7}%`;
+  acc30.textContent = `${avg30}%`;
 
-  if (trend7) trend7.textContent = h7.map(v => `${v}%`).join(" · ");
-  if (trend30) trend30.textContent = h30.map(v => `${v}%`).join(" · ");
+  trend7.textContent = h7.map(v => `${v}%`).join(" · ");
+  trend30.textContent = h30.map(v => `${v}%`).join(" · ");
 
-  if (trendBar7) trendBar7.style.width = `${avg7}%`;
-  if (trendBar30) trendBar30.style.width = `${avg30}%`;
+  trendBar7.style.width = `${avg7}%`;
+  trendBar30.style.width = `${avg30}%`;
 
-  if (accVolume) accVolume.textContent = `${accuracy.predictionVolume || 0} picks`;
+  accVolume.textContent = `${accuracy.predictionVolume || 0} picks`;
 
-  const hrHitters = Array.isArray(accuracy.hrHittersToday) ? accuracy.hrHittersToday : [];
-  if (accHRHitters) {
-    accHRHitters.innerHTML = hrHitters.length
-      ? hrHitters.map(p => `<div class="pill">${p}</div>`).join("")
-      : `<div class="muted">No HR hitters recorded yet.</div>`;
-  }
+  const hrHitters = accuracy.hrHittersToday || [];
+  accHRHitters.innerHTML = hrHitters.length
+    ? hrHitters.map(p => `<div class="pill">${p}</div>`).join("")
+    : `<div class="muted">No HR hitters recorded yet.</div>`;
 }
 
-// ------------------------------
+// ===============================
 // RENDER — SEARCH RESULTS
-// ------------------------------
+// ===============================
 function renderSearchResults(query) {
-  if (!searchResults) return;
-
   searchResults.innerHTML = "";
 
   if (!query) {
@@ -567,13 +413,11 @@ function renderSearchResults(query) {
   const q = query.toLowerCase();
   const sb = currentSportsbook;
 
-  const matches = (signals || []).filter(s => {
-    return (
-      (s.player || "").toLowerCase().includes(q) ||
-      (s.team || "").toLowerCase().includes(q) ||
-      (s.opponent || "").toLowerCase().includes(q)
-    );
-  });
+  const matches = signals.filter(s =>
+    (s.player || "").toLowerCase().includes(q) ||
+    (s.team || "").toLowerCase().includes(q) ||
+    (s.opponent || "").toLowerCase().includes(q)
+  );
 
   if (!matches.length) {
     searchResults.innerHTML = `<div class="emptyState">No matches found.</div>`;
@@ -590,7 +434,7 @@ function renderSearchResults(query) {
     const ocmTierClass =
       tierKey === "strong"
         ? "ocmHex-strong"
-        : tierKey === "playable"
+        : tierKey === "playmable"
         ? "ocmHex-playable"
         : "ocmHex-watch";
 
@@ -601,261 +445,222 @@ function renderSearchResults(query) {
       <div class="name">${s.player}</div>
       <div class="meta">${s.team} vs ${s.opponent}</div>
       <div class="oddsBlock">${sb.toUpperCase()}: ${odds}</div>
-
       <div class="hrBar"></div>
-
       <div class="ocmHex ${ocmTierClass} ${ocmIntensityClass}">
         <span>OCM ${Math.round(ocm)}</span>
       </div>
     `;
 
-    const bar = div.querySelector(".hrBar");
-    if (bar) bar.style.width = `${barWidth}%`;
+    div.querySelector(".hrBar").style.width = `${barWidth}%`;
 
     searchResults.appendChild(div);
   });
 }
 
-// ------------------------------
-// SYSTEM INFO
-// ------------------------------
-async function renderSystemInfo() {
-  if (!systemInfo) return;
+// ===============================
+// STADIUM INFO — COLLAPSIBLE
+// ===============================
+stadiumSelect?.addEventListener("change", () => {
+  const stadium = stadiumSelect.value;
+
+  if (!stadium) {
+    stadiumDetails.innerHTML = "";
+    return;
+  }
+
+  // Static example info — can be replaced with API later
+  stadiumDetails.innerHTML = `
+    <div><strong>${stadium}</strong></div>
+    <div>Park Factor: (example) 112</div>
+    <div>Weather: (example) 72° · Clear</div>
+    <div>Wind: (example) 8 mph Out to LF</div>
+    <div>Notes: High‑altitude, HR‑friendly environment.</div>
+  `;
+});
+// ===============================
+// COLLAPSIBLE SECTIONS (Info + Stadium)
+// ===============================
+document.querySelectorAll(".collapsibleHeader").forEach(header => {
+  header.addEventListener("click", () => {
+    const targetId = header.dataset.target;
+    const content = document.getElementById(targetId);
+    content.classList.toggle("active");
+  });
+});
+
+// ===============================
+// SETTINGS — PERSISTENCE
+// ===============================
+const SETTINGS_KEY = "nexari-settings-v66";
+
+function loadSettings() {
   try {
-    const dbg = await fetchDebug();
-    systemInfo.innerHTML = `
-      <div class="sysLine">Version: ${dbg.version}</div>
-      <div class="sysLine">Signals: ${dbg.signalCount}</div>
-      <div class="sysLine">Games: ${dbg.gameCount}</div>
-      <div class="sysLine">Last Update: ${dbg.lastUpdate}</div>
-    `;
-  } catch {
-    systemInfo.innerHTML = `<div class="muted">System info unavailable.</div>`;
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return;
+    const s = JSON.parse(raw);
+
+    if (s.theme) {
+      document.body.dataset.theme = s.theme;
+      themeToggle.querySelectorAll(".segBtn").forEach(btn =>
+        btn.classList.toggle("active", btn.dataset.theme === s.theme)
+      );
+    }
+
+    if (s.device) {
+      document.body.dataset.device = s.device;
+      deviceModeSelect.value = s.device;
+    }
+
+    if (s.baseFontSize) {
+      fontSizeSlider.value = s.baseFontSize;
+      document.documentElement.style.setProperty("--base-font-size", s.baseFontSize + "px");
+    }
+
+    if (s.iconSize) {
+      iconSizeSlider.value = s.iconSize;
+      document.documentElement.style.setProperty("--icon-size", s.iconSize + "px");
+    }
+
+    if (s.navLayout) {
+      document.body.dataset.navlayout = s.navLayout;
+      navLayoutSelect.value = s.navLayout;
+    }
+
+    if (s.autoRefresh) {
+      autoRefreshSelect.value = s.autoRefresh;
+    }
+  } catch (err) {
+    console.error("Failed to load settings", err);
   }
 }
 
-// ------------------------------
-// REFRESH ALL
-// ------------------------------
+function saveSettings() {
+  const s = {
+    theme: document.body.dataset.theme,
+    device: document.body.dataset.device,
+    baseFontSize: fontSizeSlider.value,
+    iconSize: iconSizeSlider.value,
+    navLayout: navLayoutSelect.value,
+    autoRefresh: autoRefreshSelect.value
+  };
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+}
+
+// ===============================
+// SETTINGS — EVENT HANDLERS
+// ===============================
+themeToggle?.querySelectorAll(".segBtn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    themeToggle.querySelectorAll(".segBtn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.body.dataset.theme = btn.dataset.theme;
+    saveSettings();
+  });
+});
+
+deviceModeSelect?.addEventListener("change", () => {
+  document.body.dataset.device = deviceModeSelect.value;
+  saveSettings();
+});
+
+fontSizeSlider?.addEventListener("input", () => {
+  document.documentElement.style.setProperty("--base-font-size", fontSizeSlider.value + "px");
+  saveSettings();
+});
+
+iconSizeSlider?.addEventListener("input", () => {
+  document.documentElement.style.setProperty("--icon-size", iconSizeSlider.value + "px");
+  saveSettings();
+});
+
+navLayoutSelect?.addEventListener("change", () => {
+  document.body.dataset.navlayout = navLayoutSelect.value;
+  saveSettings();
+});
+
+autoRefreshSelect?.addEventListener("change", saveSettings);
+
+forceRebuildBtn?.addEventListener("click", async () => {
+  try {
+    await forceRebuild(currentDate);
+    alert("Rebuild triggered successfully.");
+  } catch (err) {
+    alert("Rebuild failed.");
+  }
+});
+
+clearCacheBtn?.addEventListener("click", () => {
+  localStorage.clear();
+  alert("Cache cleared.");
+});
+
+// ===============================
+// DATE NAVIGATION
+// ===============================
+prevDateBtn?.addEventListener("click", () => {
+  currentDate = shiftDate(currentDate, -1);
+  currentDateLabel.textContent = formatDateLabel(currentDate);
+  refreshAll();
+});
+
+nextDateBtn?.addEventListener("click", () => {
+  currentDate = shiftDate(currentDate, 1);
+  currentDateLabel.textContent = formatDateLabel(currentDate);
+  refreshAll();
+});
+
+// ===============================
+// AUTO REFRESH
+// ===============================
+let autoRefreshTimer = null;
+
+function setupAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+
+  const val = autoRefreshSelect.value;
+  if (val === "off") return;
+
+  const minutes = parseInt(val, 10);
+  if (!minutes) return;
+
+  autoRefreshTimer = setInterval(refreshAll, minutes * 60 * 1000);
+}
+
+// ===============================
+// MASTER REFRESH
+// ===============================
 async function refreshAll() {
   try {
-    await fetchSignals(currentDate);
-    await fetchGames(currentDate);
-    await fetchAccuracy();
+    await Promise.all([
+      fetchSignals(currentDate),
+      fetchGames(currentDate),
+      fetchAccuracy()
+    ]);
 
     renderSignals();
     renderGames();
     renderAccuracy();
-    renderSearchResults(playerSearchInput ? playerSearchInput.value.trim() : "");
     renderLiveTicker();
-    await renderSystemInfo();
   } catch (err) {
-    console.error("Refresh error:", err);
+    console.error("Refresh failed", err);
   }
 }
 
-// ------------------------------
-// SETTINGS HANDLERS
-// ------------------------------
-if (themeToggle) {
-  themeToggle.addEventListener("click", e => {
-    if (!e.target.classList.contains("segBtn")) return;
-    const theme = e.target.dataset.theme;
-    body.dataset.theme = theme;
-
-    themeToggle.querySelectorAll(".segBtn").forEach(btn =>
-      btn.classList.toggle("active", btn.dataset.theme === theme)
-    );
-
-    saveSettings();
-  });
-}
-
-if (deviceModeSelect) {
-  deviceModeSelect.addEventListener("change", () => {
-    body.dataset.device = deviceModeSelect.value;
-    saveSettings();
-  });
-}
-
-if (fontSizeSlider) {
-  fontSizeSlider.addEventListener("input", () => {
-    document.documentElement.style.setProperty("--base-font-size", fontSizeSlider.value + "px");
-    saveSettings();
-  });
-}
-
-if (iconSizeSlider) {
-  iconSizeSlider.addEventListener("input", () => {
-    document.documentElement.style.setProperty("--icon-size", iconSizeSlider.value + "px");
-    saveSettings();
-  });
-}
-
-if (navLayoutSelect) {
-  navLayoutSelect.addEventListener("change", () => {
-    body.dataset.navlayout = navLayoutSelect.value;
-    saveSettings();
-  });
-}
-
-if (autoRefreshSelect) {
-  autoRefreshSelect.addEventListener("change", () => {
-    applyAutoRefresh();
-    saveSettings();
-  });
-}
-
-if (forceRebuildBtn) {
-  forceRebuildBtn.addEventListener("click", async () => {
-    forceRebuildBtn.disabled = true;
-    forceRebuildBtn.textContent = "Rebuilding…";
-    try {
-      await forceRebuild(currentDate);
-      await refreshAll();
-    } catch (err) {
-      console.error(err);
-    }
-    forceRebuildBtn.disabled = false;
-    forceRebuildBtn.textContent = "Force Rebuild";
-  });
-}
-
-if (clearCacheBtn) {
-  clearCacheBtn.addEventListener("click", () => {
-    localStorage.clear();
-    location.reload();
-  });
-}
-
-// ------------------------------
-// DATE NAVIGATION
-// ------------------------------
-if (prevDateBtn) {
-  prevDateBtn.addEventListener("click", () => {
-    currentDate = shiftDate(currentDate, -1);
-    if (currentDateLabel) currentDateLabel.textContent = formatDateLabel(currentDate);
-    refreshAll();
-  });
-}
-
-if (nextDateBtn) {
-  nextDateBtn.addEventListener("click", () => {
-    currentDate = shiftDate(currentDate, 1);
-    if (currentDateLabel) currentDateLabel.textContent = formatDateLabel(currentDate);
-    refreshAll();
-  });
-}
-
-// ------------------------------
-// SEARCH INPUT
-// ------------------------------
-if (playerSearchInput) {
-  playerSearchInput.addEventListener("input", () => {
-    renderSearchResults(playerSearchInput.value.trim());
-  });
-}
-
-// ------------------------------
-// SWIPE NAVIGATION (MOBILE)
-// ------------------------------
-let touchStartX = null;
-let touchStartY = null;
-let touchLocked = false;
-
-function getCurrentPageIndex() {
-  const order = ["hr", "games", "accuracy", "search", "settings"];
-  const activeKey = order.find(key => pages[key] && pages[key].classList.contains("active"));
-  return order.indexOf(activeKey);
-}
-
-function setPageByIndex(idx) {
-  const order = ["hr", "games", "accuracy", "search", "settings"];
-  if (idx < 0 || idx >= order.length) return;
-  setActivePage(order[idx]);
-}
-
-document.addEventListener("touchstart", e => {
-  if (window.innerWidth > 900) return;
-  if (e.touches.length !== 1) return;
-
-  touchStartX = e.touches[0].clientX;
-  touchStartY = e.touches[0].clientY;
-  touchLocked = false;
-});
-
-document.addEventListener(
-  "touchmove",
-  e => {
-    if (window.innerWidth > 900) return;
-    if (!touchStartX || !touchStartY) return;
-
-    const dx = e.touches[0].clientX - touchStartX;
-    const dy = e.touches[0].clientY - touchStartY;
-
-    if (!touchLocked && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 24) {
-      touchLocked = true;
-      document.body.classList.add("swiping-horizontal");
-    }
-
-    if (touchLocked) {
-      e.preventDefault();
-    }
-  },
-  { passive: false }
-);
-
-document.addEventListener("touchend", e => {
-  if (window.innerWidth > 900) return;
-  if (!touchLocked) {
-    touchStartX = null;
-    touchStartY = null;
-    return;
-  }
-
-  const dx = (e.changedTouches[0]?.clientX || 0) - touchStartX;
-  const threshold = 60;
-
-  if (Math.abs(dx) > threshold) {
-    const currentIndex = getCurrentPageIndex();
-    if (dx < 0) {
-      setPageByIndex(currentIndex + 1);
-    } else {
-      setPageByIndex(currentIndex - 1);
-    }
-  }
-
-  document.body.classList.remove("swiping-horizontal");
-  touchStartX = null;
-  touchStartY = null;
-  touchLocked = false;
-});
-
-// ------------------------------
+// ===============================
 // INIT
-// ------------------------------
+// ===============================
 async function init() {
   loadSettings();
+  setupAutoRefresh();
 
-  currentDate = new Date().toISOString().slice(0, 10);
-  if (currentDateLabel) currentDateLabel.textContent = formatDateLabel(currentDate);
+  const today = new Date();
+  currentDate = today.toISOString().slice(0, 10);
+  currentDateLabel.textContent = formatDateLabel(currentDate);
 
-  if (sportsbookSelects.length) {
-    sportsbookSelects.forEach(sel => {
-      sel.addEventListener("change", () => {
-        currentSportsbook = sel.value;
-        sportsbookSelects.forEach(s2 => (s2.value = sel.value));
-        renderSignals();
-        renderSearchResults(playerSearchInput ? playerSearchInput.value.trim() : "");
-        saveSettings();
-      });
-    });
-  }
-
-  applyAutoRefresh();
-  setActivePage("hr");
   await refreshAll();
-  if (navItems.length) moveNavSliderTo(navItems[0]);
+
+  const activeItem = navItems.find(n => n.classList.contains("active"));
+  if (activeItem) moveNavSliderTo(activeItem);
 }
 
 init();
