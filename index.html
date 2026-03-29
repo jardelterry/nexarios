@@ -5,7 +5,14 @@
     <title>NexariOS v6.6</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body data-device="auto" data-theme="dark" data-navlayout="stacked">
+
+    <!-- LIVE TICKER (NEW) -->
+    <div id="liveTicker">
+        <span class="liveLabel">LIVE</span>
+        <div id="liveTickerContent"></div>
+    </div>
 
     <!-- BOTTOM NAVIGATION (GLOWING) -->
     <div id="bottomNav">
@@ -55,6 +62,7 @@
                 <option value="fanatics">Fanatics</option>
             </select>
         </div>
+
         <div id="signalsContainer"></div>
     </div>
 
@@ -203,7 +211,8 @@
             <div id="systemInfo"></div>
         </div>
 
-        <div class="settingsSection">
+        <!-- OVERMIND SECTION (HIDDEN BUT LOGIC PRESERVED) -->
+        <div class="settingsSection overmindHidden">
             <h3>Overmind Mode</h3>
             <div id="overmindToggle" class="segmented">
                 <button class="segBtn active" data-mode="c">C</button>

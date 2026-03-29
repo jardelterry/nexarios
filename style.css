@@ -1,455 +1,364 @@
-/* ============================================================
-   NexariOS v6.6 — Full Style Sheet (Merged + Dynamic Icons)
-   ============================================================ */
+/* --------------------------------------------------
+   NexariOS v6.6 — Full CSS Rewrite
+   Includes: Glow Rings, Hex Badge, Ticker, Pulse,
+   Desktop Layout, Swipe Nav, Hidden Overmind
+-------------------------------------------------- */
 
+/* ROOT VARIABLES */
 :root {
-    --bg: #05060a;
-    --bg-card: #10131f;
-    --bg-nav: rgba(3, 5, 15, 0.95);
-    --border-subtle: #1f2435;
-    --text-main: #ffffff;
-    --text-muted: #7a8195;
-    --accent: #0af;
-    --accent-soft: #5bffea;
-
-    /* Dynamic Icon System */
+    --base-font-size: 16px;
     --icon-size: 58px;
-    --nav-height: 96px;
-    --glow-size: 14px;
+
+    --bg: #0b0d11;
+    --bg-soft: #13161c;
+    --bg-card: #161a21;
+
+    --text: #e5e7eb;
+    --text-muted: #9ca3af;
+
+    --border-subtle: #2a2f38;
+
+    --accent-strong: #ff3355;
+    --accent-playable: #ffd94a;
+    --accent-watch: #6b7280;
+
+    --accent-soft: #a5b4fc;
 }
 
-body[data-theme="light"] {
-    --bg: #f5f7fb;
-    --bg-card: #ffffff;
-    --bg-nav: rgba(245, 247, 251, 0.96);
-    --border-subtle: #d0d5e5;
-    --text-main: #111827;
-    --text-muted: #6b7280;
-    --accent: #0a84ff;
-    --accent-soft: #5bd5ff;
-}
-
+/* GLOBAL */
 body {
     margin: 0;
+    padding: 0;
     background: var(--bg);
-    color: var(--text-main);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    font-size: 16px;
-    touch-action: pan-y;
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
+    font-size: var(--base-font-size);
+    -webkit-font-smoothing: antialiased;
 }
 
-/* PAGES */
 .page {
-    display: none;
-    padding: 16px;
-    padding-bottom: 100px;
-}
-.page.active {
-    display: block;
+    padding: 36px 14px 80px;
 }
 
-/* ============================================================
-   BOTTOM NAV — Dynamic Icon System + Layout Modes
-   ============================================================ */
+/* --------------------------------------------------
+   LIVE TICKER
+-------------------------------------------------- */
+#liveTicker {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    background: linear-gradient(90deg, #1f2933, #05060a);
+    border-bottom: 1px solid var(--border-subtle);
+    z-index: 998;
+    font-size: 12px;
+    color: var(--text-muted);
+    overflow: hidden;
+}
 
+.liveLabel {
+    font-weight: 600;
+    color: var(--accent-strong);
+    text-shadow: 0 0 8px rgba(255, 51, 85, 0.9);
+}
+
+#liveTickerContent {
+    white-space: nowrap;
+    overflow: hidden;
+    flex: 1;
+}
+
+#liveTickerContent span {
+    display: inline-block;
+    margin-right: 24px;
+    opacity: 0.9;
+}
+
+@keyframes tickerScroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+#liveTickerContent.scrolling {
+    animation: tickerScroll 18s linear infinite;
+}
+
+/* --------------------------------------------------
+   NAVIGATION
+-------------------------------------------------- */
 #bottomNav {
     position: fixed;
     bottom: 0;
     left: 0;
-    width: 100%;
-    height: var(--nav-height);
-    background: var(--bg-nav);
-    backdrop-filter: blur(14px);
+    right: 0;
+    height: 64px;
+    background: var(--bg-soft);
+    border-top: 1px solid var(--border-subtle);
     display: flex;
     justify-content: space-around;
     align-items: center;
-    border-top: 1px solid var(--border-subtle);
     z-index: 999;
-    transition: height 0.25s ease;
 }
 
-#bottomNav .navItem {
-    flex: 1;
-    text-align: center;
-    color: var(--text-muted);
-    padding-top: 6px;
-    cursor: pointer;
-    transition: color 0.2s, transform 0.15s;
-}
-
-#bottomNav .navItem.active {
-    color: var(--accent);
-    text-shadow: 0 0 var(--glow-size) var(--accent);
-    transform: translateY(-3px);
-}
-
-#bottomNav .icon {
-    display: block;
-    font-size: var(--icon-size);
-    margin-bottom: 4px;
-    transition:
-        transform 0.25s ease,
-        text-shadow 0.25s ease,
-        font-size 0.25s ease;
-}
-
-#bottomNav .navItem.active .icon {
-    transform: scale(1.75);
-    text-shadow: 0 0 var(--glow-size) var(--accent);
-}
-
-#bottomNav .label {
-    font-size: 13px;
-    opacity: 0.95;
-}
-
-/* Nav layout: icons on left for desktop mode */
-body[data-navlayout="side"] #bottomNav .navItem {
+.navItem {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-body[data-navlayout="side"] #bottomNav .icon {
-    margin-bottom: 0;
-}
-body[data-navlayout="side"] #bottomNav .label {
-    font-size: 14px;
+    gap: 2px;
+    width: 20%;
+    padding-top: 4px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
 }
 
-/* Slider */
+.navItem.active {
+    opacity: 1;
+}
+
 #navSlider {
     position: absolute;
     bottom: 0;
-    width: 20%;
     height: 3px;
-    background: var(--accent);
-    box-shadow: 0 0 10px var(--accent);
-    transition: left 0.25s;
+    width: 20%;
+    background: var(--accent-soft);
+    border-radius: 3px;
+    transition: left 0.25s, width 0.25s;
 }
 
-/* FIELD LABELS */
-.fieldLabel {
-    font-size: 14px;
-    opacity: 0.8;
-    margin-right: 8px;
-}
-
-/* HR SIGNALS */
+/* --------------------------------------------------
+   HR SIGNALS
+-------------------------------------------------- */
 .signal {
+    background: var(--bg-card);
     padding: 12px;
-    margin-bottom: 10px;
     border-radius: 10px;
-    background: radial-gradient(circle at top left, #151a2a, #0b0d14);
+    margin-bottom: 12px;
     border: 1px solid var(--border-subtle);
 }
 
-/* HR SCROLL */
-#signalsContainer {
-    max-height: calc(100vh - 200px);
-    overflow-y: auto;
-}
-
-/* HR DROPDOWN */
-#hrControls {
+.signalLine1,
+.signalLine2,
+.signalLine3 {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-}
-#hrControls select {
-    padding: 6px 10px;
-    background: #151827;
-    border: 1px solid #2a3145;
-    color: #fff;
-    border-radius: 6px;
-    font-size: 14px;
+    justify-content: space-between;
+    margin-bottom: 4px;
 }
 
-/* HR BAR (ANIMATED) */
+/* Tier Glow Ring */
+.tierRing {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.tier-strong-ring {
+    border: 2px solid var(--accent-strong);
+    box-shadow: 0 0 10px rgba(255, 51, 85, 0.9);
+}
+
+.tier-playable-ring {
+    border: 2px solid var(--accent-playable);
+    box-shadow: 0 0 10px rgba(255, 217, 74, 0.9);
+}
+
+.tier-watch-ring {
+    border: 2px solid var(--accent-watch);
+    box-shadow: 0 0 6px rgba(107, 114, 128, 0.6);
+}
+
+/* HR Bar */
 .hrBar {
     height: 6px;
-    background: linear-gradient(90deg, var(--accent), var(--accent-soft));
     border-radius: 4px;
+    background: linear-gradient(90deg, #4f46e5, #818cf8);
     margin-top: 6px;
-    box-shadow: 0 0 6px var(--accent);
-    width: 0%;
-    transition: width 0.8s ease;
 }
 
-/* GAMES */
-.game {
-    padding: 12px;
-    margin-bottom: 12px;
-    background: var(--bg-card);
-    border-radius: 10px;
-    border: 1px solid var(--border-subtle);
+/* Momentum Pulse */
+@keyframes momentumPulseStrong {
+    0% { box-shadow: 0 0 6px rgba(255, 51, 85, 0.7); }
+    50% { box-shadow: 0 0 16px rgba(255, 51, 85, 1); }
+    100% { box-shadow: 0 0 6px rgba(255, 51, 85, 0.7); }
 }
 
-.gameHeader {
-    display: flex;
-    justify-content: space-between;
-    cursor: pointer;
-    padding: 4px 0;
-    gap: 8px;
-    align-items: center;
+@keyframes momentumPulsePlayable {
+    0% { box-shadow: 0 0 4px rgba(255, 217, 74, 0.6); }
+    50% { box-shadow: 0 0 10px rgba(255, 217, 74, 0.9); }
+    100% { box-shadow: 0 0 4px rgba(255, 217, 74, 0.6); }
 }
 
-.gameHeader .title {
-    font-weight: 600;
+.momentumStrong {
+    animation: momentumPulseStrong 1.4s ease-in-out infinite;
 }
 
-.gameHeader .metaLine {
-    font-size: 13px;
-    opacity: 0.9;
-    text-align: right;
+.momentumPlayable {
+    animation: momentumPulsePlayable 1.8s ease-in-out infinite;
 }
 
-.gameHeader:hover {
-    opacity: 0.85;
-}
-
-.gameDetails {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid #252b3d;
-}
-
-/* Refined lineup tags */
-.lineup {
-    margin-top: 6px;
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-.playerTag {
+/* --------------------------------------------------
+   HEX OCM BADGE (H2 OUTLINE + G4 HYBRID)
+-------------------------------------------------- */
+.ocmHex {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 2px 6px;
-    margin: 2px 4px 2px 0;
-    border-radius: 999px;
-    background: rgba(15, 23, 42, 0.9);
-    border: 1px solid rgba(148, 163, 184, 0.4);
-}
-
-.playerName {
-    font-weight: 500;
-}
-
-.playerPos {
+    justify-content: center;
+    padding: 2px 10px;
     font-size: 11px;
-    padding: 1px 5px;
-    border-radius: 999px;
-    background: rgba(56, 189, 248, 0.15);
+    letter-spacing: 0.06em;
+    position: relative;
+    margin-left: 8px;
     color: var(--accent-soft);
 }
 
-/* CALENDAR */
-#calendarBar {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 12px;
-}
-.clickerBtn {
-    background: #151827;
-    border: 1px solid #2a3145;
-    color: #fff;
-    padding: 6px 12px;
-    cursor: pointer;
-    margin: 0 10px;
-    border-radius: 6px;
-}
-
-/* ACCURACY */
-.accHeader {
-    font-size: 20px;
-    margin-bottom: 14px;
-    color: var(--accent);
-    text-shadow: 0 0 10px var(--accent);
-}
-
-.accCard {
-    background: var(--bg-card);
-    padding: 14px;
-    border-radius: 12px;
-    margin-bottom: 16px;
-    border: 1px solid var(--border-subtle);
-    box-shadow: 0 0 18px rgba(0, 170, 255, 0.12);
-}
-
-.accCard h3 {
-    margin-top: 0;
-    margin-bottom: 8px;
-    color: var(--accent);
-    font-size: 15px;
-}
-
-/* MICRO BAR */
-.microBar {
-    height: 6px;
-    background: linear-gradient(90deg, var(--accent), var(--accent-soft));
-    border-radius: 4px;
-    width: 0%;
-    transition: width 0.8s ease;
-}
-
-/* SPARKLINE */
-.sparkline {
-    font-family: monospace;
-    font-size: 14px;
-    letter-spacing: 1px;
-    margin-top: 6px;
-    opacity: 0.9;
-}
-
-/* NEON TREND BARS */
-.trendBar {
-    position: relative;
-    margin-top: 8px;
-    height: 6px;
-    border-radius: 4px;
-    overflow: hidden;
-    background: rgba(15, 23, 42, 0.7);
-    border: 1px solid rgba(148, 163, 184, 0.4);
-}
-.trendBar::before {
+.ocmHex::before {
     content: "";
     position: absolute;
-    left: -40%;
-    top: 0;
-    width: 40%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, var(--accent), var(--accent-soft), transparent);
-    box-shadow: 0 0 10px var(--accent);
-    animation: trendSweep 2.4s linear infinite;
-}
-
-@keyframes trendSweep {
-    0% { left: -40%; }
-    100% { left: 100%; }
-}
-
-/* SETTINGS */
-.settingsSection {
-    background: var(--bg-card);
-    padding: 14px;
-    border-radius: 12px;
-    margin-bottom: 16px;
-    box-shadow: 0 0 18px rgba(0, 170, 255, 0.12);
-    border: 1px solid var(--border-subtle);
-}
-
-.settingsSection h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    color: var(--accent);
-    text-shadow: 0 0 6px var(--accent);
-    font-size: 15px;
-}
-
-#settingsPage select,
-#settingsPage input[type=range],
-#settingsPage button {
-    width: 100%;
-    margin: 8px 0;
-    padding: 8px;
-    background: #151827;
-    border: 1px solid #2a3145;
-    color: #fff;
-    border-radius: 8px;
-    font-size: 14px;
-}
-
-/* SEGMENTED CONTROL */
-.segmented {
-    display: flex;
-    background: #050816;
-    border-radius: 999px;
-    padding: 3px;
-    margin-bottom: 10px;
-    border: 1px solid #1f2937;
-}
-.segmented .segBtn {
-    flex: 1;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    padding: 6px 0;
-    border-radius: 999px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
-}
-.segmented .segBtn.active {
-    background: linear-gradient(90deg, var(--accent), var(--accent-soft));
-    color: #000;
-    box-shadow: 0 0 12px rgba(0, 170, 255, 0.6);
-}
-
-/* INFO BLOCKS */
-.infoBlock {
-    background: var(--bg-card);
-    padding: 12px;
-    border-radius: 10px;
-    margin-bottom: 12px;
-    border: 1px solid var(--border-subtle);
-}
-.infoBlock h3 {
-    margin-top: 0;
-    color: var(--accent);
-    font-size: 15px;
-}
-
-/* SEARCH PAGE */
-.searchBarWrapper {
-    margin-bottom: 12px;
-}
-#playerSearchInput {
-    width: 100%;
-    padding: 10px 12px;
-    border-radius: 999px;
-    border: 1px solid var(--border-subtle);
-    background: #050816;
-    color: var(--text-main);
-    font-size: 14px;
-}
-.searchControls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-}
-.searchControls select {
-    padding: 6px 10px;
-    background: #151827;
-    border: 1px solid #2a3145;
-    color: #fff;
+    inset: 0;
+    border: 1.5px solid currentColor;
     border-radius: 6px;
-    font-size: 14px;
-}
-.searchResult {
-    padding: 12px;
-    margin-bottom: 10px;
-    border-radius: 10px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-}
-.searchResult .name {
-    font-weight: 600;
-}
-.searchResult .meta {
-    font-size: 13px;
+    clip-path: polygon(
+        10% 0%,
+        90% 0%,
+        100% 50%,
+        90% 100%,
+        10% 100%,
+        0% 50%
+    );
+    box-shadow: 0 0 10px currentColor;
     opacity: 0.9;
 }
-.searchResult .oddsBlock {
-    margin-top: 6px;
-    font-size: 13px;
-    opacity: 0.95;
+
+.ocmHex span {
+    position: relative;
+    z-index: 1;
 }
-.searchResult .hrBar {
-    margin-top: 6px;
+
+/* Tier color base */
+.ocmHex-strong { color: var(--accent-strong); }
+.ocmHex-playable { color: var(--accent-playable); }
+.ocmHex-watch { color: var(--accent-watch); }
+
+/* Intensity */
+.ocmHex-intensity-low {
+    filter: brightness(0.8);
+    opacity: 0.7;
+}
+.ocmHex-intensity-med {
+    filter: brightness(1);
+    opacity: 0.9;
+}
+.ocmHex-intensity-high {
+    filter: brightness(1.2);
+    opacity: 1;
+}
+.ocmHex-intensity-ultra {
+    filter: brightness(1.4);
+    opacity: 1;
+    text-shadow: 0 0 12px currentColor;
+}
+
+/* --------------------------------------------------
+   GAMES PAGE
+-------------------------------------------------- */
+.game {
+    background: var(--bg-card);
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border-subtle);
+}
+
+.liveBadge {
+    color: var(--accent-strong);
+    font-weight: 600;
+    text-shadow: 0 0 8px rgba(255, 51, 85, 0.9);
+}
+
+/* --------------------------------------------------
+   ACCURACY PAGE
+-------------------------------------------------- */
+.accCard {
+    background: var(--bg-card);
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+    margin-bottom: 12px;
+}
+
+.microBar,
+.trendBar {
+    height: 6px;
+    border-radius: 4px;
+    background: #4f46e5;
+}
+
+/* --------------------------------------------------
+   SEARCH PAGE
+-------------------------------------------------- */
+.searchResult {
+    background: var(--bg-card);
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border-subtle);
+}
+
+/* --------------------------------------------------
+   SETTINGS PAGE
+-------------------------------------------------- */
+.settingsSection {
+    margin-bottom: 24px;
+}
+
+.segmented {
+    display: flex;
+    gap: 6px;
+}
+
+.segBtn {
+    padding: 6px 12px;
+    background: var(--bg-soft);
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+}
+
+.segBtn.active {
+    background: var(--accent-soft);
+    color: #000;
+}
+
+/* Hide Overmind UI */
+.overmindHidden {
+    display: none;
+}
+
+/* --------------------------------------------------
+   SWIPE NAVIGATION
+-------------------------------------------------- */
+body.swiping-horizontal {
+    touch-action: pan-y;
+}
+
+/* --------------------------------------------------
+   DESKTOP LAYOUT
+-------------------------------------------------- */
+@media (min-width: 900px) {
+    body[data-device="desktop"] .page {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    body[data-device="desktop"] #accuracyDeep {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
 }
