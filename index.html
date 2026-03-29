@@ -5,12 +5,9 @@
   <title>NexariOS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- External CSS (your neon NexariOS theme) -->
-  <link rel="stylesheet" href="styles.css" />
+  <!-- PATCHED CSS LINK (Cache‑Buster Applied) -->
+  <link rel="stylesheet" href="styles.css?v=7" />
 
-  <!-- App identity -->
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icon-192.svg" type="image/svg+xml" />
   <meta name="theme-color" content="#050816" />
 </head>
 
@@ -157,7 +154,7 @@
 
   </div>
 
-  <!-- EMBEDDED JSON (Self‑Contained Data Model) -->
+  <!-- EMBEDDED JSON -->
   <script id="games-data" type="application/json">
   {
     "games": [
@@ -187,7 +184,7 @@
   }
   </script>
 
-  <!-- INLINE JS (Self‑Contained Logic) -->
+  <!-- INLINE JS -->
   <script>
     let gamesData = [];
     let signalsData = [];

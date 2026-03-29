@@ -65,7 +65,6 @@ body {
 .tab-view.active {
   display: block;
 }
-
 /* CARDS (Carbon + Glass Hybrid) */
 .card {
   background: linear-gradient(
@@ -135,7 +134,6 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
-
 /* PILLS */
 .pill {
   display: inline-block;
@@ -186,7 +184,6 @@ body {
   line-height: 1.55;
   color: #c8d2ff;
 }
-
 /* BOTTOM NAV */
 .bottom-nav {
   position: fixed;
