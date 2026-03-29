@@ -4,14 +4,11 @@
   <meta charset="UTF-8" />
   <title>NexariOS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Correct CSS filename + cache-buster -->
-  <link rel="stylesheet" href="style.css?v=1" />
-
+  <link rel="stylesheet" href="style.css?v=3" />
   <meta name="theme-color" content="#050816" />
 </head>
 
-<body>
+<body class="theme-dark">
   <div class="app-shell">
 
     <!-- HEADER -->
@@ -20,6 +17,12 @@
         <span class="icon">☄️</span>
         <span>NexariOS</span>
       </div>
+      <div class="theme-toggle" id="theme-toggle">
+        <span>Dark</span>
+        <div class="toggle-switch">
+          <div class="toggle-knob"></div>
+        </div>
+      </div>
     </header>
 
     <!-- MAIN CONTENT -->
@@ -27,6 +30,23 @@
 
       <!-- HR TAB -->
       <section id="tab-hr" class="tab-view active">
+        <div class="section-bar">
+          <div class="section-title">HR Signals</div>
+        </div>
+
+        <div class="hr-controls">
+          <div class="range-buttons">
+            <button class="range-btn active" data-range="10">Top 10</button>
+            <button class="range-btn" data-range="20">Top 20</button>
+            <button class="range-btn" data-range="all">All</button>
+          </div>
+          <div class="date-nav">
+            <button id="prev-day">◀</button>
+            <span id="current-date-label">Today</span>
+            <button id="next-day">▶</button>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-header">
             <span class="icon">☄️</span>
@@ -38,26 +58,42 @@
 
       <!-- GAMES TAB -->
       <section id="tab-games" class="tab-view">
+        <div class="section-bar">
+          <div class="section-title">Games</div>
+        </div>
+
         <div class="card">
           <div class="card-header">
             <span class="icon">⚾️</span>
-            <span>Games</span>
+            <span>Games & Weather</span>
           </div>
           <ul id="games-list" class="list"></ul>
+        </div>
+
+        <div class="card glass">
+          <div class="card-header">
+            <span class="icon">🧾</span>
+            <span>Lineups</span>
+          </div>
+          <ul id="lineups-list" class="list"></ul>
         </div>
       </section>
 
       <!-- ACCURACY TAB -->
       <section id="tab-accuracy" class="tab-view">
+        <div class="section-bar">
+          <div class="section-title">Accuracy (Today)</div>
+        </div>
+
         <div class="card">
           <div class="card-header">
             <span class="icon">📊</span>
             <span>System Tracker</span>
           </div>
-          <div id="accuracy-system"></div>
+          <div id="accuracy-system" class="accuracy-grid"></div>
         </div>
 
-        <div class="card">
+        <div class="card glass">
           <div class="card-header">
             <span class="icon">📈</span>
             <span>HR Outcomes</span>
@@ -65,20 +101,28 @@
           <div id="accuracy-hr-outcomes"></div>
         </div>
       </section>
+
       <!-- SEARCH TAB -->
       <section id="tab-search" class="tab-view">
+        <div class="section-bar">
+          <div class="section-title">Search Players</div>
+        </div>
+
         <div class="card">
           <div class="card-header">
             <span class="icon">🔍</span>
-            <span>Search Players</span>
+            <span>Search</span>
           </div>
-          <input id="search-input" class="search-input" type="text" placeholder="Search players or teams..." />
+          <input id="search-input" class="search-input" type="text" placeholder="Search players, teams, stadiums..." />
           <ul id="search-results" class="list"></ul>
         </div>
       </section>
 
       <!-- SETTINGS TAB -->
       <section id="tab-settings" class="tab-view">
+        <div class="section-bar">
+          <div class="section-title">System</div>
+        </div>
 
         <!-- DISPLAY -->
         <div class="card glass">
@@ -87,7 +131,7 @@
             <span>Display</span>
           </div>
           <div class="metric-row">
-            <span>Theme</span><span>Deep‑Space Neon</span>
+            <span>Theme</span><span id="theme-label">Deep‑Space Neon (Dark)</span>
           </div>
           <div class="metric-row">
             <span>Accent</span><span>Blue / Purple</span>
@@ -101,10 +145,10 @@
             <span>System</span>
           </div>
           <div class="metric-row">
-            <span>Device Mode</span><span>Auto</span>
+            <span>Engine</span><span>v6.6 Overmind OCM</span>
           </div>
           <div class="metric-row">
-            <span>Worker Version</span><span>v6.6</span>
+            <span>Worker</span><span>nexari.jardelterry.workers.dev</span>
           </div>
         </div>
 
@@ -129,16 +173,14 @@
             <span>System Intelligence</span>
           </div>
           <div class="handbook">
-            <p><strong>OCM</strong> blends matchup quality, power profile, volatility, and role into a single HR‑readiness score.</p>
-            <p><strong>HR Base</strong> is the baseline HR expectation for the matchup.</p>
-            <p><strong>Playable</strong> means the signal clears internal thresholds for risk, odds, and volatility.</p>
-            <p><strong>Hits & Misses</strong> track playable outcomes only.</p>
-            <p><strong>Unlisted HRs</strong> feed back into calibration.</p>
-            <p><strong>Streaks</strong> tilt edges when everything else is close.</p>
-            <p><strong>Daily Accuracy Blocks</strong> summarize hits, misses, accuracy %, and units.</p>
+            <p><strong>OCM</strong> is the Overmind Composite Metric — lineup slot, park, weather, and context blended into one HR edge score.</p>
+            <p><strong>HR Base</strong> is derived from lineup slot (1–3) and represents raw HR expectation.</p>
+            <p><strong>Tier</strong> groups signals into Strong / Playable / Watch bands.</p>
+            <p><strong>Sportsbook Odds</strong> are synthetic, used for relative edge framing only.</p>
+            <p><strong>Accuracy</strong> tracks system picks only, by day.</p>
+            <p><strong>History7 / History30</strong> are rolling accuracy snapshots.</p>
           </div>
         </div>
-
       </section>
     </main>
 
@@ -153,72 +195,117 @@
 
   </div>
 
-  <!-- EMBEDDED JSON -->
-  <script id="games-data" type="application/json">
-  {
-    "games": [
-      { "id": 1, "home": "Yankees", "away": "Red Sox", "time": "7:05 PM", "status": "scheduled" },
-      { "id": 2, "home": "Dodgers", "away": "Giants", "time": "9:40 PM", "status": "scheduled" }
-    ]
-  }
-  </script>
-
-  <script id="signals-data" type="application/json">
-  {
-    "signals": [
-      { "player": "Aaron Judge", "team": "NYY", "ocm": 92, "hr_base": 0.41, "matchup": "vs BOS", "game_id": 1, "playable": true, "hit": true },
-      { "player": "Giancarlo Stanton", "team": "NYY", "ocm": 84, "hr_base": 0.33, "matchup": "vs BOS", "game_id": 1, "playable": true, "hit": false },
-      { "player": "Mookie Betts", "team": "LAD", "ocm": 88, "hr_base": 0.36, "matchup": "vs SF", "game_id": 2, "playable": true, "hit": false }
-    ]
-  }
-  </script>
-
-  <script id="players-data" type="application/json">
-  {
-    "players": [
-      { "name": "Aaron Judge", "team": "NYY", "position": "RF" },
-      { "name": "Giancarlo Stanton", "team": "NYY", "position": "DH" },
-      { "name": "Mookie Betts", "team": "LAD", "position": "2B" }
-    ]
-  }
-  </script>
-
   <!-- INLINE JS -->
   <script>
+    const WORKER_BASE = "https://nexari.jardelterry.workers.dev";
+
     let gamesData = [];
     let signalsData = [];
-    let playersData = [];
+    let accuracyData = null;
 
-    function loadEmbeddedData() {
+    let currentRange = "10";
+    let currentDate = new Date(); // UI date; Worker uses NY internally
+
+    function toDateString(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function formatDateLabel(date) {
+      const today = new Date();
+      const d0 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const d1 = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const diff = (d1 - d0) / (1000 * 60 * 60 * 24);
+      if (diff === 0) return "Today";
+      if (diff === -1) return "Yesterday";
+      if (diff === 1) return "Tomorrow";
+      return toDateString(date);
+    }
+
+    function updateDateLabel() {
+      document.getElementById("current-date-label").textContent = formatDateLabel(currentDate);
+    }
+
+    async function fetchJSON(url) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Fetch failed: " + url + " " + res.status);
+      return res.json();
+    }
+
+    async function loadDataForCurrentDate() {
       const t0 = performance.now();
+      const dateStr = toDateString(currentDate);
 
-      gamesData = JSON.parse(document.getElementById("games-data").textContent).games;
-      signalsData = JSON.parse(document.getElementById("signals-data").textContent).signals;
-      playersData = JSON.parse(document.getElementById("players-data").textContent).players;
+      try {
+        const [gamesRes, signalsRes, accuracyRes] = await Promise.all([
+          fetchJSON(`${WORKER_BASE}/games?date=${dateStr}`),
+          fetchJSON(`${WORKER_BASE}/signals?date=${dateStr}`),
+          fetchJSON(`${WORKER_BASE}/accuracy`)
+        ]);
 
-      const t1 = performance.now();
-      document.getElementById("perf-data").textContent = Math.round(t1 - t0) + " ms";
+        gamesData = (gamesRes && gamesRes.games) || [];
+        signalsData = (signalsRes && signalsRes.signals) || [];
+        accuracyData = (accuracyRes && accuracyRes.accuracy) || null;
 
-      renderHRView();
-      renderGames();
-      renderAccuracy();
-      renderSearchResults("");
+        const t1 = performance.now();
+        document.getElementById("perf-data").textContent = Math.round(t1 - t0) + " ms";
+
+        updateDateLabel();
+        renderHRView();
+        renderGames();
+        renderLineups();
+        renderAccuracy();
+        renderSearchResults("");
+      } catch (e) {
+        console.error("Data load error:", e);
+      }
     }
 
     function renderHRView() {
       const list = document.getElementById("hr-list");
       list.innerHTML = "";
 
-      signalsData.forEach(s => {
+      let signals = signalsData.filter(s => s.systemPick);
+
+      signals.sort((a, b) => (b.overmindCompositeMetric || 0) - (a.overmindCompositeMetric || 0));
+
+      if (currentRange !== "all") {
+        const n = parseInt(currentRange, 10);
+        signals = signals.slice(0, n);
+      }
+
+      signals.forEach(s => {
+        const venue = s.context?.venueName || "";
+        const temp = s.context?.temp != null ? `${s.context.temp}°` : "";
+        const wind = s.context?.wind != null ? `${s.context.wind} mph` : "";
+        const cond = s.context?.conditions || "";
+        const envParts = [venue, temp, wind, cond].filter(Boolean).join(" · ");
+
+        const dk = s.sportsbooks?.dk || "N/A";
+
         const li = document.createElement("li");
         li.innerHTML = `
-          <div><strong>${s.player}</strong> <span class="pill">${s.team}</span></div>
-          <div class="sub">${s.matchup} · OCM ${s.ocm} · HR Base ${s.hr_base.toFixed(2)}
-            <span class="pill ${s.hit ? "hit" : "miss"}">${s.hit ? "Hit" : "Miss"}</span>
+          <div>
+            <strong>${s.player}</strong>
+            <span class="pill">${s.team || ""}</span>
+            ${venue ? `<span class="pill-small">${venue}</span>` : ""}
+          </div>
+          <div class="sub">
+            vs ${s.opponent || "—"} · OCM ${(s.overmindCompositeMetric || 0).toFixed(1)} · HR Base ${s.hr}
+            · Tier ${s.tier}
+            ${envParts ? ` · ${envParts}` : ""}
+            · DK ${dk}
+            <span class="pill ${s.hrHit ? "hit" : "miss"}">${s.hrHit ? "Hit" : "Miss"}</span>
           </div>
         `;
         list.appendChild(li);
       });
+
+      if (!signals.length) {
+        list.innerHTML = `<li class="sub">No HR signals for this date.</li>`;
+      }
     }
 
     function renderGames() {
@@ -226,34 +313,131 @@
       list.innerHTML = "";
 
       gamesData.forEach(g => {
+        const temp = g.temp != null ? `${g.temp}°` : "";
+        const wind = g.wind != null ? `${g.wind} mph` : "";
+        const cond = g.conditions || "";
+        const envParts = [temp, wind, cond].filter(Boolean).join(" · ");
+
+        const scorePart =
+          g.awayScore != null && g.homeScore != null
+            ? ` · ${g.awayScore}–${g.homeScore}`
+            : "";
+
+        const liveTag = g.live ? " · LIVE" : "";
+
         const li = document.createElement("li");
         li.innerHTML = `
           <div><strong>${g.away}</strong> @ <strong>${g.home}</strong></div>
-          <div class="sub">${g.time} · ${g.status}</div>
+          <div class="sub">
+            ${g.gameTime} · ${g.status}${scorePart}${liveTag}
+          </div>
+          <div class="sub">
+            ${g.venueName || ""}${envParts ? " · " + envParts : ""}
+          </div>
         `;
         list.appendChild(li);
       });
+
+      if (!gamesData.length) {
+        list.innerHTML = `<li class="sub">No games returned for this date.</li>`;
+      }
+    }
+
+    function renderLineups() {
+      const list = document.getElementById("lineups-list");
+      list.innerHTML = "";
+
+      gamesData.forEach(g => {
+        const header = document.createElement("li");
+        header.innerHTML = `
+          <div><strong>${g.away}</strong> @ <strong>${g.home}</strong></div>
+          <div class="sub">${g.venueName || ""}</div>
+        `;
+        list.appendChild(header);
+
+        const awayPlayers = g.awayPlayers || [];
+        const homePlayers = g.homePlayers || [];
+
+        if (!awayPlayers.length && !homePlayers.length) {
+          const li = document.createElement("li");
+          li.innerHTML = `<div class="sub">No lineup data available.</div>`;
+          list.appendChild(li);
+          return;
+        }
+
+        if (awayPlayers.length) {
+          const subHeader = document.createElement("li");
+          subHeader.innerHTML = `<div class="subheader">Away Lineup – ${g.away}</div>`;
+          list.appendChild(subHeader);
+
+          awayPlayers.forEach(p => {
+            const li = document.createElement("li");
+            li.innerHTML = `
+              <div><strong>${p.name}</strong> <span class="pill">${p.pos || ""}</span></div>
+            `;
+            list.appendChild(li);
+          });
+        }
+
+        if (homePlayers.length) {
+          const subHeader = document.createElement("li");
+          subHeader.innerHTML = `<div class="subheader">Home Lineup – ${g.home}</div>`;
+          list.appendChild(subHeader);
+
+          homePlayers.forEach(p => {
+            const li = document.createElement("li");
+            li.innerHTML = `
+              <div><strong>${p.name}</strong> <span class="pill">${p.pos || ""}</span></div>
+            `;
+            list.appendChild(li);
+          });
+        }
+      });
+
+      if (!gamesData.length) {
+        list.innerHTML = `<li class="sub">No games / lineups for this date.</li>`;
+      }
     }
 
     function renderAccuracy() {
-      const playable = signalsData.filter(s => s.playable);
-      const hits = playable.filter(s => s.hit);
-      const misses = playable.filter(s => !s.hit);
+      const grid = document.getElementById("accuracy-system");
+      const outcomesDiv = document.getElementById("accuracy-hr-outcomes");
 
-      const acc = playable.length ? ((hits.length / playable.length) * 100).toFixed(1) : "–";
+      if (!accuracyData) {
+        grid.innerHTML = `<div class="accuracy-label">Accuracy</div><div class="accuracy-value">–</div>`;
+        outcomesDiv.innerHTML = `<div class="sub">No accuracy data.</div>`;
+        return;
+      }
 
-      document.getElementById("accuracy-system").innerHTML = `
-        <div class="metric-row"><span>Playable</span><span>${playable.length}</span></div>
-        <div class="metric-row"><span>Hits</span><span>${hits.length}</span></div>
-        <div class="metric-row"><span>Misses</span><span>${misses.length}</span></div>
-        <div class="metric-row"><span>Accuracy</span><span>${acc === "–" ? "–" : acc + "%"}</span></div>
+      const percent = accuracyData.percent ?? 0;
+      const volume = accuracyData.predictionVolume ?? 0;
+      const systemStreak = accuracyData.systemStreak ?? 0;
+      const playerStreak = accuracyData.playerStreak ?? 0;
+      const hits = (accuracyData.outcomes || []).length;
+      const misses = (accuracyData.missed || []).length;
+
+      grid.innerHTML = `
+        <div class="accuracy-label">Accuracy</div><div class="accuracy-value">${percent}%</div>
+        <div class="accuracy-label">Volume</div><div class="accuracy-value">${volume}</div>
+        <div class="accuracy-label">System Streak</div><div class="accuracy-value">${systemStreak}</div>
+        <div class="accuracy-label">Player Streak</div><div class="accuracy-value">${playerStreak}</div>
+        <div class="accuracy-label">Hits</div><div class="accuracy-value">${hits}</div>
+        <div class="accuracy-label">Misses</div><div class="accuracy-value">${misses}</div>
       `;
 
-      document.getElementById("accuracy-hr-outcomes").innerHTML = `
+      const hitsList = (accuracyData.outcomes || []).map(s =>
+        `<div class="sub">${s.player} (${s.team || ""}) · Tier ${s.tier}</div>`
+      ).join("");
+
+      const missesList = (accuracyData.missed || []).map(s =>
+        `<div class="sub">${s.player} (${s.team || ""}) · Tier ${s.tier}</div>`
+      ).join("");
+
+      outcomesDiv.innerHTML = `
         <div class="subheader">Hits</div>
-        ${hits.length ? hits.map(s => `<div class="sub">${s.player} (${s.team})</div>`).join("") : `<div class="sub">No hits recorded.</div>`}
+        ${hitsList || `<div class="sub">No hits recorded.</div>`}
         <div class="subheader">Misses</div>
-        ${misses.length ? misses.map(s => `<div class="sub">${s.player} (${s.team})</div>`).join("") : `<div class="sub">No misses recorded.</div>`}
+        ${missesList || `<div class="sub">No misses recorded.</div>`}
       `;
     }
 
@@ -261,18 +445,42 @@
       const list = document.getElementById("search-results");
       const q = query.toLowerCase();
 
-      const results = signalsData.filter(s =>
-        s.player.toLowerCase().includes(q) ||
-        s.team.toLowerCase().includes(q) ||
-        s.matchup.toLowerCase().includes(q)
-      );
+      if (!q) {
+        list.innerHTML = `<li class="sub">Type a player, team, opponent, or stadium.</li>`;
+        return;
+      }
 
-      list.innerHTML = results.map(s => `
-        <li>
-          <div><strong>${s.player}</strong> <span class="pill">${s.team}</span></div>
-          <div class="sub">${s.matchup} · OCM ${s.ocm} · HR Base ${s.hr_base.toFixed(2)}</div>
-        </li>
-      `).join("");
+      const results = signalsData.filter(s => {
+        const venue = s.context?.venueName || "";
+        return (
+          (s.player || "").toLowerCase().includes(q) ||
+          (s.team || "").toLowerCase().includes(q) ||
+          (s.opponent || "").toLowerCase().includes(q) ||
+          venue.toLowerCase().includes(q)
+        );
+      });
+
+      list.innerHTML = results.map(s => {
+        const venue = s.context?.venueName || "";
+        const dk = s.sportsbooks?.dk || "N/A";
+        return `
+          <li class="search-result">
+            <div>
+              <strong>${s.player}</strong>
+              <span class="pill">${s.team || ""}</span>
+              ${venue ? `<span class="pill-small">${venue}</span>` : ""}
+            </div>
+            <div class="sub">
+              vs ${s.opponent || "—"} · OCM ${(s.overmindCompositeMetric || 0).toFixed(1)}
+              · HR Base ${s.hr} · Tier ${s.tier} · DK ${dk}
+            </div>
+          </li>
+        `;
+      }).join("");
+
+      if (!results.length) {
+        list.innerHTML = `<li class="sub">No matches found.</li>`;
+      }
     }
 
     function setupNav() {
@@ -298,13 +506,71 @@
       });
     }
 
+    function setupRangeButtons() {
+      const buttons = document.querySelectorAll(".range-btn");
+      buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          buttons.forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          currentRange = btn.dataset.range;
+          renderHRView();
+        });
+      });
+    }
+
+    function setupDateNav() {
+      document.getElementById("prev-day").addEventListener("click", () => {
+        currentDate.setDate(currentDate.getDate() - 1);
+        updateDateLabel();
+        loadDataForCurrentDate();
+      });
+
+      document.getElementById("next-day").addEventListener("click", () => {
+        currentDate.setDate(currentDate.getDate() + 1);
+        updateDateLabel();
+        loadDataForCurrentDate();
+      });
+    }
+
+    function setupThemeToggle() {
+      const body = document.body;
+      const toggle = document.getElementById("theme-toggle");
+      const label = document.getElementById("theme-label");
+
+      function applyTheme(theme) {
+        if (theme === "light") {
+          body.classList.add("theme-light");
+          body.classList.remove("theme-dark");
+          label.textContent = "Soft OS (Light)";
+        } else {
+          body.classList.add("theme-dark");
+          body.classList.remove("theme-light");
+          label.textContent = "Deep‑Space Neon (Dark)";
+        }
+      }
+
+      const saved = localStorage.getItem("nexarios-theme");
+      applyTheme(saved || "dark");
+
+      toggle.addEventListener("click", () => {
+        const isDark = body.classList.contains("theme-dark");
+        const next = isDark ? "light" : "dark";
+        localStorage.setItem("nexarios-theme", next);
+        applyTheme(next);
+      });
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       const t0 = performance.now();
       setupNav();
       setupSearch();
-      loadEmbeddedData();
-      const t1 = performance.now();
-      document.getElementById("perf-render").textContent = Math.round(t1 - t0) + " ms";
+      setupRangeButtons();
+      setupDateNav();
+      setupThemeToggle();
+      loadDataForCurrentDate().then(() => {
+        const t1 = performance.now();
+        document.getElementById("perf-render").textContent = Math.round(t1 - t0) + " ms";
+      });
     });
   </script>
 
