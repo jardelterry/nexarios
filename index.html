@@ -5,13 +5,12 @@
   <title>NexariOS — Midnight OS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0a0c10" />
-  <link rel="stylesheet" href="style.css?v=7.4" />
+  <link rel="stylesheet" href="style.css?v=7.7" />
 </head>
- 
+
 <body class="theme-dark device-auto">
   <div class="app-root">
- 
-    <!-- SIDEBAR -->
+
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-title"><span>☄️</span><span>NexariOS</span></div>
       <nav class="sidebar-nav">
@@ -22,16 +21,14 @@
         <button class="sidebar-item" data-tab="settings"><span>⚙️</span><span>Settings</span></button>
       </nav>
     </aside>
- 
-    <!-- MAIN COLUMN -->
+
     <div class="app-column">
- 
       <header class="app-header">
         <div class="title"><span>☄️</span><span>NexariOS</span></div>
       </header>
- 
+
       <main id="main-content" style="padding: 22px 22px 90px;">
- 
+
         <!-- HR TAB -->
         <section id="tab-hr" class="tab-view active" style="margin-bottom: 26px;">
           <div class="section-title">HR Signals</div>
@@ -64,53 +61,50 @@
             <ul id="hr-list" class="list compact-list"></ul>
           </div>
         </section>
- 
+
         <!-- GAMES TAB -->
         <section id="tab-games" class="tab-view" style="margin-bottom: 26px;">
           <div class="section-title">Games & Weather</div>
           <div class="card" style="padding: 20px 20px;">
             <div class="card-header"><span>⚾️</span><span>Games</span></div>
- 
-            <!-- v7.4: Games date nav — independent from HR tab -->
             <div class="date-nav games-date-nav" style="margin-bottom: 14px;">
               <button id="games-prev-day">◀</button>
               <span id="games-date-label">Today</span>
               <button id="games-next-day">▶</button>
             </div>
- 
             <ul id="games-list" class="list compact-list"></ul>
           </div>
         </section>
- 
+
         <!-- ACCURACY TAB -->
         <section id="tab-accuracy" class="tab-view" style="margin-bottom: 26px;">
           <div class="section-title">Accuracy</div>
- 
+
           <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header"><span>📊</span><span>System Tracker</span></div>
-            <div class="card-subtitle">Overall performance of the Overmind HR Engine across all picks.</div>
+            <div class="card-subtitle">Tracks Strong-tier HR picks vs actual outcomes. Auto-saves picks on each signals load and computes outcomes the following day.</div>
             <div id="accuracy-system" class="accuracy-grid"></div>
           </div>
- 
+
           <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header"><span>📈</span><span>HR & RBI Tracker</span></div>
-            <div class="card-subtitle">Rolling windows + today's active HR hitters / streaks from KV.</div>
+            <div class="card-subtitle">Rolling accuracy windows and active player streaks from KV.</div>
             <div id="accuracy-hr-rbi" class="accuracy-grid"></div>
           </div>
- 
+
           <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header"><span>🏆</span><span>2026 Season Leaders</span></div>
             <div class="card-subtitle">Live MLB season leaders in Home Runs, Hits, and RBI — updated each load.</div>
             <div id="accuracy-leaders" class="leaders-grid"></div>
           </div>
- 
+
           <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header"><span>🎯</span><span>HR Outcomes</span></div>
-            <div class="card-subtitle">Individual player outcomes for recent HR calls (hit vs miss by tier).</div>
+            <div class="card-subtitle">Recent Strong-tier pick results — auto-computed from MLB boxscores.</div>
             <div id="accuracy-hr-outcomes" class="compact-outcomes"></div>
           </div>
         </section>
- 
+
         <!-- SEARCH TAB -->
         <section id="tab-search" class="tab-view" style="margin-bottom: 26px;">
           <div class="section-title">Search</div>
@@ -120,11 +114,11 @@
             <ul id="search-results" class="list compact-list"></ul>
           </div>
         </section>
- 
+
         <!-- SETTINGS TAB -->
         <section id="tab-settings" class="tab-view" style="margin-bottom: 26px;">
           <div class="section-title">System</div>
- 
+
           <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header"><span>⚙️</span><span>Display</span></div>
             <div class="metric-row"><span>Theme</span><span>Midnight OS</span></div>
@@ -137,79 +131,63 @@
               </select>
             </div>
           </div>
- 
+
           <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header"><span>🧩</span><span>Engine</span></div>
-            <div class="metric-row"><span>Version</span><span>v7.4 Midnight Hybrid Radial</span></div>
+            <div class="metric-row"><span>Version</span><span>v7.7 Midnight Hybrid Radial</span></div>
             <div class="metric-row"><span>Worker</span><span>nexari.jardelterry.workers.dev</span></div>
           </div>
- 
+
           <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header"><span>ℹ️</span><span>Info</span></div>
             <div class="metric-row"><span>Model</span><span>Overmind HR Engine 6.6</span></div>
             <div class="metric-row"><span>Ranking Logic</span><span>OCM vs pitcher, park, weather</span></div>
             <div class="metric-row"><span>Data Source</span><span>MLB StatsAPI (live)</span></div>
           </div>
- 
+
           <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header"><span>📖</span><span>How to Read NexariOS</span></div>
- 
+
             <div class="guide-section">
               <div class="guide-heading">☄️ HR Signals</div>
-              <div class="guide-body">
-                Ranks every active batter by home run likelihood using the Overmind Composite Metric (OCM). Use the date nav to browse any day — past or future. Select your sportsbook to see live odds lines.
-              </div>
+              <div class="guide-body">Ranks batters from across the full day's slate by HR likelihood. Uses round-robin interleaving so the top pick from each game appears before the 2nd pick from any game — you always see variety at the top, not a cluster from one matchup.</div>
               <div class="guide-item">
                 <span class="guide-label strong-label">Strong</span>
-                <span class="guide-desc">18%+ HR probability. Highest confidence. Prioritize for single-game props and parlay legs.</span>
+                <span class="guide-desc">18%+ HR probability. Highest confidence — prioritize for single-game props and parlay legs.</span>
               </div>
               <div class="guide-item">
                 <span class="guide-label medium-label">Medium</span>
-                <span class="guide-desc">11–17% probability. Solid situational play — good for longer odds parlays.</span>
+                <span class="guide-desc">11–17% probability. Solid situational play — good for longer-odds parlays.</span>
               </div>
               <div class="guide-item">
                 <span class="guide-label light-label">Light</span>
                 <span class="guide-desc">Under 11%. Low confidence — only play when odds offer significant value.</span>
               </div>
               <div class="guide-item">
-                <span class="guide-label">OCM Score</span>
-                <span class="guide-desc">0–100 composite: batter power (HR rate, SLG, OPS) vs pitcher vulnerability (ERA, HR allowed). Higher = stronger matchup edge.</span>
-              </div>
-              <div class="guide-item">
-                <span class="guide-label">Odds Pill</span>
-                <span class="guide-desc">Live line from your selected sportsbook. N/A means no line posted yet.</span>
+                <span class="guide-label">OCM</span>
+                <span class="guide-desc">0–100 composite: batter power (HR rate, SLG, OPS) vs pitcher vulnerability (ERA, HR allowed).</span>
               </div>
             </div>
- 
+
             <div class="guide-section">
               <div class="guide-heading">⚾️ Games</div>
-              <div class="guide-body">
-                Use the ◀ ▶ arrows to browse any date — go back to see final scores from past games, or forward to see upcoming schedules. Tap any game row to expand both rosters and the probable starting pitcher. Pre-game shows ET start time. Live shows score + inning. Final shows the final score.
-              </div>
+              <div class="guide-body">Use ◀ ▶ to browse any date. Tap any game to expand rosters. When lineups are officially confirmed (usually 3–4 hours pre-game), batting order numbers appear next to each player — 1 through 9. For live and final games, the boxscore batting order is used. Final games also show H / HR / RBI per batter and K for the starting pitcher.</div>
             </div>
- 
+
             <div class="guide-section">
               <div class="guide-heading">📊 Accuracy</div>
-              <div class="guide-body">
-                Tracks engine pick performance over time. System Tracker shows lifetime pick history. HR &amp; RBI Tracker shows 7-day and 30-day windows plus today's active HR hitters pulled from KV. Season Leaders shows live 2026 MLB leaders in HR, Hits, and RBI — cross-reference these against current signals to validate top picks.
-              </div>
-              <div class="guide-item">
-                <span class="guide-label">Note</span>
-                <span class="guide-desc">Pick tracking history requires KV backend wiring — in progress. Leaders pull live from MLB Stats API each load.</span>
-              </div>
+              <div class="guide-body">No setup required. Every time you load HR Signals, the system automatically saves today's Strong picks to KV. The following day, outcomes are computed automatically from MLB boxscores. System Tracker accumulates over time. Season Leaders pull live from MLB Stats API each load.</div>
             </div>
- 
+
             <div class="guide-section">
               <div class="guide-heading">🔍 Search</div>
-              <div class="guide-body">Search any player name or team. Results show OCM score, tier, opponent pitcher, and position for today's slate.</div>
+              <div class="guide-body">Search any player or team name. Results show OCM, tier, opponent, and pitcher for today's slate.</div>
             </div>
- 
           </div>
         </section>
- 
+
       </main>
- 
-      <!-- MOBILE NAV -->
+
       <nav class="bottom-nav" style="padding-top: 6px;">
         <div class="nav-indicator" id="nav-indicator"></div>
         <div class="nav-item active" data-tab="hr"><span>☄️</span><span>HR</span></div>
@@ -218,10 +196,9 @@
         <div class="nav-item" data-tab="search"><span>🔍</span><span>Search</span></div>
         <div class="nav-item" data-tab="settings"><span>⚙️</span><span>Settings</span></div>
       </nav>
- 
     </div>
   </div>
- 
-  <script src="app.js?v=7.4"></script>
+
+  <script src="app.js?v=7.7"></script>
 </body>
 </html>

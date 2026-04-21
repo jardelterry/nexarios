@@ -1,5 +1,5 @@
 /* ===========================
-   NexariOS — Midnight OS v7.5
+   NexariOS — Midnight OS v7.7
 =========================== */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -13,8 +13,7 @@ body {
 }
 
 .app-root {
-  display: flex;
-  min-height: 100vh;
+  display: flex; min-height: 100vh;
   background: radial-gradient(circle at top left, #151926 0, #05070b 55%, #020308 100%);
   color: #f5f7ff;
 }
@@ -39,7 +38,6 @@ body {
 .sidebar-item:hover { background:rgba(255,255,255,0.03); border-color:rgba(255,255,255,0.06); }
 .sidebar-item.active { background:radial-gradient(circle at top left,#1b2338 0,#0b0f1a 60%); border-color:rgba(120,180,255,0.6); color:#f5f7ff; transform:translateY(-1px); }
 
-/* Main Column */
 .app-column { flex:1; display:flex; flex-direction:column; }
 
 /* Header */
@@ -112,39 +110,60 @@ body {
 .sportsbook-select { display:flex; align-items:center; gap:6px; font-size:12px; color:#9aa3c5; }
 .sportsbook-select select { border-radius:999px; border:1px solid rgba(255,255,255,0.08); background:rgba(10,14,24,0.9); color:#e5ecff; padding:3px 10px; font-size:12px; }
 
-/* Games */
+/* Games date nav */
 .games-date-nav { display:inline-flex; align-items:center; gap:8px; font-size:13px; color:#e5ecff; }
+
+/* Game rows */
 .game-row { cursor:pointer; flex-direction:column; transition:background 0.18s,border-color 0.18s,transform 0.12s; }
 .game-row:hover { background:rgba(16,22,40,0.95); border-color:rgba(120,180,255,0.4); transform:translateY(-1px); }
 .live-dot { width:7px; height:7px; border-radius:50%; background:#ff4b6e; box-shadow:0 0 8px rgba(255,75,110,0.9); display:inline-block; }
 
-/* Lineup Collapse */
+/* Lineup collapse */
 .game-lineups { margin-top:8px; border-top:1px dashed rgba(255,255,255,0.08); overflow:hidden; }
-.anim-collapse { max-height:0; transition:max-height 0.25s ease-out; }
+.anim-collapse { max-height:0; transition:max-height 0.3s ease-out; }
 .game-lineups-inner { padding-top:10px; }
 
-/* Lineup Columns */
+/* Lineup columns */
 .lineup-columns { display:flex; gap:12px; }
 .lineup-col { flex:1; min-width:0; }
-.lineup-title { font-size:12px; font-weight:600; color:#e5ecff; margin-bottom:3px; }
+.lineup-title {
+  font-size:12px; font-weight:600; color:#e5ecff;
+  margin-bottom:3px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+}
 .lineup-sp { font-size:11px; color:#78b4ff; opacity:0.85; margin-bottom:6px; display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
-.lineup-empty { font-size:11px; color:#8f9ac0; padding:4px 0; }
+.lineup-empty { font-size:11px; color:#8f9ac0; padding:4px 0; font-style:italic; }
 .lineup-grid { display:flex; flex-direction:column; gap:2px; }
 
+/* ── v7.7 Batting Order ── */
 .lineup-player {
   display:flex; align-items:center; gap:4px;
-  padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.03);
-  flex-wrap:wrap;
+  padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.03);
+  flex-wrap:nowrap;
 }
-.lp-name { font-size:11px; color:#c5cbe0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0; }
+
+/* Batting order number — shown for confirmed lineups */
+.lp-order {
+  font-size:10px; font-weight:700; color:#78b4ff;
+  opacity:0.75; width:14px; flex-shrink:0;
+  text-align:center; line-height:1;
+}
+/* Spacer when no order number (unconfirmed roster) */
+.lp-order-empty { width:14px; flex-shrink:0; }
+
+.lp-name { font-size:11px; color:#c5cbe0; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .lp-pos  { font-size:10px; color:#78b4ff; opacity:0.75; flex-shrink:0; min-width:20px; text-align:right; }
 .lp-stats { display:flex; gap:3px; flex-shrink:0; }
 
-/* ── v7.5 Stat Badges (H / HR / RBI / K) ── */
-.stat-badge {
-  font-size:9px; font-weight:700; padding:1px 5px;
-  border-radius:999px; white-space:nowrap; line-height:1.4;
+/* Lineup confirmed/pending label */
+.lineup-status {
+  font-size:9px; font-weight:600; padding:1px 5px;
+  border-radius:999px; white-space:nowrap;
 }
+.lineup-status.confirmed { color:#9af7c8; border:1px solid rgba(154,247,200,0.4); background:rgba(154,247,200,0.1); }
+.lineup-status.pending   { color:#9aa3c5; border:1px solid rgba(160,160,160,0.3); background:rgba(160,160,160,0.07); }
+
+/* ── Stat Badges (H / HR / RBI / K) ── */
+.stat-badge { font-size:9px; font-weight:700; padding:1px 5px; border-radius:999px; white-space:nowrap; line-height:1.4; }
 .stat-h   { background:rgba(120,180,255,0.15); color:#78b4ff; border:1px solid rgba(120,180,255,0.4); }
 .stat-hr  { background:rgba(255,100,100,0.18); color:#ff7a7a; border:1px solid rgba(255,100,100,0.5); }
 .stat-rbi { background:rgba(154,247,200,0.15); color:#9af7c8; border:1px solid rgba(154,247,200,0.4); }
@@ -155,7 +174,7 @@ body {
 .metric-row { display:flex; justify-content:space-between; font-size:13px; color:#d5dcff; padding:4px 0; }
 .metric-row span:first-child { color:#9aa3c5; }
 .accuracy-note { margin-top:4px; }
-.accuracy-note span { color:#8f9ac0; font-size:11px; font-style:italic; }
+.accuracy-note span { color:#8f9ac0; font-size:11px; font-style:italic; line-height:1.5; }
 
 /* Leaders */
 .leaders-grid { display:flex; flex-direction:column; gap:14px; }
@@ -169,11 +188,11 @@ body {
 
 /* Outcomes */
 .compact-outcomes { display:flex; flex-direction:column; gap:6px; }
-.outcome-row { display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:10px; background:rgba(8,11,20,0.9); border:1px solid rgba(255,255,255,0.04); font-size:12px; }
-.outcome-main { display:flex; flex-direction:column; gap:2px; }
-.outcome-player { font-weight:500; color:#f5f7ff; }
-.outcome-team   { color:#9aa3c5; }
-.outcome-side   { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+.outcome-row { display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:10px; background:rgba(8,11,20,0.9); border:1px solid rgba(255,255,255,0.04); font-size:12px; gap:8px; }
+.outcome-main { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.outcome-player { font-weight:500; color:#f5f7ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.outcome-team   { color:#9aa3c5; font-size:11px; }
+.outcome-side   { display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0; }
 .outcome-hit    { color:#9af7c8; font-size:11px; }
 
 /* Search */

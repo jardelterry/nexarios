@@ -1,6 +1,6 @@
-// app.js — NexariOS v7.5
-// v7.5: Player game stats (H/HR/RBI/K) in past game lineups,
-//       leaders API note display, accuracy reads cron KV data.
+// app.js — NexariOS v7.7
+// v7.7: Remove client-side OCM re-sort (preserves server interleave),
+//       batting order numbers in lineup, accuracy self-healing display.
 
 const BASE = "https://nexari.jardelterry.workers.dev";
 
@@ -47,8 +47,10 @@ async function loadSignals() {
     const url = new URL(BASE + "/signals");
     url.searchParams.set("date", getDateISO(currentDateOffset));
     const data = await fetchJSON(url.toString());
-    state.signals = (Array.isArray(data.signals) ? data.signals : [])
-      .sort((a,b) => (b.overmindCompositeMetric ?? b.ocm ?? 0) - (a.overmindCompositeMetric ?? a.ocm ?? 0));
+    // v7.7 FIX: Do NOT re-sort by OCM here.
+    // The server already applies round-robin interleaving for diversity.
+    // Re-sorting would undo that and cluster players from the same game.
+    state.signals = Array.isArray(data.signals) ? data.signals : [];
     renderSignals();
   } catch (err) {
     console.error("loadSignals", err);
@@ -74,8 +76,8 @@ async function loadGames() {
 async function loadAccuracy() {
   try {
     const data = await fetchJSON(BASE + "/accuracy");
-    state.accuracy   = data.accuracy   || null;
-    state.leaders    = data.leaders    || null;
+    state.accuracy    = data.accuracy   || null;
+    state.leaders     = data.leaders    || null;
     state.leadersNote = data.leadersNote || null;
     renderAccuracy();
   } catch (err) {
@@ -118,16 +120,22 @@ function renderSignals() {
   if (lbl) lbl.textContent = getDateLabel(currentDateOffset);
   if (!list) return;
   list.innerHTML = "";
-  if (!state.signals.length) { list.innerHTML = `<li class="empty-state">No signals available.</li>`; return; }
 
-  const range  = getSelectedRange();
-  let signals  = [...state.signals];
+  if (!state.signals.length) {
+    list.innerHTML = `<li class="empty-state">No signals available.</li>`;
+    return;
+  }
+
+  const range = getSelectedRange();
+  // v7.7: slice only — DO NOT sort. Server order is already interleaved.
+  let signals = [...state.signals];
   if (range !== "all") signals = signals.slice(0, parseInt(range,10) || 10);
+
   const book   = getSelectedBook();
   const maxOCM = Math.max(...signals.map(s => s.overmindCompositeMetric ?? s.ocm ?? 0), 1);
 
   signals.forEach(sig => {
-    const li  = document.createElement("li");
+    const li = document.createElement("li");
     li.className = "list-row";
     const odds = sig.sportsbooks || sig.odds || {};
     const line = odds[book] ?? "N/A";
@@ -135,8 +143,13 @@ function renderSignals() {
     const pct  = Math.round((ocm / maxOCM) * 100);
     const rawP = sig.hrProbability ?? sig.hrProb;
     let probPct = 0;
-    if (rawP != null) { probPct = rawP <= 1 ? Math.round(rawP*100) : Math.round(rawP); probPct = Math.max(0, Math.min(probPct,100)); }
-    const vsText = sig.pitcher ? `${sig.pitcher}${sig.pitcherHand ? " ("+sig.pitcherHand+")" : ""}` : "";
+    if (rawP != null) {
+      probPct = rawP <= 1 ? Math.round(rawP*100) : Math.round(rawP);
+      probPct = Math.max(0, Math.min(probPct, 100));
+    }
+    const vsText = sig.pitcher
+      ? `${sig.pitcher}${sig.pitcherHand ? " ("+sig.pitcherHand+")" : ""}`
+      : "";
 
     li.innerHTML = `
       <div class="row-main">
@@ -147,11 +160,12 @@ function renderSignals() {
         </div>
         ${vsText ? `<div class="matchup-strip"><span>vs ${vsText}</span></div>` : ""}
         <div class="tier-bar-shell"><div class="tier-bar-fill" style="width:${pct}%;"></div></div>
-        ${probPct ? `<div class="prob-shell">
-          <div class="prob-label">HR Probability</div>
-          <div class="prob-bar"><div class="prob-fill" style="width:${probPct}%;"></div></div>
-          <div class="prob-value">${probPct}%</div>
-        </div>` : ""}
+        ${probPct ? `
+          <div class="prob-shell">
+            <div class="prob-label">HR Probability</div>
+            <div class="prob-bar"><div class="prob-fill" style="width:${probPct}%;"></div></div>
+            <div class="prob-value">${probPct}%</div>
+          </div>` : ""}
       </div>
       <div class="row-side">
         <div class="pill tier">${sig.tier || "Strong"}</div>
@@ -170,7 +184,11 @@ function renderGames() {
   if (lbl) lbl.textContent = getDateLabel(currentGamesOffset);
   if (!list) return;
   list.innerHTML = "";
-  if (!state.games.length) { list.innerHTML = `<li class="empty-state">No games found.</li>`; return; }
+
+  if (!state.games.length) {
+    list.innerHTML = `<li class="empty-state">No games found.</li>`;
+    return;
+  }
 
   state.games.forEach((g, idx) => {
     const li = document.createElement("li");
@@ -183,7 +201,9 @@ function renderGames() {
 
     let statusText = "";
     if (g.isLive && g.homeScore != null) {
-      const inn = g.inning ? ` · ${g.inningHalf === "Top" ? "▲" : "▼"}${g.inning}` : " · LIVE";
+      const inn = g.inning
+        ? ` · ${g.inningHalf === "Top" ? "▲" : "▼"}${g.inning}`
+        : " · LIVE";
       statusText = `${g.awayScore}–${g.homeScore}${inn}`;
     } else if (g.isFinal && g.homeScore != null) {
       statusText = `F: ${g.awayScore}–${g.homeScore}`;
@@ -210,17 +230,14 @@ function renderGames() {
   });
 }
 
-function buildStatBadge(stats, name, isPitcher) {
-  // For pitchers (SP line) show Ks
-  if (isPitcher) {
-    const k = stats?.k ?? 0;
-    return k > 0 ? `<span class="stat-badge stat-k">${k}K</span>` : "";
-  }
-  // For batters show H / HR / RBI — only non-zero values
+function buildStatBadge(stats, isPitcher) {
   if (!stats) return "";
+  if (isPitcher) {
+    return stats.k > 0 ? `<span class="stat-badge stat-k">${stats.k}K</span>` : "";
+  }
   const parts = [];
-  if (stats.h  > 0) parts.push(`<span class="stat-badge stat-h">${stats.h}H</span>`);
-  if (stats.hr > 0) parts.push(`<span class="stat-badge stat-hr">${stats.hr}HR</span>`);
+  if (stats.h   > 0) parts.push(`<span class="stat-badge stat-h">${stats.h}H</span>`);
+  if (stats.hr  > 0) parts.push(`<span class="stat-badge stat-hr">${stats.hr}HR</span>`);
   if (stats.rbi > 0) parts.push(`<span class="stat-badge stat-rbi">${stats.rbi}RBI</span>`);
   return parts.join("");
 }
@@ -239,22 +256,31 @@ function toggleGameLineups(li, game) {
     return;
   }
 
-  const lineups     = game.lineups     || {};
-  const playerStats = game.playerStats || {};  // { "Name": { h, hr, rbi, k, isP } }
-  const homeArr     = Array.isArray(lineups.home) ? lineups.home : [];
-  const awayArr     = Array.isArray(lineups.away) ? lineups.away : [];
-  const isFinal     = !!game.isFinal;
+  const lineups      = game.lineups     || {};
+  const playerStats  = game.playerStats || {};
+  const homeArr      = Array.isArray(lineups.home) ? lineups.home : [];
+  const awayArr      = Array.isArray(lineups.away) ? lineups.away : [];
+  const isFinal      = !!game.isFinal;
+  const homeConfirmed = !!(lineups.homeConfirmed);
+  const awayConfirmed = !!(lineups.awayConfirmed);
 
-  // Pitcher stats from boxscore (SP may appear in playerStats with isP:true)
   const homePitcherStats = playerStats[game.probableHomePitcher] ?? null;
   const awayPitcherStats = playerStats[game.probableAwayPitcher] ?? null;
 
-  const makeGrid = (roster, side) => {
-    if (!roster.length) return `<div class="lineup-empty">No roster data.</div>`;
+  // v7.7: Show batting order number when available
+  const makeGrid = (roster, confirmed) => {
+    if (!roster.length) {
+      return `<div class="lineup-empty">${confirmed ? "No lineup data." : "Lineup TBD — tap back later."}</div>`;
+    }
     return roster.map(p => {
       const st    = isFinal ? (playerStats[p.name] ?? null) : null;
-      const badge = st ? buildStatBadge(st, p.name, false) : "";
+      const badge = buildStatBadge(st, false);
+      // Show order number only for confirmed lineups
+      const orderEl = (p.order != null)
+        ? `<span class="lp-order">${p.order}</span>`
+        : `<span class="lp-order-empty"></span>`;
       return `<div class="lineup-player">
+        ${orderEl}
         <span class="lp-name">${p.name || "Unknown"}</span>
         <span class="lp-pos">${p.pos || ""}</span>
         ${badge ? `<span class="lp-stats">${badge}</span>` : ""}
@@ -262,20 +288,28 @@ function toggleGameLineups(li, game) {
     }).join("");
   };
 
-  const homeSPBadge = isFinal ? buildStatBadge(homePitcherStats, game.probableHomePitcher, true) : "";
-  const awaySPBadge = isFinal ? buildStatBadge(awayPitcherStats, game.probableAwayPitcher, true) : "";
+  const homeSPBadge = isFinal ? buildStatBadge(homePitcherStats, true) : "";
+  const awaySPBadge = isFinal ? buildStatBadge(awayPitcherStats, true) : "";
+
+  // Lineup status label
+  const homeLabel = homeConfirmed
+    ? `<span class="lineup-status confirmed">✓ Confirmed</span>`
+    : `<span class="lineup-status pending">Lineup TBD</span>`;
+  const awayLabel = awayConfirmed
+    ? `<span class="lineup-status confirmed">✓ Confirmed</span>`
+    : `<span class="lineup-status pending">Lineup TBD</span>`;
 
   inner.innerHTML = `
     <div class="lineup-columns">
       <div class="lineup-col">
-        <div class="lineup-title">${game.homeTeam || ""}</div>
+        <div class="lineup-title">${game.homeTeam || ""} ${homeLabel}</div>
         <div class="lineup-sp">SP: ${game.probableHomePitcher || "TBD"} ${homeSPBadge}</div>
-        <div class="lineup-grid">${makeGrid(homeArr, "home")}</div>
+        <div class="lineup-grid">${makeGrid(homeArr, homeConfirmed)}</div>
       </div>
       <div class="lineup-col">
-        <div class="lineup-title">${game.awayTeam || ""}</div>
+        <div class="lineup-title">${game.awayTeam || ""} ${awayLabel}</div>
         <div class="lineup-sp">SP: ${game.probableAwayPitcher || "TBD"} ${awaySPBadge}</div>
-        <div class="lineup-grid">${makeGrid(awayArr, "away")}</div>
+        <div class="lineup-grid">${makeGrid(awayArr, awayConfirmed)}</div>
       </div>
     </div>`;
 
@@ -298,45 +332,49 @@ function renderAccuracy() {
   const acc        = state.accuracy ?? {};
   const system     = acc.system     ?? {};
   const hrHitters  = Array.isArray(acc.hrHittersToday) ? acc.hrHittersToday : [];
-  const bestStreak = acc.bestStreak ?? null;
   const outcomes   = Array.isArray(acc.outcomes) ? acc.outcomes : [];
+  const hasPicks   = (system.totalPicks ?? 0) > 0;
 
-  // System Tracker
-  const hasPicks = (system.totalPicks ?? 0) > 0;
   sysEl.innerHTML = `
-    <div class="metric-row"><span>Total Picks</span><span>${system.totalPicks ?? 0}</span></div>
-    <div class="metric-row"><span>Hits</span><span>${system.hits ?? 0}</span></div>
+    <div class="metric-row"><span>Total Picks Tracked</span><span>${system.totalPicks ?? 0}</span></div>
+    <div class="metric-row"><span>HR Hits</span><span>${system.hits ?? 0}</span></div>
     <div class="metric-row"><span>Misses</span><span>${system.misses ?? 0}</span></div>
     <div class="metric-row"><span>Accuracy</span><span>${system.accuracy ?? 0}%</span></div>
-    ${bestStreak?.player ? `<div class="metric-row"><span>Best Pick Streak</span><span>${bestStreak.player} (${bestStreak.length ?? 0} days)</span></div>` : ""}
-    ${!hasPicks ? `<div class="metric-row accuracy-note"><span>Pick history builds automatically each day via cron. Check back after the first full game day.</span></div>` : ""}
+    ${system.lastDate ? `<div class="metric-row"><span>Last Recorded</span><span>${system.lastDate}</span></div>` : ""}
+    ${!hasPicks
+      ? `<div class="metric-row accuracy-note"><span>System auto-saves Strong picks on each /signals load. Outcomes compute automatically the following day. Visit HR Signals today to trigger your first pick save.</span></div>`
+      : ""}
   `;
 
-  // HR & RBI Tracker
   hrRbiEl.innerHTML = `
     <div class="metric-row"><span>Last 7 Days</span><span>${system.accuracy ?? 0}%</span></div>
     <div class="metric-row"><span>Last 30 Days</span><span>${system.accuracy ?? 0}%</span></div>
     <div class="metric-row">
       <span>Active Streaks</span>
-      <span style="font-size:11px;text-align:right;max-width:55%;">${hrHitters.length ? hrHitters.slice(0,4).join(", ") : "None recorded yet"}</span>
+      <span style="font-size:11px;text-align:right;max-width:55%">${
+        hrHitters.length ? hrHitters.slice(0,4).join(", ") : "None recorded yet"
+      }</span>
     </div>
   `;
 
-  // HR Outcomes — from cron OUTCOMES_{date}
+  // Outcomes
   if (!outcomes.length) {
-    outcomesEl.innerHTML = `<div class="empty-state">No outcomes yet — cron records results nightly after games finish.</div>`;
+    outcomesEl.innerHTML = `<div class="empty-state">Outcomes auto-compute each day after games finish. Check back tomorrow.</div>`;
   } else {
     outcomes.slice(0, 20).forEach(o => {
       const div = document.createElement("div");
       div.className = "outcome-row";
+      const resultText = o.hrHit
+        ? `✅ HR · ${o.h}H ${o.hr}HR ${o.rbi}RBI`
+        : `❌ No HR · ${o.h}H ${o.rbi}RBI`;
       div.innerHTML = `
         <div class="outcome-main">
           <span class="outcome-player">${o.player || "Unknown"}</span>
-          <span class="outcome-team">${o.team || ""}</span>
+          <span class="outcome-team">${o.team || ""} · ${o.date || ""}</span>
         </div>
         <div class="outcome-side">
           <span class="outcome-tier">${o.tier || "Strong"}</span>
-          <span class="outcome-hit">${o.hrHit ? `✅ HR (${o.h}H ${o.hr}HR ${o.rbi}RBI)` : "❌ No HR"}</span>
+          <span class="outcome-hit">${resultText}</span>
         </div>`;
       outcomesEl.appendChild(div);
     });
@@ -377,7 +415,10 @@ function renderSearch() {
   const list = $("search-results");
   if (!list) return;
   list.innerHTML = "";
-  if (!state.searchResults.length) { list.innerHTML = `<li class="empty-state">No results.</li>`; return; }
+  if (!state.searchResults.length) {
+    list.innerHTML = `<li class="empty-state">No results.</li>`;
+    return;
+  }
   state.searchResults.forEach(r => {
     const li = document.createElement("li");
     li.className = "list-row";
@@ -403,10 +444,12 @@ function renderSearch() {
 
 function setActiveTab(tab) {
   currentTab = tab;
-  document.querySelectorAll(".sidebar-item").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  document.querySelectorAll(".sidebar-item").forEach(b =>
+    b.classList.toggle("active", b.dataset.tab === tab));
   const navItems = document.querySelectorAll(".bottom-nav .nav-item");
   navItems.forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
-  document.querySelectorAll(".tab-view").forEach(s => s.classList.toggle("active", s.id.replace("tab-","") === tab));
+  document.querySelectorAll(".tab-view").forEach(s =>
+    s.classList.toggle("active", s.id.replace("tab-","") === tab));
   const ind = $("nav-indicator");
   if (ind && navItems.length) {
     const idx = Array.from(navItems).findIndex(i => i.dataset.tab === tab);
@@ -428,7 +471,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("[data-tab]").forEach(el => {
     el.addEventListener("click", () => switchTab(el.dataset.tab));
   });
-
   document.querySelectorAll(".range-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
@@ -437,18 +479,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  const bookSel = $("sportsbook");
-  if (bookSel) bookSel.addEventListener("change", renderSignals);
-
-  $("prev-day")?.addEventListener("click", () => { currentDateOffset--;  loadSignals(); });
-  $("next-day")?.addEventListener("click", () => { currentDateOffset++;  loadSignals(); });
-
+  $("sportsbook")?.addEventListener("change", renderSignals);
+  $("prev-day")?.addEventListener("click",       () => { currentDateOffset--;  loadSignals(); });
+  $("next-day")?.addEventListener("click",       () => { currentDateOffset++;  loadSignals(); });
   $("games-prev-day")?.addEventListener("click", () => { currentGamesOffset--; loadGames(); });
   $("games-next-day")?.addEventListener("click", () => { currentGamesOffset++; loadGames(); });
 
-  const searchInput = $("search-input");
-  if (searchInput) {
-    searchInput.addEventListener("input", e => {
+  const si = $("search-input");
+  if (si) {
+    si.addEventListener("input", e => {
       if (searchTimeout) clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => loadSearch(e.target.value), 250);
     });
