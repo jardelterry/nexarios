@@ -5,7 +5,7 @@
   <title>NexariOS — Midnight OS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0a0c10" />
-  <link rel="stylesheet" href="style.css?v=7.7" />
+  <link rel="stylesheet" href="style.css?v=7.8" />
 </head>
 
 <body class="theme-dark device-auto">
@@ -82,13 +82,13 @@
 
           <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header"><span>📊</span><span>System Tracker</span></div>
-            <div class="card-subtitle">Tracks Strong-tier HR picks vs actual outcomes. Auto-saves picks on each signals load and computes outcomes the following day.</div>
+            <div class="card-subtitle">Tracks all tiers (Strong / Medium / Light). Auto-saves picks on each signals load, computes outcomes the following day.</div>
             <div id="accuracy-system" class="accuracy-grid"></div>
           </div>
 
           <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header"><span>📈</span><span>HR & RBI Tracker</span></div>
-            <div class="card-subtitle">Rolling accuracy windows and active player streaks from KV.</div>
+            <div class="card-subtitle">Rolling accuracy windows and active player streaks.</div>
             <div id="accuracy-hr-rbi" class="accuracy-grid"></div>
           </div>
 
@@ -100,7 +100,7 @@
 
           <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header"><span>🎯</span><span>HR Outcomes</span></div>
-            <div class="card-subtitle">Recent Strong-tier pick results — auto-computed from MLB boxscores.</div>
+            <div class="card-subtitle">All-tier pick results grouped by tier with per-tier accuracy — auto-computed from MLB boxscores.</div>
             <div id="accuracy-hr-outcomes" class="compact-outcomes"></div>
           </div>
         </section>
@@ -134,7 +134,7 @@
 
           <div class="card glass" style="padding: 20px 20px;">
             <div class="card-header"><span>🧩</span><span>Engine</span></div>
-            <div class="metric-row"><span>Version</span><span>v7.7 Midnight Hybrid Radial</span></div>
+            <div class="metric-row"><span>Version</span><span>v7.8 Midnight Hybrid Radial</span></div>
             <div class="metric-row"><span>Worker</span><span>nexari.jardelterry.workers.dev</span></div>
           </div>
 
@@ -142,7 +142,7 @@
             <div class="card-header"><span>ℹ️</span><span>Info</span></div>
             <div class="metric-row"><span>Model</span><span>Overmind HR Engine 6.6</span></div>
             <div class="metric-row"><span>Ranking Logic</span><span>OCM vs pitcher, park, weather</span></div>
-            <div class="metric-row"><span>Data Source</span><span>MLB StatsAPI (live)</span></div>
+            <div class="metric-row"><span>Data Source</span><span>MLB StatsAPI + DraftKings (live)</span></div>
           </div>
 
           <div class="card glass" style="padding: 20px 20px;">
@@ -150,38 +150,25 @@
 
             <div class="guide-section">
               <div class="guide-heading">☄️ HR Signals</div>
-              <div class="guide-body">Ranks batters from across the full day's slate by HR likelihood. Uses round-robin interleaving so the top pick from each game appears before the 2nd pick from any game — you always see variety at the top, not a cluster from one matchup.</div>
-              <div class="guide-item">
-                <span class="guide-label strong-label">Strong</span>
-                <span class="guide-desc">18%+ HR probability. Highest confidence — prioritize for single-game props and parlay legs.</span>
-              </div>
-              <div class="guide-item">
-                <span class="guide-label medium-label">Medium</span>
-                <span class="guide-desc">11–17% probability. Solid situational play — good for longer-odds parlays.</span>
-              </div>
-              <div class="guide-item">
-                <span class="guide-label light-label">Light</span>
-                <span class="guide-desc">Under 11%. Low confidence — only play when odds offer significant value.</span>
-              </div>
-              <div class="guide-item">
-                <span class="guide-label">OCM</span>
-                <span class="guide-desc">0–100 composite: batter power (HR rate, SLG, OPS) vs pitcher vulnerability (ERA, HR allowed).</span>
-              </div>
+              <div class="guide-body">Round-robin interleaved across all games — the top pick from each game appears before any game's second pick. Each card shows: Tier · OCM score · Live DraftKings odds · EV/Barrel/ISO stats (when available from KV) · Career HR vs this pitcher (🏠 badge appears when 2+ career HRs).</div>
+              <div class="guide-item"><span class="guide-label strong-label">Strong</span><span class="guide-desc">18%+ HR probability — highest confidence.</span></div>
+              <div class="guide-item"><span class="guide-label medium-label">Medium</span><span class="guide-desc">11–17% probability — solid situational play.</span></div>
+              <div class="guide-item"><span class="guide-label light-label">Light</span><span class="guide-desc">Under 11% — value plays only.</span></div>
             </div>
 
             <div class="guide-section">
               <div class="guide-heading">⚾️ Games</div>
-              <div class="guide-body">Use ◀ ▶ to browse any date. Tap any game to expand rosters. When lineups are officially confirmed (usually 3–4 hours pre-game), batting order numbers appear next to each player — 1 through 9. For live and final games, the boxscore batting order is used. Final games also show H / HR / RBI per batter and K for the starting pitcher.</div>
+              <div class="guide-body">Browse any date with ◀ ▶. Tap any game to expand. Confirmed batting order shows numbered slots 1–9. Final games show H/HR/RBI per batter and K for the starter.</div>
             </div>
 
             <div class="guide-section">
               <div class="guide-heading">📊 Accuracy</div>
-              <div class="guide-body">No setup required. Every time you load HR Signals, the system automatically saves today's Strong picks to KV. The following day, outcomes are computed automatically from MLB boxscores. System Tracker accumulates over time. Season Leaders pull live from MLB Stats API each load.</div>
+              <div class="guide-body">Tracks ALL tiers — Strong, Medium, and Light picks are all saved on each signals load. Outcomes are computed automatically the next day from MLB boxscores. System Tracker shows tier-by-tier breakdown (picks · hits · misses · %) so you can see which tier performs best over time.</div>
             </div>
 
             <div class="guide-section">
               <div class="guide-heading">🔍 Search</div>
-              <div class="guide-body">Search any player or team name. Results show OCM, tier, opponent, and pitcher for today's slate.</div>
+              <div class="guide-body">Search any player or team. Results show OCM, tier, opponent, and pitcher for the current date.</div>
             </div>
           </div>
         </section>
@@ -199,6 +186,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=7.7"></script>
+  <script src="app.js?v=7.8"></script>
 </body>
 </html>

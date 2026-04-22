@@ -1,6 +1,6 @@
-// app.js — NexariOS v7.7
-// v7.7: Remove client-side OCM re-sort (preserves server interleave),
-//       batting order numbers in lineup, accuracy self-healing display.
+// app.js — NexariOS v7.8
+// v7.8: EV/Barrel/ISO stats row in signals, career vs pitcher
+//       badge (2+ HR), accuracy breakdown by tier, all tiers tracked.
 
 const BASE = "https://nexari.jardelterry.workers.dev";
 
@@ -47,9 +47,7 @@ async function loadSignals() {
     const url = new URL(BASE + "/signals");
     url.searchParams.set("date", getDateISO(currentDateOffset));
     const data = await fetchJSON(url.toString());
-    // v7.7 FIX: Do NOT re-sort by OCM here.
-    // The server already applies round-robin interleaving for diversity.
-    // Re-sorting would undo that and cluster players from the same game.
+    // Do NOT re-sort — server round-robin order is intentional
     state.signals = Array.isArray(data.signals) ? data.signals : [];
     renderSignals();
   } catch (err) {
@@ -104,7 +102,7 @@ async function loadSearch(query) {
   }
 }
 
-/* ─── HR SIGNALS ─── */
+/* ─── SIGNAL HELPERS ─── */
 
 function getSelectedRange() {
   const btn = document.querySelector(".range-btn.active");
@@ -113,6 +111,52 @@ function getSelectedRange() {
 function getSelectedBook() {
   return $("sportsbook")?.value ?? "dk";
 }
+
+// Format KV stat values for compact display
+function fmtStat(label, val, suffix = "") {
+  if (val == null || val === 0) return null;
+  const rounded = suffix === "%" ? `${(val * 100).toFixed(1)}%` : `${val}${suffix}`;
+  return `<span class="sig-stat"><span class="sig-stat-label">${label}</span>${rounded}</span>`;
+}
+
+// Build the stats row from kvStats
+function buildStatsRow(kvStats) {
+  if (!kvStats) return "";
+  const parts = [];
+
+  // SLG — only show if above average (.370)
+  if (kvStats.slg && kvStats.slg > 0.37)
+    parts.push(fmtStat("SLG", kvStats.slg.toFixed(3)));
+
+  // ISO (Isolated Power = SLG - AVG, proxy for power)
+  if (kvStats.iso && kvStats.iso > 0.1)
+    parts.push(fmtStat("ISO", kvStats.iso.toFixed(3)));
+
+  // Barrel rate — only show if meaningful (>5%)
+  if (kvStats.barrelRate && kvStats.barrelRate > 0.05)
+    parts.push(fmtStat("Barrel", kvStats.barrelRate, "%"));
+
+  // Hard hit rate — only show if meaningful (>35%)
+  if (kvStats.hardHitRate && kvStats.hardHitRate > 0.35)
+    parts.push(fmtStat("HardHit", kvStats.hardHitRate, "%"));
+
+  // Average exit velocity — only if > 85 mph
+  if (kvStats.avgEV && kvStats.avgEV > 85)
+    parts.push(fmtStat("EV", `${kvStats.avgEV.toFixed(1)} mph`));
+
+  if (parts.length === 0) return "";
+  return `<div class="sig-stats-row">${parts.join("")}</div>`;
+}
+
+// Build career vs pitcher badge (only shown if 2+ HR)
+function buildCareerBadge(career) {
+  if (!career || career.hr < 2) return "";
+  const ab  = career.ab ?? 0;
+  const tip = ab > 0 ? `${career.h}H, ${career.hr}HR in ${ab} AB` : `${career.hr}HR vs this pitcher`;
+  return `<div class="career-badge" title="${tip}">🏠 ${career.hr}HR vs SP</div>`;
+}
+
+/* ─── HR SIGNALS ─── */
 
 function renderSignals() {
   const list = $("hr-list");
@@ -127,9 +171,8 @@ function renderSignals() {
   }
 
   const range = getSelectedRange();
-  // v7.7: slice only — DO NOT sort. Server order is already interleaved.
   let signals = [...state.signals];
-  if (range !== "all") signals = signals.slice(0, parseInt(range,10) || 10);
+  if (range !== "all") signals = signals.slice(0, parseInt(range, 10) || 10);
 
   const book   = getSelectedBook();
   const maxOCM = Math.max(...signals.map(s => s.overmindCompositeMetric ?? s.ocm ?? 0), 1);
@@ -137,19 +180,25 @@ function renderSignals() {
   signals.forEach(sig => {
     const li = document.createElement("li");
     li.className = "list-row";
-    const odds = sig.sportsbooks || sig.odds || {};
-    const line = odds[book] ?? "N/A";
-    const ocm  = sig.overmindCompositeMetric ?? sig.ocm ?? 0;
-    const pct  = Math.round((ocm / maxOCM) * 100);
-    const rawP = sig.hrProbability ?? sig.hrProb;
-    let probPct = 0;
+
+    const odds   = sig.sportsbooks || sig.odds || {};
+    const line   = odds[book] ?? "N/A";
+    const ocm    = sig.overmindCompositeMetric ?? sig.ocm ?? 0;
+    const pct    = Math.round((ocm / maxOCM) * 100);
+    const rawP   = sig.hrProbability ?? sig.hrProb;
+    let probPct  = 0;
     if (rawP != null) {
-      probPct = rawP <= 1 ? Math.round(rawP*100) : Math.round(rawP);
+      probPct = rawP <= 1 ? Math.round(rawP * 100) : Math.round(rawP);
       probPct = Math.max(0, Math.min(probPct, 100));
     }
+
     const vsText = sig.pitcher
-      ? `${sig.pitcher}${sig.pitcherHand ? " ("+sig.pitcherHand+")" : ""}`
+      ? `${sig.pitcher}${sig.pitcherHand ? " (" + sig.pitcherHand + ")" : ""}`
       : "";
+
+    // v7.8: EV/barrel stats row + career vs pitcher badge
+    const statsRow    = buildStatsRow(sig.kvStats);
+    const careerBadge = buildCareerBadge(sig.careerVsPitcher);
 
     li.innerHTML = `
       <div class="row-main">
@@ -159,6 +208,7 @@ function renderSignals() {
           ${sig.opponent ? `<span>vs ${sig.opponent}</span>` : ""}
         </div>
         ${vsText ? `<div class="matchup-strip"><span>vs ${vsText}</span></div>` : ""}
+        ${statsRow}
         <div class="tier-bar-shell"><div class="tier-bar-fill" style="width:${pct}%;"></div></div>
         ${probPct ? `
           <div class="prob-shell">
@@ -171,6 +221,7 @@ function renderSignals() {
         <div class="pill tier">${sig.tier || "Strong"}</div>
         <div class="pill ocm">${Math.round(ocm)}</div>
         <div class="pill odds">${line}</div>
+        ${careerBadge}
       </div>`;
     list.appendChild(li);
   });
@@ -232,9 +283,7 @@ function renderGames() {
 
 function buildStatBadge(stats, isPitcher) {
   if (!stats) return "";
-  if (isPitcher) {
-    return stats.k > 0 ? `<span class="stat-badge stat-k">${stats.k}K</span>` : "";
-  }
+  if (isPitcher) return stats.k > 0 ? `<span class="stat-badge stat-k">${stats.k}K</span>` : "";
   const parts = [];
   if (stats.h   > 0) parts.push(`<span class="stat-badge stat-h">${stats.h}H</span>`);
   if (stats.hr  > 0) parts.push(`<span class="stat-badge stat-hr">${stats.hr}HR</span>`);
@@ -256,7 +305,7 @@ function toggleGameLineups(li, game) {
     return;
   }
 
-  const lineups      = game.lineups     || {};
+  const lineups      = game.lineups || {};
   const playerStats  = game.playerStats || {};
   const homeArr      = Array.isArray(lineups.home) ? lineups.home : [];
   const awayArr      = Array.isArray(lineups.away) ? lineups.away : [];
@@ -264,19 +313,15 @@ function toggleGameLineups(li, game) {
   const homeConfirmed = !!(lineups.homeConfirmed);
   const awayConfirmed = !!(lineups.awayConfirmed);
 
-  const homePitcherStats = playerStats[game.probableHomePitcher] ?? null;
-  const awayPitcherStats = playerStats[game.probableAwayPitcher] ?? null;
+  const homePSP = playerStats[game.probableHomePitcher] ?? null;
+  const awayPSP = playerStats[game.probableAwayPitcher] ?? null;
 
-  // v7.7: Show batting order number when available
   const makeGrid = (roster, confirmed) => {
-    if (!roster.length) {
-      return `<div class="lineup-empty">${confirmed ? "No lineup data." : "Lineup TBD — tap back later."}</div>`;
-    }
+    if (!roster.length) return `<div class="lineup-empty">${confirmed ? "No lineup data." : "Lineup TBD."}</div>`;
     return roster.map(p => {
       const st    = isFinal ? (playerStats[p.name] ?? null) : null;
       const badge = buildStatBadge(st, false);
-      // Show order number only for confirmed lineups
-      const orderEl = (p.order != null)
+      const orderEl = p.order != null
         ? `<span class="lp-order">${p.order}</span>`
         : `<span class="lp-order-empty"></span>`;
       return `<div class="lineup-player">
@@ -288,10 +333,9 @@ function toggleGameLineups(li, game) {
     }).join("");
   };
 
-  const homeSPBadge = isFinal ? buildStatBadge(homePitcherStats, true) : "";
-  const awaySPBadge = isFinal ? buildStatBadge(awayPitcherStats, true) : "";
+  const homeSPBadge = isFinal ? buildStatBadge(homePSP, true) : "";
+  const awaySPBadge = isFinal ? buildStatBadge(awayPSP, true) : "";
 
-  // Lineup status label
   const homeLabel = homeConfirmed
     ? `<span class="lineup-status confirmed">✓ Confirmed</span>`
     : `<span class="lineup-status pending">Lineup TBD</span>`;
@@ -319,6 +363,10 @@ function toggleGameLineups(li, game) {
 
 /* ─── ACCURACY ─── */
 
+function tierAccuracyPct(t) {
+  return t.picks > 0 ? Math.round((t.hits / t.picks) * 100) : 0;
+}
+
 function renderAccuracy() {
   const sysEl      = $("accuracy-system");
   const hrRbiEl    = $("accuracy-hr-rbi");
@@ -335,15 +383,44 @@ function renderAccuracy() {
   const outcomes   = Array.isArray(acc.outcomes) ? acc.outcomes : [];
   const hasPicks   = (system.totalPicks ?? 0) > 0;
 
+  // v7.8: tier breakdown
+  const tiers = system.tiers ?? {};
+  const strong = tiers.Strong ?? { picks: 0, hits: 0, misses: 0 };
+  const medium = tiers.Medium ?? { picks: 0, hits: 0, misses: 0 };
+  const light  = tiers.Light  ?? { picks: 0, hits: 0, misses: 0 };
+
   sysEl.innerHTML = `
     <div class="metric-row"><span>Total Picks Tracked</span><span>${system.totalPicks ?? 0}</span></div>
-    <div class="metric-row"><span>HR Hits</span><span>${system.hits ?? 0}</span></div>
-    <div class="metric-row"><span>Misses</span><span>${system.misses ?? 0}</span></div>
-    <div class="metric-row"><span>Accuracy</span><span>${system.accuracy ?? 0}%</span></div>
-    ${system.lastDate ? `<div class="metric-row"><span>Last Recorded</span><span>${system.lastDate}</span></div>` : ""}
-    ${!hasPicks
-      ? `<div class="metric-row accuracy-note"><span>System auto-saves Strong picks on each /signals load. Outcomes compute automatically the following day. Visit HR Signals today to trigger your first pick save.</span></div>`
-      : ""}
+    <div class="metric-row"><span>Overall Accuracy</span><span>${system.accuracy ?? 0}%</span></div>
+    ${system.lastDate ? `<div class="metric-row"><span>Last Updated</span><span>${system.lastDate}</span></div>` : ""}
+
+    ${hasPicks ? `
+    <div class="tier-accuracy-block">
+      <div class="tier-acc-row">
+        <span class="tier-acc-label strong-label">Strong</span>
+        <span class="tier-acc-stat">${strong.picks} picks</span>
+        <span class="tier-acc-stat hits">${strong.hits} hits</span>
+        <span class="tier-acc-stat misses">${strong.misses} misses</span>
+        <span class="tier-acc-pct">${tierAccuracyPct(strong)}%</span>
+      </div>
+      <div class="tier-acc-row">
+        <span class="tier-acc-label medium-label">Medium</span>
+        <span class="tier-acc-stat">${medium.picks} picks</span>
+        <span class="tier-acc-stat hits">${medium.hits} hits</span>
+        <span class="tier-acc-stat misses">${medium.misses} misses</span>
+        <span class="tier-acc-pct">${tierAccuracyPct(medium)}%</span>
+      </div>
+      <div class="tier-acc-row">
+        <span class="tier-acc-label light-label">Light</span>
+        <span class="tier-acc-stat">${light.picks} picks</span>
+        <span class="tier-acc-stat hits">${light.hits} hits</span>
+        <span class="tier-acc-stat misses">${light.misses} misses</span>
+        <span class="tier-acc-pct">${tierAccuracyPct(light)}%</span>
+      </div>
+    </div>` : `
+    <div class="metric-row accuracy-note">
+      <span>Tracking all tiers (Strong / Medium / Light). Auto-saves picks on each signals load. Outcomes compute automatically the next day.</span>
+    </div>`}
   `;
 
   hrRbiEl.innerHTML = `
@@ -352,32 +429,50 @@ function renderAccuracy() {
     <div class="metric-row">
       <span>Active Streaks</span>
       <span style="font-size:11px;text-align:right;max-width:55%">${
-        hrHitters.length ? hrHitters.slice(0,4).join(", ") : "None recorded yet"
+        hrHitters.length ? hrHitters.slice(0, 4).join(", ") : "None recorded yet"
       }</span>
     </div>
   `;
 
-  // Outcomes
+  // Outcomes — ALL tiers, sorted by date desc
   if (!outcomes.length) {
-    outcomesEl.innerHTML = `<div class="empty-state">Outcomes auto-compute each day after games finish. Check back tomorrow.</div>`;
+    outcomesEl.innerHTML = `<div class="empty-state">Outcomes auto-compute each day after games finish.</div>`;
   } else {
-    outcomes.slice(0, 20).forEach(o => {
-      const div = document.createElement("div");
-      div.className = "outcome-row";
-      const resultText = o.hrHit
-        ? `✅ HR · ${o.h}H ${o.hr}HR ${o.rbi}RBI`
-        : `❌ No HR · ${o.h}H ${o.rbi}RBI`;
-      div.innerHTML = `
-        <div class="outcome-main">
-          <span class="outcome-player">${o.player || "Unknown"}</span>
-          <span class="outcome-team">${o.team || ""} · ${o.date || ""}</span>
-        </div>
-        <div class="outcome-side">
-          <span class="outcome-tier">${o.tier || "Strong"}</span>
-          <span class="outcome-hit">${resultText}</span>
-        </div>`;
-      outcomesEl.appendChild(div);
-    });
+    // Group by tier for display
+    const grouped = { Strong: [], Medium: [], Light: [] };
+    for (const o of outcomes) {
+      const t = o.tier ?? "Light";
+      if (!grouped[t]) grouped[t] = [];
+      grouped[t].push(o);
+    }
+
+    for (const [tierName, items] of Object.entries(grouped)) {
+      if (!items.length) continue;
+      const header = document.createElement("div");
+      header.className = "outcomes-tier-header";
+      const hits   = items.filter(o => o.hrHit).length;
+      const total  = items.length;
+      const pct    = total > 0 ? Math.round((hits / total) * 100) : 0;
+      header.innerHTML = `<span class="tier-acc-label ${tierName.toLowerCase()}-label">${tierName}</span><span class="outcomes-tier-stat">${hits}/${total} (${pct}%)</span>`;
+      outcomesEl.appendChild(header);
+
+      items.slice(0, 10).forEach(o => {
+        const div = document.createElement("div");
+        div.className = "outcome-row";
+        const result = o.hrHit
+          ? `✅ HR · ${o.h}H ${o.hr}HR ${o.rbi}RBI`
+          : `❌ No HR · ${o.h}H ${o.rbi}RBI`;
+        div.innerHTML = `
+          <div class="outcome-main">
+            <span class="outcome-player">${o.player || "Unknown"}</span>
+            <span class="outcome-team">${o.team || ""} · ${o.date || ""}</span>
+          </div>
+          <div class="outcome-side">
+            <span class="outcome-hit">${result}</span>
+          </div>`;
+        outcomesEl.appendChild(div);
+      });
+    }
   }
 
   // Season Leaders
@@ -449,11 +544,11 @@ function setActiveTab(tab) {
   const navItems = document.querySelectorAll(".bottom-nav .nav-item");
   navItems.forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
   document.querySelectorAll(".tab-view").forEach(s =>
-    s.classList.toggle("active", s.id.replace("tab-","") === tab));
+    s.classList.toggle("active", s.id.replace("tab-", "") === tab));
   const ind = $("nav-indicator");
   if (ind && navItems.length) {
     const idx = Array.from(navItems).findIndex(i => i.dataset.tab === tab);
-    if (idx >= 0) ind.style.transform = `translateX(${(idx/navItems.length)*100}%)`;
+    if (idx >= 0) ind.style.transform = `translateX(${(idx / navItems.length) * 100}%)`;
   }
 }
 
